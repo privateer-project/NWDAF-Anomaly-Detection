@@ -18,6 +18,15 @@ docker build -t privateer-ad .
 docker run --gpus all -p 8889:8888 privateer-ad
 ```
 
+## Accessing the Jupyter Server
+
+Once your Docker container is up and running, you can start interacting with the Jupyter Notebook server. To access the server:
+
+1. **Open your web browser**
+
+2. **Navigate to the Notebook interface**: Enter the following URL in your browser's address bar: http://localhost:8889
+
+
 ## Note regarding NWDAF files
 For efficiency and to minimize the Docker image size, certain files and directories are excluded from being transferred into the Docker container.  
 .dockerignore configuration excludes all contents of the Data directory except for summary_df.csv, which holds information about the UEs (User Equipment).  
