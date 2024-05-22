@@ -99,3 +99,26 @@ def plot_ts(ts1, ts2, ts1_name, ts2_name, range):
     fig.update_yaxes(range=range)
 
     fig.show()
+
+def plot_original_vs_rec(ts_original, ts_rec, imeisv, metric):
+    trace1 = go.Scatter(
+        y = ts_original,
+        mode = 'lines',
+        name = 'Original Time Series'
+    )
+
+    trace2 = go.Scatter(
+        y = ts_rec,
+        mode = 'lines',
+        name = 'Reconstructed Time Series'
+    )
+
+    layout = go.Layout(
+        title = f'Time Series Comparison for imeisv {imeisv}',
+        xaxis = {'title': 'Time Index'},
+        yaxis = {'title': f'{metric}'}
+    )
+
+    fig = go.Figure(data=[trace1, trace2], layout=layout)
+
+    fig.show()

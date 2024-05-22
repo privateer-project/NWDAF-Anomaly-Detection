@@ -54,18 +54,18 @@ def create_ds_loader(benign_data, malicious_data, window_size, step_size, featur
     
     train_data, val_data = split_train_test(benign_data)
     
-    scaler = StandardScaler()
+    # scaler = StandardScaler()
 
-    scaler.fit(np.vstack(train_data))
-    train_data_scaled = [scaler.transform(ds) for ds in train_data]
-    val_data_scaled = [scaler.transform(ds) for ds in val_data]
+    # scaler.fit(np.vstack(train_data))
+    # train_data_scaled = [scaler.transform(ds) for ds in train_data]
+    # val_data_scaled = [scaler.transform(ds) for ds in val_data]
 
-    mal_data_scaled = [scaler.transform(ds) for ds in mal_data]
+    # mal_data_scaled = [scaler.transform(ds) for ds in mal_data]
     
-    train_dataset = MultiVarTsDataset(train_data_scaled)
-    val_dataset = MultiVarTsDataset(val_data_scaled)
+    train_dataset = MultiVarTsDataset(train_data)
+    val_dataset = MultiVarTsDataset(val_data)
 
-    mal_dataset = MultiVarTsDataset(mal_data_scaled)
+    mal_dataset = MultiVarTsDataset(mal_data)
 
     train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_data_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
