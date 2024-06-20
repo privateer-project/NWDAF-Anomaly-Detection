@@ -13,7 +13,7 @@ st.set_page_config(layout="wide")
 @st.cache_data
 def load_data():
     
-    df = pd.read_csv(os.path.join(data_folder, "amari_ue_data_final_v5.csv"))
+    df = pd.read_csv(os.path.join(data_folder, "amari_ue_data_final_v5_smoothed_scaled_diff.csv"))
     df = df.sort_values(['imeisv','_time'], ascending = True)
 
     summary_df = pd.read_csv(os.path.join(data_folder, "summary_df.csv"))
