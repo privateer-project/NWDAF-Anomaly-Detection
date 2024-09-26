@@ -1,0 +1,237 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+from tqdm import tqdm
+
+from src.utils.training_utils import TrainingHistory
+
+
+class Encoder(nn.Module):
+    def __init__(
+        self, input_dim, hidden_dim1, hidden_dim2, num_layers, dropout, layer_norm_flag
+    ):
+        super(Encoder, self).__init__()
+        self.lstm1 = nn.LSTM(
+            input_dim,
+            hidden_dim1,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
+        self.lstm2 = nn.LSTM(
+            hidden_dim1,
+            hidden_dim2,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
+        self.layer_norm_flag = layer_norm_flag
+        self.layer_norm = nn.LayerNorm(hidden_dim2)
+
+    def forward(self, x):
+        x, _ = self.lstm1(x)
+        x, (hidden, _) = self.lstm2(x)
+        if self.layer_norm_flag:
+            x = self.layer_norm(x)
+        return x
+
+
+class Decoder(nn.Module):
+    def __init__(self, encoded_dim, hidden_dim1, num_layers, output_dim, dropout):
+        super(Decoder, self).__init__()
+        self.lstm1 = nn.LSTM(
+            encoded_dim,
+            hidden_dim1,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
+        self.lstm2 = nn.LSTM(
+            hidden_dim1,
+            output_dim,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout,
+        )
+
+    def forward(self, x):
+        x, _ = self.lstm1(x)
+        x, _ = self.lstm2(x)
+        return x
+
+
+class LSTMAutoencoder(nn.Module):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim1,
+        hidden_dim2,
+        num_layers,
+        output_dim,
+        dropout,
+        layer_norm_flag,
+    ):
+        super(LSTMAutoencoder, self).__init__()
+        self.input_dim = input_dim
+        self.hidden_dim1 = hidden_dim1
+        self.hidden_dim2 = hidden_dim2
+        self.num_layers = num_layers
+        self.output_dim = output_dim
+        self.dropout = dropout
+        self.layer_norm_flag = layer_norm_flag
+
+        self.encoder = Encoder(
+            self.input_dim,
+            self.hidden_dim1,
+            self.hidden_dim2,
+            self.num_layers,
+            self.dropout,
+            self.layer_norm_flag,
+        )
+        self.decoder = Decoder(
+            self.hidden_dim2,
+            self.hidden_dim1,
+            self.num_layers,
+            self.output_dim,
+            self.dropout,
+        )
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
+    def encode(self, x):
+        encoded = self.encoder(x)
+        return encoded
+
+    def decode(self, x):
+        decoded = self.decoder(x)
+        return decoded
+
+    def train_model(
+        self,
+        num_epochs,
+        early_stopping,
+        train_data_loader,
+        val_data_loader,
+        mal_data_loader,
+        device,
+        criterion,
+        optimizer,
+    ):
+        self.to(device)
+
+        history = TrainingHistory()
+
+        for epoch in range(num_epochs):
+            self.train()
+            epoch_train_losses = []
+            total_loss = 0
+
+            progress_bar = tqdm(train_data_loader, desc="Training...")
+            for inputs, targets in progress_bar:
+                train_batch_size = inputs.shape[0]
+                input_size = inputs.shape[-1]
+                inputs, targets = inputs.view(train_batch_size, -1, input_size).to(
+                    device
+                ), targets.view(train_batch_size, -1, input_size).to(device)
+                optimizer.zero_grad()
+                outputs = self(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+
+                for name, parameter in self.named_parameters():
+                    if parameter.grad is not None:
+                        grad_norm = parameter.grad.norm().item()
+                        history.gradient_norms[name].append(grad_norm)
+
+                optimizer.step()
+
+                step_loss = loss.item()
+                total_loss += step_loss
+                epoch_train_losses.append(step_loss)
+
+            avg_train_loss = total_loss / len(train_data_loader)
+            history.train_losses.append(avg_train_loss)
+
+            self.eval()
+            total_val_loss = 0
+            epoch_val_losses = []
+            with torch.no_grad():
+                progress_bar = tqdm(val_data_loader, desc="Validating...")
+                for inputs, targets in progress_bar:
+                    val_batch_size = inputs.shape[0]
+                    input_size = inputs.shape[-1]
+                    inputs, targets = inputs.view(val_batch_size, -1, input_size).to(
+                        device
+                    ), targets.view(val_batch_size, -1, input_size).to(device)
+                    outputs = self(inputs)
+                    val_loss = criterion(outputs, targets)
+                    step_val_loss = val_loss.item()
+                    total_val_loss += step_val_loss
+                    epoch_val_losses.append(step_val_loss)
+
+            avg_val_loss = total_val_loss / len(val_data_loader)
+            history.val_losses.append(avg_val_loss)
+
+            print(
+                f"Epoch {epoch+1}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}"
+            )
+
+            if early_stopping is not None:
+                early_stopping(avg_val_loss)
+                if early_stopping.early_stop:
+                    print("Early stopping")
+                    break
+
+        self.eval()
+        with torch.no_grad():
+            for inputs, targets in mal_data_loader:
+                mal_batch_size = inputs.shape[0]
+                input_size = inputs.shape[-1]
+                inputs, targets = inputs.view(mal_batch_size, -1, input_size).to(
+                    device
+                ), targets.view(mal_batch_size, -1, input_size).to(device)
+                outputs = self(inputs)
+                mal_loss = criterion(outputs, targets)
+                history.mal_losses.append(mal_loss)
+
+        history.model_weights = self.state_dict()
+        history.epochs_trained = epoch
+
+        return history
+
+    def evaluate_model(
+        self, criterion, benign_test_data_loader, mal_test_data_loader, device
+    ):
+        self.eval()
+        benign_test_losses = []
+        with torch.no_grad():
+            progress_bar = tqdm(benign_test_data_loader, desc="Validating...")
+            for inputs, targets in progress_bar:
+                test_batch_size = inputs.shape[0]
+                test_output_dim = inputs.shape[-1]
+                inputs, targets = inputs.view(test_batch_size, -1, test_output_dim).to(
+                    device
+                ), targets.view(test_batch_size, -1, test_output_dim).to(device)
+                outputs = self(inputs)
+                loss = criterion(outputs, targets)
+                benign_test_losses.append(loss.item())
+
+        self.eval()
+        mal_test_losses = []
+        with torch.no_grad():
+            progress_bar = tqdm(mal_test_data_loader, desc="Validating...")
+            for inputs, targets in progress_bar:
+                test_batch_size = inputs.shape[0]
+                test_output_dim = inputs.shape[-1]
+                inputs, targets = inputs.view(test_batch_size, -1, test_output_dim).to(
+                    device
+                ), targets.view(test_batch_size, -1, test_output_dim).to(device)
+                outputs = self(inputs)
+                loss = criterion(outputs, targets)
+                mal_test_losses.append(loss.item())
+
+        return benign_test_losses, mal_test_losses

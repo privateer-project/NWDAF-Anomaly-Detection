@@ -6,3 +6,5 @@ plotly==5.19.0
 scikit_learn==1.2.2
 streamlit==1.33.0
 tqdm==4.66.2
+hyperopt==0.2.7
+mlflow==2.6.0
