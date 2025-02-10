@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "privateer-ad"
+version = "1.0.0"
+description = ""
+license = "Apache-2.0"
+dependencies = [
+    "datasets==3.1.0",
+    "flwr[simulation]==1.14.0",
+    "flwr-datasets==0.5.0",
+    "joblib==1.4.2",
+    "kaleido==0.2.1",
+    "mlflow==2.19.0",
+    "numpy==1.26.4",
+    "opacus==1.5.2",
+    "optuna==4.2.0",
+    "optuna-integration[mlflow]==4.2.1",
+    "pandas==2.2.3",
+    "plotly==5.24.1",
+    "pyaml==25.1.0",
+    "python-dotenv==1.0.1",
+    "pytorch-forecasting==1.2.0",
+    "pyaml==25.1.0",
+    "requests==2.32.3",
+    "scikit-learn==1.6.1",
+    "seaborn==0.13.2",
+    "tqdm==4.67.1",
+    "torch==2.5.1",
+    "torchinfo==1.8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "gliv"
+
+[tool.flwr.app.components]
+serverapp = "privateer_ad.server_app:app"
+clientapp = "privateer_ad.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 2
+fraction-fit =1
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 2
+options.backend.client-resources.num-cpus = 2 # Each ClientApp will get assigned n CPU core
+options.backend.client-resources.num-gpus = 0.0 # Each ClientApp will get n * 100% of each available GPU VRAM
+options.backend.init_args.num_cpus = 4 # Only expose N CPU to the simulation
+options.backend.init_args.num_gpus = 0 # Expose N GPUs to the simulation

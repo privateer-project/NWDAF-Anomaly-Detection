@@ -1,70 +1,70 @@
-# -*- coding: utf-8 -*-
-""" main.py """
-
-# standard
-import argparse
 import os
-import time
 import logging
 
-# external
+from fire import Fire
+
+from src.data_utils import Downloader
+from datetime import datetime
+
 import mlflow
-import warnings
-import torch
+import flwr as fl
+from src.fed_learn import NWDAFClient
+from src.training import ModelTrainer
+from src.config.other_configs import config
 
-# internal
-from src.configs.config import CFG
-from src.models.rae import LSTMAutoencoder
-from src.utils.logging_utils import connect_to_mlflow
-
-from src.logger.logger import setup_logger
-from src.training.training_orchestrator import TrainingOrchestrator
-
-# Create a logger instance
-logger = setup_logger()
-
-warnings.filterwarnings("ignore")
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
-def main():
-    # Configure the device (GPU/CPU)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+def main(mode : str=None, client_id: int = None,
+         flwr_server: str = None,
+         partition_id: int = None,
+         num_partitions: int = None,
+         num_classes_per_partition: int = None):
 
-    # Connect to MLflow
-    mlflow_cfg = CFG.get("mlflow_config", {})
-    if mlflow_cfg.get("enabled", False):
-        experiment_id, run_id = connect_to_mlflow(mlflow_cfg)
-        print(f"Connected to MLflow. Run ID: {run_id}")
+    for _dir in ['data', 'processed', 'architectures', 'scalers', 'analysis']:
+        os.makedirs(config['paths'][_dir], exist_ok=True)
+
+    # Check if data needs to be downloaded
+    if not os.path.exists(config['metadata']['raw_dataset']):
+        logger.info("Downloading dataset...")
+        Downloader(url=config['metadata']['url'], extract_path=config['paths']['raw']).download_extract()
+
+    mlflow.set_tracking_uri(f'{config['mlflow']['server_address']}')
+    mlflow.set_experiment(config['mlflow']['experiment_name'])
+    run_name = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    if flwr_server:
+        config['flwr']['server'] = flwr_server
+    if partition_id:
+        config['train_hparams']['partition_id'] = partition_id
+    if num_partitions:
+        config['train_hparams']['num_partitions'] = num_partitions
+    if num_partitions:
+        config['train_hparams']['num_classes_per_partition'] = num_classes_per_partition
+
+    if config['autotune']['enabled']:
+        mlflow.start_run(run_name='autotune')
+
+    if mode == 'server':
+        run_name = '_'.join(['mode', run_name])
+        mlflow.start_run(run_name=run_name, nested=config['autotune']['enabled'])
+    if mode == 'client':
+        if client_id:
+            config['flwr']['client_id'] = client_id
+        trainer = ModelTrainer(config=config)
+        client = NWDAFClient(trainer=trainer).to_client()
+        # Start client
+        fl.client.start_client(server_address=config['flwr']['server_address'], client=client)
     else:
-        print("MLflow tracking is disabled in the configuration.")
-
-    # Initialize the Training Orchestrator with the model class and configuration
-    orchestrator = TrainingOrchestrator(
-        model_class=LSTMAutoencoder,
-        config=CFG,
-        experiment_id=experiment_id,
-    )
-
-    # Building the model
-    # orchestrator.build_model(device=device)
-
-    # Start training the model
-    # orchestrator.train_model(device=device)
-
-    # Evaluate the model
-    # orchestrator.eval_model(device=device)
-
-    # If tuning is enabled, start the hyperparameter tuning process
-    if orchestrator.tuning_enabled:
-        print("Starting model tuning...")
-        best_params = orchestrator.tune_model(device=device)
-        print(f"Best hyperparameters found: {best_params}")
-
-    # End MLflow run
-    if mlflow_cfg.get("enabled", False):
-        mlflow.end_run()
+        mlflow.start_run(run_name=run_name, nested=config['autotune']['enabled'])
+        trainer = ModelTrainer()
+        best_checkpoint = trainer.training()
+        trainer._evaluate_loop()
+        model = trainer.model.load_state_dict(best_checkpoint['model_state_dict'])
+        testing.test(model, test_dl=trainer.test_dl, criterion=trainer.loss_class(reduction='none'), device=trainer.device)
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    Fire(main)
