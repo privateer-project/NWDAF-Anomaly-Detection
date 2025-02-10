@@ -20,7 +20,6 @@ class TransformerADConfig:
     n_layers: int =  2
     dropout: float = 0.1
 
-
 @dataclass
 class LSTMAutoencoderConfig:
    input_size: int = 4

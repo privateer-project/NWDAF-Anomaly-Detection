@@ -11,7 +11,7 @@ from config import Paths
 
 @dataclass
 class DownloadConfig:
-   zip_name: str
+   zip_name: str = 'nwdaf-data.zip'
    url: str = os.environ.get('DATA_URL', 'https://zenodo.org/api/records/13900057/files-archive')
    extraction_dir: Path = Path(os.environ.get('RAW_DIR', Paths.raw))
    raw_dataset: Path = Path(os.environ.get('RAW_DATASET', Paths.raw_dataset))
@@ -43,7 +43,7 @@ class Downloader:
             files = zip_ref.namelist()
             for file in tqdm(files, desc="Extracting"):
                 zip_ref.extract(file, self.extraction_dir)
-        print("Download and extraction completed!")
+        print("Download and extract completed!")
 
     def remove_zip(self):
         print(f"Removing {self.zip_path} ...")

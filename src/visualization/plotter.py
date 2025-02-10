@@ -1,16 +1,14 @@
 import pandas as pd
+from pandas import DataFrame, Series, to_datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from src.config import Paths, MetaData
-from .utils import create_device_color_map, get_feature_data, split_traces
-from .configs import (
-    create_subplot_config,
-    create_button_menu,
+from config import MetaData, Paths
+from .utils import create_device_color_map, create_subplot_config, get_feature_data, split_traces, create_button_menu, \
     create_layout_config
-)
 
 
+# noinspection PyTypeChecker
 class FeatureAnalyzer:
     """Analyzes and visualizes features from a dataset."""
 
@@ -21,7 +19,7 @@ class FeatureAnalyzer:
         self.paths = paths
         self.color_map = create_device_color_map(metadata)
 
-    def analyze_features(self, df: pd.DataFrame, name: str):
+    def analyze_features(self, df: DataFrame, name: str):
         """Analyze and create visualizations for all features."""
         df = self._preprocess_dataframe(df)
         analysis_dir = self.paths.analysis.joinpath(name)
@@ -43,14 +41,14 @@ class FeatureAnalyzer:
                 print(f'Error writing {html_file}: {e}')
 
     @staticmethod
-    def _preprocess_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    def _preprocess_dataframe(df: DataFrame) -> DataFrame:
         """Preprocess the input DataFrame."""
         df = df.copy()
-        df['_time'] = pd.to_datetime(df['_time'])
+        df['_time'] = to_datetime(df['_time'])
         df['imeisv'] = df['imeisv'].astype(str)
         return df.sort_values('_time')
 
-    def _create_feature_plot(self, df: pd.DataFrame, feature_name: str) -> go.Figure:
+    def _create_feature_plot(self, df: DataFrame, feature_name: str) -> go.Figure:
         """Create plot for a single feature."""
         subplot_config = create_subplot_config(feature_name)
         fig = make_subplots(**subplot_config)
@@ -62,7 +60,7 @@ class FeatureAnalyzer:
         self._update_figure_layout(fig, feature_name)
         return fig
 
-    def _add_device_traces(self, fig: go.Figure, df: pd.DataFrame,
+    def _add_device_traces(self, fig: go.Figure, df: DataFrame,
                            imeisv: str, feature_name: str):
         """Add traces for a single device."""
         normal_users = [dev.imeisv for dev in self.metadata.devices.values() if not dev.malicious]
@@ -98,8 +96,8 @@ class FeatureAnalyzer:
                                                 legend_name, line_color)
 
     @staticmethod
-    def _add_numeric_distributions(fig: go.Figure, feature_data: pd.Series,
-                                   device_df: pd.DataFrame, legend_name: str,
+    def _add_numeric_distributions(fig: go.Figure, feature_data: Series,
+                                   device_df: DataFrame, legend_name: str,
                                    line_color: str):
         """Add distribution plots for numeric features."""
         # Overall distribution
@@ -134,8 +132,8 @@ class FeatureAnalyzer:
         )
 
     @staticmethod
-    def _add_categorical_distributions(fig: go.Figure, feature_data: pd.Series,
-                                       device_df: pd.DataFrame, legend_name: str,
+    def _add_categorical_distributions(fig: go.Figure, feature_data: Series,
+                                       device_df: DataFrame, legend_name: str,
                                        line_color: str):
         """Add distribution plots for categorical features."""
         # Overall distribution
@@ -167,7 +165,7 @@ class FeatureAnalyzer:
         )
 
     @staticmethod
-    def _add_attack_periods(fig: go.Figure, df: pd.DataFrame):
+    def _add_attack_periods(fig: go.Figure, df: DataFrame):
         """Add attack period highlighting to the plot."""
         attack_data = df[df['attack'] == 1]
         if not attack_data.empty:

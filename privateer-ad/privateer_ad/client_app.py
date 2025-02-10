@@ -6,8 +6,7 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from flwr.client.mod import secaggplus_mod, fixedclipping_mod
 
-from src import config
-
+import config
 
 from src.training.trainer import ModelTrainer
 

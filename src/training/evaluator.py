@@ -13,7 +13,7 @@ from sklearn.metrics import (
     RocCurveDisplay
 )
 
-from src.config import MLFlowConfig, Paths, HParams
+from config import MLFlowConfig, Paths, HParams
 
 
 class ModelEvaluator:

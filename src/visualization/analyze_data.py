@@ -1,8 +1,8 @@
-from src.data_utils.preprocessing import DataCleaner
-from src.data_utils.visualization import FeatureAnalyzer
+from data_handling.transform import DataCleaner
+from visualization import FeatureAnalyzer
 
 if __name__ == '__main__':
-    from src.config import Paths, MetaData
+    from config import Paths, MetaData
     import pandas as pd
 
     # Initialize config and paths

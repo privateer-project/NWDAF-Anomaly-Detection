@@ -3,8 +3,8 @@ from datetime import datetime
 import optuna
 import mlflow
 
-from src import config
-from src.config import *
+import config
+from config import *
 from src.training.trainer import ModelTrainer
 
 

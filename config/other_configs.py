@@ -44,3 +44,26 @@ class PartitionConfig:
     num_partitions: int = 1
     num_classes_per_partition: int = 9
     partition_id: int = 0
+
+@dataclass
+class SecureAggregationConfig:
+   num_shares: int = 3
+   reconstruction_threshold: int = 2
+   max_weight: float = 1000.0
+   clipping_range: float = 8.0
+   quantization_range: int = 4194304
+   modulus_range: int = 4294967296
+   timeout: float = 600.0
+
+@dataclass
+class FlowerConfig:
+   enable: bool = False
+   mode: str = "client"
+   client_id: int = 0
+   n_clients: int = 1
+   server_address: str = "[::]:8081"
+   num_rounds: int = 3
+   num_clients_per_round: int = 2
+   min_clients_per_round: int = 2
+   fraction_fit: float = 1.0
+   fraction_evaluate: float = 1.0

@@ -3,11 +3,10 @@ from pathlib import Path
 
 import torch
 
-from src.config import *
-from src.data_utils.data_loading.dataloader import DataLoaderFactory
+from data_handling.load import DataLoaderFactory
+from config import *
 from src.training import ModelEvaluator
 from src.architectures import LSTMAutoencoder
-
 
 def main():
     parser = argparse.ArgumentParser(description='Evaluate trained LSTM Autoencoder')

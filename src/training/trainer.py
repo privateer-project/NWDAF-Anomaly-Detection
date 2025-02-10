@@ -1,21 +1,19 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict, Any
 
-from tqdm import tqdm
 import mlflow
 import torch
-import torch.nn as nn
-from torch.optim import Adam
-from torchinfo import summary
-
 from opacus import PrivacyEngine
 from opacus.validators import ModuleValidator
+from torch import nn
+from torchinfo import summary
+from tqdm import tqdm
 
-from .. import architectures
-from src.config import *
-from src.data_utils.data_loading.dataloader import DataLoaderFactory
-from .evaluator import ModelEvaluator
+import architectures
+from config import *
+from data_handling.load import DataLoaderFactory
+from training import ModelEvaluator
 
 
 class ModelTrainer:
@@ -100,17 +98,16 @@ class ModelTrainer:
         _sum = summary(self.model,
                        input_data=self.sample,
                        col_names=('input_size', 'output_size', 'num_params', 'params_percent', 'trainable'))
+
         mlflow.log_text(str(_sum), 'model_summary.txt')
 
     def _init_optimizer(self, optimizer_config: OptimizerConfig):
         """Initialize the optimizer."""
 
-        self.optimizer = getattr(torch.optim, optimizer_config.type)
-        self.optimizer = Adam(
-            self.model.parameters(),
-            lr=self.hparams.learning_rate,
-            **optimizer_config.params
-        )
+        self.optimizer = getattr(torch.optim,
+                                 optimizer_config.type)(self.model.parameters(),
+                                                        lr=self.hparams.learning_rate,
+                                                        **optimizer_config.params)
 
     def _init_criterion(self):
         """Initialize the loss criterion."""

@@ -1,9 +1,7 @@
-import os
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import List, Optional, Dict
 import yaml
-from src.config import Paths
+from config import Paths
 
 
 @dataclass

@@ -2,8 +2,8 @@ import argparse
 
 import mlflow
 
-from src import config
-from src.config import *
+import config
+from config import *
 from src.training import ModelTrainer
 
 
