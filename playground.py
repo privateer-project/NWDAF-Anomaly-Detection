@@ -11,13 +11,13 @@ import pandas as pd
 
 def prepare_data(df):
     # Features to use
-    features = ['ul_phr', 'ul_mcs', 'dl_tx', 'dl_bitrate', 'ul_tx', 'p_ue']
-    #          'dl_mcs', 'dl_retx',  'ul_bitrate',  'ul_path_loss',
-    #     'ul_retx',   'pusch_snr', 'turbo_decoder_avg'
-    # ]
+    features = ['ul_phr', 'ul_mcs', 'dl_tx', 'dl_bitrate', 'ul_tx', 'p_ue',
+                'dl_mcs', 'dl_retx',  'ul_bitrate',  'ul_path_loss',
+                'ul_retx',   'pusch_snr', 'turbo_decoder_avg'
+                ]
 
     X = df[features]
-    y = df['attack_number']
+    y = df['attack']
 
     # Scale the features
     scaler = StandardScaler()
@@ -28,8 +28,8 @@ def prepare_data(df):
 
 def train_and_evaluate_models(X_train, X_test, y_train, y_test):
     # Initialize models
-    rf = RandomForestClassifier(n_estimators=50, max_depth=20, min_samples_leaf=4, min_samples_split=4, random_state=42)
-    xgb = XGBClassifier(n_estimators=50, max_depth=20, reg_alpha=0.1, reg_lambda=1e-4, learning_rate=0.5, random_state=42)
+    rf = RandomForestClassifier(n_estimators=50, max_depth=50, min_samples_leaf=200, min_samples_split=500, random_state=42)
+    xgb = XGBClassifier(n_estimators=50, max_depth=50, reg_alpha=0.2, reg_lambda=5e-4, learning_rate=0.5, random_state=42)
 
     # Train models
     rf.fit(X_train, y_train)
@@ -202,9 +202,9 @@ def analyze_feature_importance(train_df, val_df, save_path=None):
 
 if __name__ == '__main__':
     # Specify the path where you want to save the plots
-    save_path = 'feature_importance_analysis1'
+    save_path = 'feature_importance_analysis2'
     test_df = pd.read_csv('/home/giorgos/projects/NWDAF-Anomaly-Detection/data/processed/test.csv')
-    train_df, test_df = train_test_split(test_df, test_size=0.2, stratify=test_df['attack_number'])
+    train_df, test_df = train_test_split(test_df, test_size=0.2, stratify=test_df['attack'])
     # Run the analysis
     rf_importance, xgb_importance, rf_model, xgb_model = analyze_feature_importance(train_df, test_df, save_path)
 
