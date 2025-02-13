@@ -21,10 +21,10 @@ def main(model_path, **kwargs):
                          }
 
     test_dl = DataLoaderFactory.get_single_dataloader(train=False,
-                                                   split='test',
-                                                   window_size=configs['hparams'].window_size,
-                                                   partition_config=configs['partition_config'],
-                                                   **dataloader_params)
+                                                      path='test',
+                                                      window_size=configs['hparams'].window_size,
+                                                      partition_config=configs['partition_config'],
+                                                      **dataloader_params)
 
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

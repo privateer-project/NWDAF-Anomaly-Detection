@@ -66,30 +66,12 @@ def main(**kwargs):
                          'prefetch_factor': configs['hparams'].batch_size * 100,
                          'persistent_workers': True
                          }
-
-    train_dl = loader_factory.get_single_dataloader(train=True,
-                                                    split='train',
-                                                    window_size=configs['hparams'].window_size,
-                                                    partition_config=configs['partition_config'],
-                                                    **dataloader_params)
-
-    val_dl = loader_factory.get_single_dataloader(train=False,
-                                                  split='val',
-                                                  window_size=configs['hparams'].window_size,
-                                                  partition_config=configs['partition_config'],
-                                                  **dataloader_params)
-
-    test_dl = loader_factory.get_single_dataloader(train=False,
-                                                   split='test',
-                                                   window_size=configs['hparams'].window_size,
-                                                   partition_config=configs['partition_config'],
-                                                   **dataloader_params)
-
-    trainer = ModelTrainer(train_dl=train_dl, val_dl=val_dl, device=device, **configs)
+    dataloaders = loader_factory.get_dataloaders(**dataloader_params)
+    trainer = ModelTrainer(train_dl=dataloaders['train'], val_dl=dataloaders['val'], device=device, **configs)
     trainer.training()
 
     evaluator = ModelEvaluator(criterion=configs['hparams'].loss, device=device)
-    metrics, figures = evaluator.evaluate(trainer.model, test_dl)
+    metrics, figures = evaluator.evaluate(trainer.model, dataloaders['test'])
     if configs['mlflow_config'].track:
         mlflow.pytorch.log_model(pytorch_model=trainer.model.to('cpu'),
                                  artifact_path='model',

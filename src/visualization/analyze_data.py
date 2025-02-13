@@ -1,13 +1,14 @@
-from data_handling.transform import DataCleaner
-from visualization import FeatureAnalyzer
+from src.data_handling.transform import DataCleaner
+from src.visualization import FeatureAnalyzer
+
 
 if __name__ == '__main__':
-    from config import Paths, MetaData
+    from src.config import ProjectPaths, MetaData
     import pandas as pd
 
     # Initialize config and paths
     metadata = MetaData()
-    paths = Paths()
+    paths = ProjectPaths()
 
     # Create analyzer
     analyzer = FeatureAnalyzer(metadata, paths)
