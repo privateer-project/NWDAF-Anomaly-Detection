@@ -3,7 +3,7 @@ from pandas import DataFrame, Series, to_datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from config import MetaData, Paths
+from src.config import MetaData, ProjectPaths
 from .utils import create_device_color_map, create_subplot_config, get_feature_data, split_traces, create_button_menu, \
     create_layout_config
 
@@ -14,7 +14,7 @@ class FeatureAnalyzer:
 
     SKIP_FEATURES = ['_time', 'imeisv', 'instance_id', 'attack']
 
-    def __init__(self, metadata: MetaData, paths: Paths):
+    def __init__(self, metadata: MetaData, paths: ProjectPaths):
         self.metadata = metadata
         self.paths = paths
         self.color_map = create_device_color_map(metadata)

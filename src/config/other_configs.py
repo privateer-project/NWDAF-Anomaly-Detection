@@ -9,20 +9,16 @@ load_dotenv(Path(__file__).parent.joinpath('.env'))
 DATEFORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
 @dataclass
-class Paths:
+class ProjectPaths:
    root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
    data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
    config: Path = Path(__file__).parent
    raw: Path = Path(os.environ.get('RAW_DIR', data.joinpath('raw')))
    processed: Path = Path(os.environ.get('PROCESSED_DIR', data.joinpath('processed')))
-   models: Path = Path(os.environ.get('MODELS_DIR', root.joinpath('architectures')))
    scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
    analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
    raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
    studies: Path = Path(os.environ.get('STUDIES', root.joinpath('studies')))
-   def __post_init__(self):
-       for path in [self.data, self.raw, self.processed, self.models, self.scalers, self.analysis]:
-           path.mkdir(parents=True, exist_ok=True)
 
 @dataclass
 class DifferentialPrivacyConfig:
@@ -36,8 +32,17 @@ class DifferentialPrivacyConfig:
 @dataclass
 class MLFlowConfig:
    track: bool = True
-   server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5555')
-   experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'tfad')
+   server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5000')
+   experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
+
+@dataclass
+class AutotuneConfig:
+   study_name: str = 'privateer-ad'
+   storage: str = 'sqlite:///optuna.db'
+   n_trials: int = 100
+   timeout: int = 3600 * 8  # 8 hours
+   target: str = 'val_loss'
+   direction: str = 'minimize'
 
 @dataclass
 class PartitionConfig:

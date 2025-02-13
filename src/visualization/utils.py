@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from pandas import DataFrame, Series
-from config import MetaData, FeatureInfo
+from src.config import MetaData, FeatureInfo
 
 
 def create_device_color_map(metadata: MetaData) -> Dict[str, str]:

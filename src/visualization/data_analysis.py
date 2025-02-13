@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from pandas import DataFrame
 from plotly.subplots import make_subplots
 
-from config import MetaData
+from src.config import MetaData
 
 
 def plot_corr_matrix(corr_mat, x, y, title, xaxis_title, yaxis_title, output_path):

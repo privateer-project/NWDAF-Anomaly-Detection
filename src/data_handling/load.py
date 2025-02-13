@@ -8,40 +8,27 @@ from pandas import DataFrame
 from pytorch_forecasting import TimeSeriesDataSet
 from torch.utils.data import DataLoader
 
-from config import FeatureInfo
-from data_handling.utils import partition_data
-from config import Paths, MetaData, PartitionConfig, HParams
+from src.config import FeatureInfo
+from src.data_handling.utils import partition_data
+from src.config import ProjectPaths, MetaData, PartitionConfig, HParams
 
 class DataLoaderFactory:
     """Creates DataLoaders for training and evaluation."""
 
-    def __init__(self, metadata: MetaData, paths: Paths, hparams: HParams):
+    def __init__(self, metadata: MetaData, paths: ProjectPaths, hparams: HParams):
         self.paths = paths
         self.creator = TSDatasetCreator(metadata.features, paths)
         self.hparams = hparams
 
     def get_dataloaders(self, window_size: int = 12,
                         partition_config: Optional[PartitionConfig] = None,
-                        train: bool = True
+                        train: bool = True,
+                        **kwargs
                         ) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Get train, validation and test dataloaders."""
         datasets = {}
         for split in ['train', 'val', 'test']:
-            df = pd.read_csv(self.paths.processed.joinpath(f'{split}.csv'))
-
-            if partition_config:
-                df = partition_data(df, partition_config)
-
-            dataset = self.creator.create_dataset(df, window_size)
-            datasets[split] = dataset.to_dataloader(
-                train=train and split == 'train',
-                batch_size=self.hparams.batch_size,
-                num_workers=os.cpu_count(),
-                pin_memory=True,
-                prefetch_factor=self.hparams.batch_size * 100,
-                persistent_workers=True
-            )
-
+            datasets[split] = self.get_single_dataloader(split, window_size, partition_config, train, **kwargs)
         return datasets['train'], datasets['val'], datasets['test']
 
     def get_single_dataloader(self, split: str, window_size: int = 12,
@@ -61,7 +48,7 @@ class DataLoaderFactory:
 class TSDatasetCreator:
     """Handles creation of time series datasets."""
 
-    def __init__(self, features: Dict[str, FeatureInfo], paths: Paths):
+    def __init__(self, features: Dict[str, FeatureInfo], paths: ProjectPaths):
         self.features = features
         self.paths = paths
 

@@ -69,13 +69,13 @@ class TimeStepAutoencoder(nn.Module):
 
 
 class TransformerAD(nn.Module):
-    def __init__(self, d_model, n_head, n_layers, seq_len, d_input, dropout):
+    def __init__(self, d_model, n_head, num_layers, seq_len, d_input, dropout):
         super().__init__()
         # Standard transformer naming
         self.d_model = d_model
         self.n_head = n_head
         self.d_ff = self.d_model * 4
-        self.n_layers = n_layers
+        self.num_layers = num_layers
         self.seq_len = seq_len
         self.d_input = d_input
         self.dropout = dropout
@@ -97,7 +97,7 @@ class TransformerAD(nn.Module):
         )
         self.transformer_encoder = nn.TransformerEncoder(
             encoder_layer,
-            num_layers=self.n_layers
+            num_layers=self.num_layers
         )
 
         # Autoencoder that processes each timestep independently

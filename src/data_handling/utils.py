@@ -2,7 +2,7 @@ from pandas import DataFrame
 from datasets import Dataset
 from flwr_datasets.partitioner import PathologicalPartitioner
 
-from config import PartitionConfig
+from src.config import PartitionConfig
 
 
 def partition_data(df: DataFrame, config: PartitionConfig) -> DataFrame:

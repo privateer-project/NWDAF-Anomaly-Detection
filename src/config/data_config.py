@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 import yaml
-from config import Paths
+from src.config import ProjectPaths
 
 
 @dataclass
@@ -32,7 +32,7 @@ class MetaData:
 
    def __init__(self):
       super().__init__()
-      with open(Paths.config.joinpath('metadata.yaml')) as f:
+      with open(ProjectPaths.config.joinpath('metadata.yaml')) as f:
          data = yaml.safe_load(f)
       self.devices = {k: DeviceInfo(**v) for k, v in data['devices'].items()}
       self.attacks = {k: AttackInfo(**v) for k, v in data['attacks'].items()}

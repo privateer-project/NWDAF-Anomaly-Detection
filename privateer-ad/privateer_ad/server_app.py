@@ -7,7 +7,7 @@ from flwr.server import ServerApp, ServerConfig, LegacyContext, Driver
 from flwr.server.strategy import FedAvg, DifferentialPrivacyClientSideFixedClipping
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
-from config import DifferentialPrivacyConfig
+from src.config import DifferentialPrivacyConfig
 
 
 def get_model_weights(model):

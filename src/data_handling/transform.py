@@ -8,9 +8,10 @@ from pandas import DataFrame
 from pytorch_forecasting import TimeSeriesDataSet
 from sklearn.model_selection import train_test_split
 
-from config import MetaData, Paths, FeatureInfo, PartitionConfig
-from data_handling.utils import partition_data
-from data_handling.load import TSDatasetCreator
+from src.config import MetaData, ProjectPaths, FeatureInfo, PartitionConfig
+from src.data_handling.load import TSDatasetCreator
+from src.data_handling.utils import partition_data
+
 
 class DataCleaner:
     """Handles data cleaning and transform operations."""
@@ -42,19 +43,7 @@ class DataCleaner:
         return df
 
     def _process_features(self, df: DataFrame) -> DataFrame:
-        def robust_normalize_ewm(x):
-            ewm_mean = x.ewm(alpha=0.1).mean()
-            ewm_std = x.ewm(alpha=0.1).std()
-            # Handle cases where std is 0 or close to 0
-            mask = ewm_std < 1e-8
-            result = (x - ewm_mean) / ewm_std.where(~mask, 1.0)
-            # If both mean and std are 0, return 0
-            result = result.where(~(mask & (ewm_mean == 0)), 0)
-            return result
-
         features = [feature for feature, params in self.features.items() if feature in df.columns and params.input]
-
-        df[features] = df.groupby('imeisv')[features].transform(robust_normalize_ewm).bfill()
         for feature in features:
             for proc in self.features[feature].process:
                 if proc == 'delta':
@@ -66,7 +55,7 @@ class DataCleaner:
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
 
-    def __init__(self, metadata: MetaData, paths: Paths):
+    def __init__(self, metadata: MetaData, paths: ProjectPaths):
         self.features = metadata.features
         self.attacks = metadata.attacks
         self.devices = metadata.devices
@@ -175,25 +164,16 @@ class DataSplitter:
     def split(self, df: DataFrame, train_size: float = 0.8) -> Tuple[DataFrame, ...]:
         """Split data into train, validation, and test sets."""
         attack_dfs = []
-        normal_on_attack_dfs = []
         for attack, params in self.attacks.items():
+            attack_number_df = df.loc[df['attack_number'] == str(attack)]
             devices = [self.devices[str(device)].imeisv for device in params.devices]
-            participating_devices_df = df.loc[df['imeisv'].isin(devices)]
-            not_participating_devices_df = df.loc[~df['imeisv'].isin(devices)]
-            attack_number_df = participating_devices_df.loc[participating_devices_df['attack_number'] == str(attack)]
-            ben_during_attack_df = not_participating_devices_df.loc[not_participating_devices_df['attack_number'] == str(attack)]
-
-            attack_dfs.append(attack_number_df)
-            normal_on_attack_dfs.append(ben_during_attack_df)
+            participating_devices_df = attack_number_df.loc[attack_number_df['imeisv'].isin(devices)]
+            attack_dfs.append(participating_devices_df)
         attack_df = pd.concat(attack_dfs)
-        normal_on_attack_df = pd.concat(normal_on_attack_dfs)
-        normal_on_attack_df['attack'] = 0
-        normal_on_attack_df['attack_number'] = '0'
 
         benign_df = df[df['attack_number'] == '0']
-        normal_df = pd.concat([benign_df, normal_on_attack_df])
 
-        train_df, val_df, test_df = self._split_normal_data(normal_df, train_size)
+        train_df, val_df, test_df = self._split_normal_data(benign_df, train_size)
         test_df = pd.concat([test_df, attack_df])
         df.drop_duplicates(inplace=True)
         train_df.drop_duplicates(inplace=True)

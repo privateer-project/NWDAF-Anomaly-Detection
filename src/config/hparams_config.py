@@ -10,6 +10,8 @@ class HParams:
     window_size: int = 128
     model: str = 'TransformerAD'
     loss: str = 'L1Loss'
+    target: str = 'val_loss'
+    direction: str = 'minimize'
 
 @dataclass
 class TransformerADConfig:
@@ -17,7 +19,7 @@ class TransformerADConfig:
     seq_len: int = 128
     d_model: int = 256
     n_head: int = 4
-    n_layers: int =  2
+    num_layers: int =  2
     dropout: float = 0.1
 
 @dataclass

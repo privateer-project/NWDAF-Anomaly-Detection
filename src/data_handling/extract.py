@@ -6,15 +6,15 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from config import Paths
+from src.config import ProjectPaths
 
 
 @dataclass
 class DownloadConfig:
    zip_name: str = 'nwdaf-data.zip'
    url: str = os.environ.get('DATA_URL', 'https://zenodo.org/api/records/13900057/files-archive')
-   extraction_dir: Path = Path(os.environ.get('RAW_DIR', Paths.raw))
-   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', Paths.raw_dataset))
+   extraction_dir: Path = Path(os.environ.get('RAW_DIR', ProjectPaths.raw))
+   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', ProjectPaths.raw_dataset))
 
 class Downloader:
     def __init__(self, config: DownloadConfig):
