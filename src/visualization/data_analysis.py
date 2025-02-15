@@ -32,12 +32,12 @@ def plot_corr_matrix(corr_mat, x, y, title, xaxis_title, yaxis_title, output_pat
 
 
 metadata = MetaData()
-csv_path = '/data/raw/amari_ue_data_merged_with_attack_number.csv'
+csv_path = 'data/raw/amari_ue_data_merged_with_attack_number.csv'
 raw_df = pd.read_csv(csv_path, parse_dates=['_time'])
 raw_df = raw_df.astype(
     {feature: params.dtype for feature, params in metadata.features.items() if feature in raw_df.columns})
 
-features = [feature for feature, params in metadata.features.items() if params.input and feature in raw_df.columns]
+features = [feature for feature, params in metadata.features.items() if params.is_input and feature in raw_df.columns]
 
 drop_features = [feature for feature, params in metadata.features.items() if params.drop and feature in raw_df.columns]
 raw_df.drop(drop_features, axis='columns', inplace=True)
@@ -81,7 +81,7 @@ for device_id, device_params in metadata.devices.items():
     device_df = raw_df[raw_df['imeisv'] == device_params.imeisv].copy()
 
     resampled_device_df = device_df.resample('1min').agg({
-        **{feat: 'mean' for feat, params in metadata.features.items() if params.input == True},
+        **{feat: 'mean' for feat, params in metadata.features.items() if params.is_input == True},
         'attack': 'max',
         'attack_number': 'max',
         'imeisv': 'first'

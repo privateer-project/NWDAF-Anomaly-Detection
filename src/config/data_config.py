@@ -10,18 +10,18 @@ class DeviceInfo:
    ip: str
    type: str
    malicious: bool
+   in_attacks: List[str]
 
 @dataclass
 class AttackInfo:
    start: str
    stop: str
-   devices: List[str]
 
 @dataclass
 class FeatureInfo:
    dtype: str = 'str'
    drop: bool = False
-   input: Optional[bool] = False
+   is_input: Optional[bool] = False
    process: List[str] = field(default_factory=lambda: list())
 
 @dataclass
@@ -37,3 +37,6 @@ class MetaData:
       self.devices = {k: DeviceInfo(**v) for k, v in data['devices'].items()}
       self.attacks = {k: AttackInfo(**v) for k, v in data['attacks'].items()}
       self.features = {k: FeatureInfo(**v) for k, v in data['features'].items()}
+
+   def get_input_features(self):
+      return [feat for feat, info in self.features.items() if info.is_input]

@@ -7,7 +7,7 @@ class HParams:
     epochs: int = 1
     learning_rate: float = 1e-3
     batch_size: int = 1024
-    window_size: int = 128
+    seq_len: int = 32
     model: str = 'TransformerAD'
     loss: str = 'L1Loss'
     target: str = 'val_loss'
@@ -16,11 +16,11 @@ class HParams:
 @dataclass
 class TransformerADConfig:
     d_input: int =  4
-    seq_len: int = 128
+    seq_len: int = 32
     d_model: int = 256
-    n_head: int = 4
+    num_heads: int = 4
     num_layers: int =  2
-    dropout: float = 0.1
+    dropout: float = 0.12
 
 @dataclass
 class LSTMAutoencoderConfig:

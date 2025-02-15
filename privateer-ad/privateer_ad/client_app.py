@@ -68,7 +68,7 @@ def create_client_components(context: Context):
 
     model_config = getattr(config, hparams.model + 'Config')()
     if hparams.model == 'TransformerAD':
-        model_config.seq_len = hparams.window_size
+        model_config.seq_len = hparams.seq_len
 
     # Initialize trainer
     trainer = ModelTrainer(

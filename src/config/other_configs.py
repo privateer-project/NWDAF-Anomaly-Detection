@@ -37,8 +37,8 @@ class MLFlowConfig:
 
 @dataclass
 class AutotuneConfig:
-   study_name: str = 'privateer-ad'
-   storage: str = 'sqlite:///optuna.db'
+   study_name: str = 'study_0'
+   storage: str = 'optuna.db'
    n_trials: int = 100
    timeout: int = 3600 * 8  # 8 hours
    target: str = 'val_loss'

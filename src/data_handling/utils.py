@@ -27,7 +27,8 @@ def get_dataset_path(dataset_name: str) -> str:
     return str(ProjectPaths.processed.joinpath(f"{dataset_name}.csv"))
 
 def save_dataset(name: str, df: DataFrame):
-    df.to_csv(get_dataset_path(name), index=True)
+    df.reset_index(drop=True, inplace=True)
+    df.to_csv(get_dataset_path(name), index=False)
 
 def check_existing_datasets(force: bool):
     for mode in ['train', 'val', 'test']:
@@ -37,25 +38,27 @@ def check_existing_datasets(force: bool):
             f'File {path} exists. Set force=True to overwrite.'
             )
 
-def split_normal_data(data: DataFrame, train_size: float) -> Tuple[DataFrame, ...]:
-    train_df = DataFrame()
-    val_df = DataFrame()
-    test_df = DataFrame()
-
-    for _, normal_per_device in data.groupby('imeisv'):
-        train_dev, val_test_dev = train_test_split(
-            normal_per_device,
+def split_data(data: DataFrame, train_size: float) -> Tuple[DataFrame, ...]:
+    train_dfs = []
+    val_dfs = []
+    test_dfs = []
+    for _, device_data in data.groupby('imeisv'):
+        device_train_df, device_val_test_df = train_test_split(
+            device_data,
             shuffle=False,
             train_size=train_size,
             random_state=42
         )
-        val_dev, test_dev = train_test_split(
-            val_test_dev,
+        device_val_df, device_test_df = train_test_split(
+            device_val_test_df,
             shuffle=False,
             test_size=0.5,
             random_state=42)
 
-        train_df = pd.concat([train_df, train_dev])
-        val_df = pd.concat([val_df, val_dev])
-        test_df = pd.concat([test_df, test_dev])
+        train_dfs.append(device_train_df)
+        val_dfs.append(device_val_df)
+        test_dfs.append(device_test_df)
+    train_df = pd.concat(train_dfs)
+    val_df = pd.concat(val_dfs)
+    test_df = pd.concat(test_dfs)
     return train_df, val_df, test_df

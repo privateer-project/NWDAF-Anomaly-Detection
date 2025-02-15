@@ -3,6 +3,7 @@ from typing import Dict, Tuple, List
 import numpy as np
 import torch
 import torch.nn as nn
+from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from tqdm import tqdm
 from sklearn.metrics import (roc_curve, accuracy_score, precision_score, roc_auc_score,
@@ -75,5 +76,6 @@ class ModelEvaluator:
 
         predictions = (rec_errors >= threshold).astype(int)
         cm_fig, roc_fig = self.generate_plots(labels, predictions)
+        plt.close()
         return  metrics, {'confusion_matrix.png': cm_fig,
                           'roc_curve.png': roc_fig}

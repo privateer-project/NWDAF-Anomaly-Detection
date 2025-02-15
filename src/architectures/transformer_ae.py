@@ -69,28 +69,24 @@ class TimeStepAutoencoder(nn.Module):
 
 
 class TransformerAD(nn.Module):
-    def __init__(self, d_model, n_head, num_layers, seq_len, d_input, dropout):
+    def __init__(self, d_model, num_heads, num_layers, seq_len, d_input, dropout):
         super().__init__()
-        # Standard transformer naming
         self.d_model = d_model
-        self.n_head = n_head
+        self.num_heads = num_heads
         self.d_ff = self.d_model * 4
         self.num_layers = num_layers
         self.seq_len = seq_len
         self.d_input = d_input
         self.dropout = dropout
+        # batch_size, seq_len, d_input
+        assert self.d_model % self.num_heads == 0, f"d_model ({self.d_model}) must be divisible by n_head ({self.num_heads})"
 
-        # Validate n_head divides d_model
-        assert self.d_model % self.n_head == 0, f"d_model ({self.d_model}) must be divisible by n_head ({self.n_head})"
-
-        # Input embedding
         self.input_embedding = nn.Linear(self.d_input, self.d_model)
         self.pos_encoder = PositionalEncoding(self.d_model, self.seq_len)
 
-        # Transformer encoder
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=self.d_model,
-            nhead=self.n_head,
+            nhead=self.num_heads,
             dim_feedforward=self.d_ff,
             dropout=self.dropout,
             batch_first=True

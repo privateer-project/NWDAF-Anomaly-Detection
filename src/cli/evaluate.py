@@ -22,7 +22,7 @@ def main(model_path, **kwargs):
 
     test_dl = DataLoaderFactory.get_single_dataloader(train=False,
                                                       path='test',
-                                                      window_size=configs['hparams'].window_size,
+                                                      window_size=configs['hparams'].seq_len,
                                                       partition_config=configs['partition_config'],
                                                       **dataloader_params)
 
