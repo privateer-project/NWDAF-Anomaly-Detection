@@ -22,20 +22,23 @@ class ModelTrainer:
                  model_config: TransformerADConfig | LSTMAutoencoderConfig,
                  optimizer_config: OptimizerConfig,
                  diff_privacy_config: DifferentialPrivacyConfig | None):
+        self.hparams = hparams
+        self.diff_privacy = diff_privacy_config
+        self.model_config = model_config
+        self.optimizer_config = optimizer_config
+
         self.train_dl = train_dl
         self.val_dl = val_dl
         self.device = device
         self.model = None
 
-        self.hparams = hparams
-        self.diff_privacy = diff_privacy_config
-
         # Initialize model and training components
         self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
-        model_sum = self._init_model(model_config)
+        model_sum = self._init_model()
 
-        self._init_optimizer(optimizer_config)
-        self._init_criterion(self.hparams.loss)
+
+        self._init_optimizer()
+        self._init_criterion()
         self._init_early_stopping()
         self._init_tracking()
         self._setup_privacy_engine()
@@ -44,33 +47,36 @@ class ModelTrainer:
                                'es_patience_epochs': self.es_patience_epochs,
                                'es_warmup_epochs': self.es_warmup_epochs,
                                'es_improvement_threshold': self.es_improvement_threshold})
-
-        if mlflow.active_run():
             mlflow.log_text(str(model_sum), 'model_summary.txt')
+            mlflow.log_params(model_config.__dict__)
+            mlflow.log_params({'device': self.device})
+            mlflow.log_params(self.hparams.__dict__)
+            mlflow.log_params(self.diff_privacy.__dict__)
+            mlflow.log_params(self.optimizer_config.__dict__)
 
-    def _init_model(self, model_config):
+    def _init_model(self):
         """Initialize model."""
         if self.hparams.model == 'TransformerAD':
-            model_config.d_input = self.sample.shape[-1]
+            self.model_config.d_input = self.sample.shape[-1]
         if self.hparams.model == 'LSTMAutoencoder':
-            model_config.input_size = self.sample.shape[-1]
+            self.model_config.input_size = self.sample.shape[-1]
 
         model_class = getattr(architectures, self.hparams.model)
-        self.model = model_class(**model_config.__dict__)
+        self.model = model_class(**self.model_config.__dict__)
         return summary(self.model,
                        input_data=self.sample,
                        col_names=('input_size', 'output_size', 'num_params', 'params_percent', 'trainable'))
 
-    def _init_optimizer(self, optimizer_config: OptimizerConfig):
+    def _init_optimizer(self):
         """Initialize the optimizer."""
-        optimizer_class = getattr(torch.optim, optimizer_config.type)
+        optimizer_class = getattr(torch.optim, self.optimizer_config.type)
         self.optimizer = optimizer_class(self.model.parameters(),
                                          lr=self.hparams.learning_rate,
-                                         **optimizer_config.params)
+                                         **self.optimizer_config.params)
 
-    def _init_criterion(self, loss):
+    def _init_criterion(self):
         """Initialize the loss criterion."""
-        self.criterion = getattr(nn, loss)(reduction='mean')
+        self.criterion = getattr(nn, self.hparams.loss)(reduction='mean')
 
     def _init_early_stopping(self):
         self.es_not_improved_epochs = 0
@@ -112,8 +118,6 @@ class ModelTrainer:
     def training(self):
         """Main training loop."""
         print(f'Using {self.device}')
-        if mlflow.active_run():
-            pass
         self.model = self.model.to(self.device)
         for epoch in range(1, self.hparams.epochs + 1):
             # Training and validation
@@ -182,7 +186,6 @@ class ModelTrainer:
 
     def _check_early_stopping(self, epoch: int, target='val_loss') -> bool:
         """Check early stopping conditions."""
-        print('check early', self.metrics[target], self.best_checkpoint['metrics'][target])
         if epoch < self.es_warmup_epochs:
             return False
 

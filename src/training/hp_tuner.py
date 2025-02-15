@@ -25,7 +25,8 @@ class ModelAutoTuner:
             load_if_exists=True
         )
 
-    def set_params(self, trial: optuna.Trial):
+    @staticmethod
+    def set_params(trial: optuna.Trial):
         autotune_params = {'learning_rate': trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True),
                            'batch_size': trial.suggest_categorical('batch_size', [2048, 4096]),
                            'seq_len': trial.suggest_categorical('seq_len', [16, 32, 64, 128]),
@@ -48,7 +49,6 @@ class ModelAutoTuner:
         optimization_hist_fig = optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target)
         mlflow.log_figure(param_importance_fig, 'param_importances.png')
         mlflow.log_figure(optimization_hist_fig, 'optimization_history.png')
-        mlflow.log
         return metrics[self.autotune_config.target]
 
     def autotune(self):

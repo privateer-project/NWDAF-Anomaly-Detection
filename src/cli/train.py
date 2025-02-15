@@ -68,7 +68,7 @@ def main(**kwargs):
                            )
     best_metrics = trainer.training()
     if mlflow_config.track:
-        mlflow.log_metrics(best_metrics)
+        mlflow.log_metrics({'best_' + key: value for key, value in best_metrics.items()})
     evaluator = ModelEvaluator(criterion=hparams.loss, device=device)
     test_metrics, figures = evaluator.evaluate(trainer.model, dataloaders['test'])
 
