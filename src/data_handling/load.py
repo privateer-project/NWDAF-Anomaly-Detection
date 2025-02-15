@@ -1,3 +1,4 @@
+import logging
 from glob import glob
 from typing import Dict
 import os
@@ -27,22 +28,18 @@ class NWDAFDataloader:
 
     def get_dataloaders(self, **kwargs) -> Dict[str, DataLoader]:
         """Get train, validation and test dataloaders."""
-        datasets = {}
+        dataloaders = {}
         for split in ['train', 'val', 'test']:
             train = False
             if split == 'train':
                 train = True
-            datasets[split] = self.get_single_dataloader(path=split, train=train, **kwargs)
-        return datasets
-
-    def get_single_dataloader(self, path: str, train: bool = True, **kwargs) -> DataLoader:
-        """Get a single dataloader."""
-        dataset = self.load_dataset(path=path)
-        return dataset.to_dataloader(train=train, batch_size=self.hparams.batch_size, **kwargs)
+            df = self.load_dataset(split)
+            dataloaders[split] = self.get_dataloader(df=df, train=train, **kwargs)
+        return dataloaders
 
     def load_dataset(self,
                      path: str,
-                     ) -> TimeSeriesDataSet:
+                     ) -> DataFrame:
         """Load and process a dataset from a file path."""
         if path in ['train', 'val', 'test']:
             path = get_dataset_path(path)
@@ -53,18 +50,14 @@ class NWDAFDataloader:
 
         if self.partition_config:
             df = partition_data(df, self.partition_config)
+        return df
 
-        return self.setup_ts_dataset(df, use_existing_scalers=True)
+    def get_dataloader(self, df: DataFrame, train: bool = True, **kwargs) -> DataLoader:
+        """Get a single dataloader."""
+        dataset = self.get_ts_dataset(df, use_existing_scalers=True)
+        return dataset.to_dataloader(train=train, batch_size=self.hparams.batch_size, **kwargs)
 
-    def setup_scalers(self):
-        train_df = pd.read_csv(get_dataset_path('train'))
-        ds = self.setup_ts_dataset(train_df, use_existing_scalers=False)
-        for name, scaler in ds.get_parameters()['scalers'].items():
-            scaler_path = self._get_scaler_path(name)
-            os.makedirs(os.path.dirname(scaler_path), exist_ok=True)
-            joblib.dump(scaler, scaler_path)
-
-    def setup_ts_dataset(self, df: DataFrame, use_existing_scalers: bool =True) -> TimeSeriesDataSet:
+    def get_ts_dataset(self, df: DataFrame, use_existing_scalers: bool =True) -> TimeSeriesDataSet:
         """Create a TimeSeriesDataSet from the preprocessed DataFrame."""
         scalers = {}
         if use_existing_scalers:
@@ -88,9 +81,25 @@ class NWDAFDataloader:
             allow_missing_timesteps=False
         )
 
+    def setup_scalers(self):
+        train_df = pd.read_csv(get_dataset_path('train'))
+        train_dataset = self.get_ts_dataset(train_df, use_existing_scalers=False)
+        for name, scaler in train_dataset.get_parameters()['scalers'].items():
+            scaler_path = self._get_scaler_path(name)
+            os.makedirs(os.path.dirname(scaler_path), exist_ok=True)
+            joblib.dump(scaler, scaler_path)
+
+
     def _load_scalers(self) -> Dict:
         scalers = {}
-        scaler_files = glob(str(self.paths.scalers.joinpath('*.scaler')))
+        scaler_files = glob(str(self.paths.scalers.joinpath('*.scaler')), recursive=True)
+        scalers_found = set(map(lambda x: x.stem, scaler_files))
+        if len(more_scalers:= scalers_found.difference(set(self.input_features))) > 0:
+            logging.warning(f'More scalers than features {' '.join(list(more_scalers))}')
+        if len(more_features:= set(self.input_features).difference(scalers_found)) > 0:
+            logging.warning(f'No scalers found for features: {' '.join(list(more_features))}')
+        if set(self.input_features).issubset(scalers_found):
+            logging.info(f'Scalers found for all features.')
         for scaler_path in scaler_files:
             col = os.path.splitext(os.path.basename(scaler_path))[0]
             scalers[col] = joblib.load(scaler_path)
@@ -104,6 +113,6 @@ class NWDAFDataloader:
 if __name__ == '__main__':
     hhparams = HParams()
     ppaths = ProjectPaths()
-    features = MetaData().features
-    ts_creator = NWDAFDataloader(features=features, hparams=hhparams, paths=ppaths)
+    ffeatures = MetaData().features
+    ts_creator = NWDAFDataloader(features=ffeatures, hparams=hhparams, paths=ppaths)
     ts_creator.setup_scalers()

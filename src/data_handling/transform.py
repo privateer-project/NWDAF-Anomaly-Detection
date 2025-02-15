@@ -15,13 +15,16 @@ class DataProcessor:
         self.attacks = metadata.attacks
         self.features = metadata.features
 
+    def load_dataset(self, path):
+        df = pd.read_csv(path,
+                         dtype={feature: feature_info.dtype for feature, feature_info in self.features.items()})
+        return df
     def prepare_datasets(self, train_ratio: float = 0.8, force: bool = False) -> None:
         """Prepare complete datasets from raw data."""
         check_existing_datasets(force)
         # dtypes = {feature: feature_info.dtype for feature, feature_info in self.features.items()}
         self.paths.processed.mkdir(parents=True, exist_ok=True)
-        df = pd.read_csv(self.paths.raw_dataset,
-                         dtype={feature: feature_info.dtype for feature, feature_info in self.features.items()})
+        df = self.load_dataset(self.paths.raw_dataset)
 
         processed_df = self.preprocess_dataset(df)
         dfs = self.split_dataset(processed_df, train_ratio)

@@ -1,9 +1,10 @@
-import pandas as pd
-from pandas import DataFrame, Series, to_datetime
+from pandas import DataFrame, Series
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from src.config import MetaData, ProjectPaths
+from src.data_handling.load import NWDAFDataloader
+from src.data_handling.transform import DataProcessor
 from .utils import create_device_color_map, create_subplot_config, get_feature_data, split_traces, create_button_menu, \
     create_layout_config
 
@@ -21,14 +22,10 @@ class FeatureAnalyzer:
 
     def analyze_features(self, df: DataFrame, name: str):
         """Analyze and create visualizations for all features."""
-        df = self._preprocess_dataframe(df)
         analysis_dir = self.paths.analysis.joinpath(name)
         analysis_dir.mkdir(parents=True, exist_ok=True)
 
         for feature_name in df.columns:
-            if feature_name in self.SKIP_FEATURES:
-                continue
-
             html_file = analysis_dir.joinpath(f'{feature_name}_analysis.html')
             if html_file.exists():
                 print(f'File {html_file} already exists, skipping.')
@@ -40,13 +37,6 @@ class FeatureAnalyzer:
             except Exception as e:
                 print(f'Error writing {html_file}: {e}')
 
-    @staticmethod
-    def _preprocess_dataframe(df: DataFrame) -> DataFrame:
-        """Preprocess the input DataFrame."""
-        df = df.copy()
-        df['_time'] = to_datetime(df['_time'])
-        df['imeisv'] = df['imeisv'].astype(str)
-        return df.sort_values('_time')
 
     def _create_feature_plot(self, df: DataFrame, feature_name: str) -> go.Figure:
         """Create plot for a single feature."""
@@ -63,13 +53,13 @@ class FeatureAnalyzer:
     def _add_device_traces(self, fig: go.Figure, df: DataFrame,
                            imeisv: str, feature_name: str):
         """Add traces for a single device."""
-        normal_users = [dev.imeisv for dev in self.metadata.devices.values() if not dev.malicious]
+        benign_devices = [device.imeisv for device in self.metadata.devices.values() if not device.malicious]
 
         device_df = df[df['imeisv'] == imeisv].sort_values('_time')
         feature_data = get_feature_data(device_df, feature_name, self.metadata)
 
         line_color = self.color_map[imeisv]
-        role = 'Normal' if imeisv in normal_users else 'Malicious'
+        role = 'Normal' if imeisv in benign_devices else 'Malicious'
         legend_name = f'{role} - IMEISV: {imeisv}'
 
         # Time series plot
@@ -193,3 +183,20 @@ class FeatureAnalyzer:
         [fig.update_xaxes(title_text=feature_name, row=row, col=1) for row in [2, 3]]
         fig.update_yaxes(title_text=feature_name, row=1, col=1)
         [fig.update_yaxes(title_text="Percent", row=row, col=1) for row in [2, 3]]
+
+
+if __name__ == '__main__':
+    from src.config import ProjectPaths, MetaData, HParams
+    import pandas as pd
+
+    # Initialize config and paths
+    metadata = MetaData()
+    paths = ProjectPaths()
+    hparams = HParams()
+
+    processor = DataProcessor(metadata, paths)
+    dl = NWDAFDataloader(metadata.features, hparams, paths)
+    analyzer = FeatureAnalyzer(metadata, paths)
+    df = processor.load_dataset(paths.raw_dataset)
+    df = processor.preprocess_dataset(df)
+    analyzer.analyze_features(df, name='raw')
