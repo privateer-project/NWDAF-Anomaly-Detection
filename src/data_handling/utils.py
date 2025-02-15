@@ -26,10 +26,6 @@ def get_dataset_path(dataset_name: str) -> str:
     """Get full path for a dataset file."""
     return str(ProjectPaths.processed.joinpath(f"{dataset_name}.csv"))
 
-def save_dataset(name: str, df: DataFrame):
-    df.reset_index(drop=True, inplace=True)
-    df.to_csv(get_dataset_path(name), index=False)
-
 def check_existing_datasets(force: bool):
     for mode in ['train', 'val', 'test']:
         path = get_dataset_path(mode)

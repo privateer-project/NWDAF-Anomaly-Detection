@@ -1,10 +1,10 @@
-from typing import Dict, List
+from typing import Dict
 
 import pandas as pd
 from pandas import DataFrame
 
 from src.config import MetaData, ProjectPaths
-from src.data_handling.utils import check_existing_datasets, save_dataset, split_data
+from src.data_handling.utils import check_existing_datasets, split_data, get_dataset_path
 
 
 class DataProcessor:
@@ -15,7 +15,7 @@ class DataProcessor:
         self.attacks = metadata.attacks
         self.features = metadata.features
 
-    def prepare_data(self, train_ratio: float = 0.8, force: bool = False) -> None:
+    def prepare_datasets(self, train_ratio: float = 0.8, force: bool = False) -> None:
         """Prepare complete datasets from raw data."""
         check_existing_datasets(force)
         # dtypes = {feature: feature_info.dtype for feature, feature_info in self.features.items()}
@@ -23,11 +23,11 @@ class DataProcessor:
         df = pd.read_csv(self.paths.raw_dataset,
                          dtype={feature: feature_info.dtype for feature, feature_info in self.features.items()})
 
-        processed_df = self.preprocess_data(df)
-        dfs = self.split_data(processed_df, train_ratio)
-        [save_dataset(name, df) for name, df in dfs.items()]
+        processed_df = self.preprocess_dataset(df)
+        dfs = self.split_dataset(processed_df, train_ratio)
+        [df.to_csv(get_dataset_path(name), index=False) for name, df in dfs.items()]
 
-    def preprocess_data(self, df: DataFrame) -> DataFrame:
+    def preprocess_dataset(self, df: DataFrame) -> DataFrame:
         """Clean and preprocess the input DataFrame."""
         if not isinstance(df, DataFrame):
             raise TypeError("Input must be a pandas DataFrame")
@@ -37,7 +37,7 @@ class DataProcessor:
         df = self._process_features(df)
         return df
 
-    def split_data(self, df: DataFrame, train_size: float = 0.8) -> Dict[str, DataFrame]:
+    def split_dataset(self, df: DataFrame, train_size: float = 0.8) -> Dict[str, DataFrame]:
         """Split data into train, validation, and test sets."""
         devices_benign = []
         devices_malicious = []
@@ -91,4 +91,4 @@ class DataProcessor:
 
 if __name__ == '__main__':
     dp = DataProcessor(MetaData(), ProjectPaths())
-    dp.prepare_data(force=True)
+    dp.prepare_datasets(force=True)

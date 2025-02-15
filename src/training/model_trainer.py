@@ -80,14 +80,14 @@ class ModelTrainer:
 
     def _init_tracking(self):
         """Initialize training tracking and checkpoints."""
-        self.metrics = {'loss': float('inf'), 'val_loss': float('inf')}
+        metrics = {'loss': float('inf'), 'val_loss': float('inf')}
+        self.metrics = metrics.copy()
         self.best_checkpoint: Dict[str, Any] = {
             'epoch': 0,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-            'metrics': self.metrics
+            'metrics': metrics.copy()
         }
-        self.best_checkpoint.update({'metrics': self.metrics})
 
     def _setup_privacy_engine(self):
         """Setup differential privacy if enabled."""
@@ -119,8 +119,8 @@ class ModelTrainer:
             # Training and validation
             train_metrics = self._training_loop(epoch)
             val_metrics =self._validation_loop()
-            self.metrics.update(train_metrics | val_metrics)
-            self._update_metrics(epoch)
+            epoch_metrics = train_metrics | val_metrics
+            self.log_metrics(epoch_metrics, epoch)
 
             # Early stopping check
             if self._check_early_stopping(epoch, target='val_loss'):
@@ -165,42 +165,45 @@ class ModelTrainer:
             val_loss /= len(self.val_dl)
         return {'val_loss': val_loss}
 
-    def _update_metrics(self, epoch: int):
+    def log_metrics(self, metrics, epoch: int):
         """Update and log metrics."""
+        self.metrics.update(metrics)
         if self.diff_privacy.enable:
             self.metrics.update({
                 'epsilon': self.privacy_engine.get_epsilon(self.diff_privacy.target_delta)
             })
 
         if mlflow.active_run():
-            mlflow.log_metrics(self.metrics, step=epoch)
-        _prnt = str({key: str(round(value, 5)) for key, value in self.metrics.items()})
-        print(f"epoch:{epoch} {_prnt}")
+            mlflow.log_metrics(metrics, step=epoch)
+        _prnt = [f'{key}: {str(round(value, 5))}' for key, value in metrics.items()]
+        print(f"\nMetrics: {' '.join(_prnt)}")
         if self.diff_privacy.enable:
             print(f"Privacy Budget (ε, δ): ({self.metrics['epsilon']:.4f}, {self.diff_privacy.target_delta})")
 
     def _check_early_stopping(self, epoch: int, target='val_loss') -> bool:
         """Check early stopping conditions."""
+        print('check early', self.metrics[target], self.best_checkpoint['metrics'][target])
+        if epoch < self.es_warmup_epochs:
+            return False
+
         if self.metrics[target] < self.best_checkpoint['metrics'][target]:
+            self.es_not_improved_epochs = 0
             self.best_checkpoint.update({
+                'metrics': self.metrics.copy(),
                 'epoch': epoch,
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict()
             })
-            self.best_checkpoint['metrics'].update(self.metrics)
-            self.es_not_improved_epochs = 0
             return False
-
-        if epoch >= self.es_warmup_epochs:
+        else:
             self.es_not_improved_epochs += 1
-            print(f'\n{target} have not increased for {self.es_not_improved_epochs} epochs.')
+            print(f'{target} have not increased for {self.es_not_improved_epochs} epochs.')
             print(f"{target}: "
-                  f"best= {self.best_checkpoint['metrics'][target]:.5f}' - "
+                  f"best= {self.best_checkpoint['metrics'][target]:.5f} - "
                   f"current= {self.metrics[target]:.5f}\n"
                   f"")
-
         if self.es_not_improved_epochs > self.es_patience_epochs:
-            print(f'Early stopping. No improvement for {self.es_patience_epochs} epochs. '
-                  f'Current epoch {epoch}')
+            print(f'Early stopping. No improvement for {self.es_not_improved_epochs} epochs.')
             return True
+
         return False

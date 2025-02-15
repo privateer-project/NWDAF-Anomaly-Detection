@@ -79,9 +79,8 @@ def main(**kwargs):
         mlflow.log_metrics(test_metrics)
         for path, fig in figures.items():
             mlflow.log_figure(fig, os.path.join('figures', path))
-
-    print("Test metrics:", test_metrics)
-
+    _fmt = ''.join([f'{key}: {value}\n' for key, value in test_metrics.items()])
+    print(f'Test metrics:\n{_fmt}')
     if mlflow_config.track:
         mlflow.end_run()
     return test_metrics
