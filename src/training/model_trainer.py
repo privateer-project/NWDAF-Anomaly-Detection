@@ -180,7 +180,7 @@ class ModelTrainer:
         if mlflow.active_run():
             mlflow.log_metrics(metrics, step=epoch)
         _prnt = [f'{key}: {str(round(value, 5))}' for key, value in metrics.items()]
-        print(f"\nMetrics: {' '.join(_prnt)}")
+        print(f"Metrics: {' '.join(_prnt)}")
         if self.diff_privacy.enable:
             print(f"Privacy Budget (ε, δ): ({self.metrics['epsilon']:.4f}, {self.diff_privacy.target_delta})")
 
