@@ -19,7 +19,7 @@ class DataProcessor:
         df = pd.read_csv(path,
                          dtype={feature: feature_info.dtype for feature, feature_info in self.features.items()})
         return df
-    def prepare_datasets(self, train_ratio: float = 0.8, force: bool = False) -> None:
+    def prepare_datasets(self, train_size: float = 0.8, force: bool = False) -> None:
         """Prepare complete datasets from raw data."""
         check_existing_datasets(force)
         # dtypes = {feature: feature_info.dtype for feature, feature_info in self.features.items()}
@@ -27,7 +27,7 @@ class DataProcessor:
         df = self.load_dataset(self.paths.raw_dataset)
 
         processed_df = self.preprocess_dataset(df)
-        dfs = self.split_dataset(processed_df, train_ratio)
+        dfs = self.split_dataset(processed_df, train_size)
         [df.to_csv(get_dataset_path(name), index=False) for name, df in dfs.items()]
 
     def preprocess_dataset(self, df: DataFrame) -> DataFrame:
