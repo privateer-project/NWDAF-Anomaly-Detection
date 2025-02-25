@@ -3,10 +3,10 @@ from typing import Dict
 
 @dataclass
 class HParams:
-    epochs: int = 20
+    epochs: int = 100
     learning_rate: float = 1e-4
-    batch_size: int = 4096 * 8
-    seq_len: int = 10
+    batch_size: int = 4096
+    seq_len: int = 15
     model: str = 'TransformerAD'
     loss: str = 'L1Loss'
     target: str = 'val_loss'

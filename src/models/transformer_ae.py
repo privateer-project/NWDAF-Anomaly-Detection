@@ -30,7 +30,7 @@ class TransformerAD(nn.Module):
         self.num_transformer_layers = self.config.num_transformer_layers
         self.seq_len = self.config.seq_len
         self.dropout = self.config.dropout
-        self.d_ff = self.d_model * 4
+        self.d_ff = self.d_model // 2 #* 4
         assert self.d_model % self.num_heads == 0, f"d_model ({self.input_size}) must be divisible by n_head ({self.num_heads})"
 
         self.input_embedding = nn.Linear(self.input_size, self.d_model)  # out d_model
@@ -40,7 +40,6 @@ class TransformerAD(nn.Module):
             d_model=self.d_model,
             nhead=self.num_heads,
             dim_feedforward=self.d_ff,
-            dropout=self.dropout,
             batch_first=True
         )
         self.transformer_encoder = nn.TransformerEncoder(
@@ -55,13 +54,13 @@ class TransformerAD(nn.Module):
         x = self.pos_encoder(x)
         transformer_output = self.transformer_encoder(x)
         ae_output = self.autoencoder(transformer_output)
-        return {'transformer_output':transformer_output, 'ae_output':ae_output}
+        return {'transformer_output':transformer_output.clone().detach(), 'ae_output':ae_output}
 
     def detect_anomalies(self, src, threshold=None):
         self.eval()
         with torch.no_grad():
-            output, _, = self(src)
-            reconstruction_error = torch.mean((src - output) ** 2, dim=(1, 2))
+            output = self(src)
+            reconstruction_error = torch.mean((output['transformer_output'] - output['ae_output']) ** 2, dim=(1, 2))
             if threshold is None:
                 return reconstruction_error
             return reconstruction_error > threshold

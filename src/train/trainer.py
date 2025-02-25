@@ -39,8 +39,8 @@ class ModelTrainer:
         if self.early_stopping:
             logger.info("Early stopping ")
             self.es_not_improved_epochs = 0
-            self.es_patience_epochs = 100
-            self.es_warmup_epochs = 100
+            self.es_patience_epochs = 10
+            self.es_warmup_epochs = 10
             self.es_improvement_threshold = 0.005
             if mlflow.active_run():  # log early stopping params
                 mlflow.log_params({'es_not_improved_epochs': self.es_not_improved_epochs,
@@ -148,7 +148,7 @@ class ModelTrainer:
         if epoch < self.es_warmup_epochs:
             return False
 
-        if self.metrics[target] < self.best_checkpoint['metrics'][target]:
+        if self.metrics[target] < self.best_checkpoint['metrics']['best_' + target]:
             self.es_not_improved_epochs = 0
             best_metrics = {'best_' + k: v for k, v in self.metrics.copy().items()}
             self.best_checkpoint.update({
