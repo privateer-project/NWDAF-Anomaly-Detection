@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 import yaml
-from src.config import PathsConf
+from src.config.other_configs import PathsConf
 
 
 @dataclass

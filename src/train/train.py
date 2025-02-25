@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime
 
@@ -8,22 +7,15 @@ from mlflow.models import infer_signature
 from torch import nn
 from torchinfo import summary
 
-from src import config, models
-from src.config import *
+from src import models, config
+from src.config import PathsConf, MLFlowConfig, HParams, OptimizerConfig, logger
 from src.utils import set_config
 from src.data_utils.load import NWDAFDataloader
-from src.handlers import ModelTrainer, ModelEvaluator
+from src.train.trainer import ModelTrainer
+from src.evaluate.evaluator import ModelEvaluator
+
 
 def train(**kwargs):
-    """Train a model with dynamically parsed configuration using Fire.
-
-    Example usage:
-      # LSTM Autoencoder
-      python script.py --model=LSTMAutoencoder --epochs=10 --hidden_size1=128 --hidden_size2=64
-
-      # TransformerAD
-      python script.py --model=TransformerAD --epochs=10 --n_head=8 --d_model=64
-    """
     # Initialize project paths
     paths = PathsConf()
 
@@ -80,7 +72,6 @@ def train(**kwargs):
     # Setup loss
     loss_fn = getattr(nn, hparams.loss)(reduction='mean')
 
-
     trainer = ModelTrainer(train_dl=dataloaders['train'],
                            val_dl=dataloaders['val'],
                            device=device,
@@ -99,7 +90,7 @@ def train(**kwargs):
         mlflow.log_metrics({'best_' + key: value for key, value in best_checkpoint['metrics'].items()})
 
     evaluator = ModelEvaluator(criterion=hparams.loss, device=device)
-    test_metrics, figures = evaluator.evaluate(trainer.model, dataloaders['test'])
+    test_report, figures = evaluator.evaluate(trainer.model, dataloaders['test'])
     for name, fig in figures.items():
         fig.savefig(os.path.join(trial_dir, f'{name}.png'))
 
@@ -116,14 +107,14 @@ def train(**kwargs):
                                                            model_output=model_output),
                                  pip_requirements=os.path.join(paths.root, 'requirements.txt'))
         # log test metrics
-        mlflow.log_metrics(test_metrics)
+        mlflow.log_metrics(test_report)
         for name, fig in figures.items():
             mlflow.log_figure(fig, f'{name}.png')
 
-    logging.info(f'Test metrics:\n{''.join([f'{key}: {value}\n' for key, value in test_metrics.items()])}')
+    logger.info(f'Test metrics:\n{''.join([f'{key}: {value}\n' for key, value in test_report.items()])}')
     if mlflow.active_run():
         mlflow.end_run()
-    return test_metrics
+    return test_report
 
 if __name__ == "__main__":
     from fire import Fire

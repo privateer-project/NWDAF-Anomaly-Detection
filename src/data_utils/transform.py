@@ -1,4 +1,3 @@
-import logging
 import os
 import joblib
 
@@ -10,11 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from flwr_datasets.partitioner import PathologicalPartitioner
 
-from src.config import MetaData, PathsConf
+from src.config import MetaData, PathsConf, logger
 from src.data_utils.utils import check_existing_datasets, get_dataset_path
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
@@ -23,11 +20,9 @@ class DataProcessor:
         self.paths = paths
         self.scaler_path = os.path.join(paths.scalers, 'scaler.pkl')
         self.pca_path = os.path.join(paths.scalers, 'pca.pkl')
-        # self.attacks = metadata.attacks
 
     def clean_data(self, df):
-        drop_features = self.metadata.get_drop_features()
-        df = df.drop(columns=drop_features)
+        df = df.drop(columns=self.metadata.get_drop_features())
         df = df.drop_duplicates()
         df = df.dropna(axis='rows')
         df.reset_index(drop=True, inplace=True)
@@ -88,8 +83,11 @@ class DataProcessor:
         joblib.dump(pca, self.pca_path)
         return pca
 
+    def get_pca(self):
+        return joblib.load(self.pca_path)
+
     def apply_pca(self, df):
-        pca = joblib.load(self.pca_path)
+        pca = self.get_pca()
         pca_features = pca.transform(df[self.metadata.get_input_features()])
         pca_df = pd.DataFrame(pca_features, columns=pca.get_feature_names_out())
         df = df.drop(columns=self.metadata.get_input_features())

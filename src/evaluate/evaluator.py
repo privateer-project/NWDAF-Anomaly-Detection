@@ -1,12 +1,12 @@
 from typing import Dict, Tuple, List
 
+from tqdm import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
-from tqdm import tqdm
-from sklearn.metrics import roc_curve, accuracy_score, precision_score, roc_auc_score, recall_score, f1_score
+from sklearn.metrics import roc_curve, roc_auc_score, classification_report
 
-from src.visualization.plotter import Visualizer
+from src.visualizations.plotter import Visualizer
 
 
 class ModelEvaluator:
@@ -44,26 +44,38 @@ class ModelEvaluator:
         return thresholds[optimal_idx]
 
     @staticmethod
-    def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, scores: np.ndarray) -> Dict[str, float]:
-        return {
-            'ae_roc_auc_score': roc_auc_score(y_true, scores),
-            'ae_accuracy': accuracy_score(y_true, y_pred),
-            'ae_precision': precision_score(y_true, y_pred),
-            'ae_recall': recall_score(y_true, y_pred),
-            'ae_f1': f1_score(y_true, y_pred)
-        }
+    def compute_metrics(y_true, y_pred, rec_errors, threshold, labels, target_names) -> Dict[str, float]:
+        clf_report = classification_report(y_true=y_true,
+                                           y_pred=y_pred,
+                                           labels=labels,
+                                           target_names=target_names,
+                                           output_dict=True)
+        final_report = {'threshold': threshold,
+                        'roc_auc': roc_auc_score(y_true=y_true, y_score=rec_errors)}
+        final_report.update(clf_report['macro avg'])
+        return final_report
 
     def evaluate(self, model, test_dataloader) -> Tuple[dict[str, float], dict]:
-        rec_errors, labels = self.compute_reconstruction_errors(model, test_dataloader)
-        threshold = self.find_optimal_threshold(rec_errors, labels)
+        rec_errors, y_true = self.compute_reconstruction_errors(model, test_dataloader)
+        threshold = self.find_optimal_threshold(rec_errors, y_true)
         y_pred = (rec_errors >= threshold).astype(int)
 
-        metrics = self.compute_metrics(labels, y_pred, rec_errors)
-        metrics['threshold'] = threshold
-        self.visualizer.visualize(y_true=labels,
-                                  y_pred=y_pred,
-                                  scores=rec_errors,
-                                  threshold=threshold,
-                                  class_names=['Benign', 'Malicious'],
-                                  prefix='test')
-        return  metrics, self.visualizer.figures
+        target_names = ['benign', 'malicious']
+        labels = [0, 1]
+
+        final_report = self.compute_metrics(
+            y_true=y_true,
+            y_pred=y_pred,
+            rec_errors=rec_errors,
+            threshold=threshold,
+            labels=labels,
+            target_names=target_names)
+        self.visualizer.visualize(
+            y_true=y_true,
+            y_pred=y_pred,
+            scores=rec_errors,
+            threshold=threshold,
+            target_names=target_names,
+            prefix='test')
+
+        return final_report, self.visualizer.figures

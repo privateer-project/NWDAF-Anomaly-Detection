@@ -3,9 +3,9 @@ from typing import Dict
 
 @dataclass
 class HParams:
-    epochs: int = 100
+    epochs: int = 20
     learning_rate: float = 1e-4
-    batch_size: int = 4096
+    batch_size: int = 4096 * 8
     seq_len: int = 10
     model: str = 'TransformerAD'
     loss: str = 'L1Loss'

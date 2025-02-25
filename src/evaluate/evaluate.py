@@ -6,8 +6,8 @@ import torch
 from src import config, models
 from src.config import *
 from src.data_utils.load import NWDAFDataloader
+from src.evaluate.evaluator import ModelEvaluator
 from src.utils import set_config
-from src.handlers import ModelEvaluator
 
 
 def main(model_path, **kwargs):

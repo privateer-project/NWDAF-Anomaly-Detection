@@ -31,11 +31,11 @@ class Visualizer:
                 ax.legend()
                 self.figures[f'{metric}_history'] = fig
 
-    def visualize(self, y_true, y_pred, scores=None, threshold=None, class_names=None, prefix=''):
-        """Generate visualization figures"""
-        # Create confusion matrix visualization
-        self.figures[f'{prefix}_confusion_matrix'] = self._create_confusion_matrix(y_true, y_pred, class_names, prefix)
-        self.figures[f'{prefix}_roc_curve'] = self._create_roc_curve(y_true, y_pred, scores, class_names, prefix)
+    def visualize(self, y_true, y_pred, scores=None, threshold=None, target_names=None, prefix=''):
+        """Generate visualizations figures"""
+        # Create confusion matrix visualizations
+        self.figures[f'{prefix}_confusion_matrix'] = self._create_confusion_matrix(y_true, y_pred, target_names, prefix)
+        self.figures[f'{prefix}_roc_curve'] = self._create_roc_curve(y_true, y_pred, scores, target_names, prefix)
         # Create distribution plot if we have scores and threshold
         if scores is not None and threshold is not None:
             self.figures[f'{prefix}_distribution'] = self._create_distribution_plot(scores, y_true, threshold,
@@ -92,7 +92,7 @@ class Visualizer:
 
     @staticmethod
     def _create_confusion_matrix(y_true, y_pred, class_names, prefix=''):
-        """Create basic confusion matrix visualization"""
+        """Create basic confusion matrix visualizations"""
         # Compute confusion matrix
 
         cm = ConfusionMatrixDisplay.from_predictions(y_true=y_true,

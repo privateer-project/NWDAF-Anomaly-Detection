@@ -1,7 +1,7 @@
 import os
 import mlflow
 
-from src.handlers import ModelAutoTuner
+from src.train.autotuner import ModelAutoTuner
 from src.config import MLFlowConfig, AutotuneConfig
 from src.utils import set_config
 

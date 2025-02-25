@@ -41,8 +41,8 @@ class AutotuneConfig:
    storage: str = 'optuna.db'
    n_trials: int = 100
    timeout: int = 3600 * 8  # 8 hours
-   target: str = 'val_loss'
-   direction: str = 'minimize'
+   target: str = 'f1-score'
+   direction: str = 'maximize'
 
 @dataclass
 class PartitionConfig:

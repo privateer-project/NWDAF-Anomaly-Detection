@@ -6,7 +6,7 @@ from pandas import DataFrame
 from pytorch_forecasting import TimeSeriesDataSet
 from torch.utils.data import DataLoader
 
-from src.config import *
+from src.config import HParams, logger
 from src.data_utils.utils import get_dataset_path
 
 class NWDAFDataloader:
@@ -22,6 +22,7 @@ class NWDAFDataloader:
                              'prefetch_factor': self.hparams.batch_size * 100,
                              'persistent_workers': True}
         dataloaders = {}
+        logger.info('Loading datasets...')
         for split in ['train', 'val', 'test']:
             path = get_dataset_path(split)
             try:
@@ -37,6 +38,7 @@ class NWDAFDataloader:
             dataloaders[split] = dataset.to_dataloader(train=split == 'train',
                                                        batch_size=self.hparams.batch_size,
                                                        **dataloader_params)
+        logger.info('Finished loading datasets.')
         return dataloaders
 
     def get_ts_dataset(self, df: DataFrame) -> TimeSeriesDataSet:

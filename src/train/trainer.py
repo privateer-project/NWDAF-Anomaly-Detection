@@ -1,6 +1,4 @@
-import logging
 from typing import Dict, Any
-
 from opacus import PrivacyEngine
 from opacus.validators import ModuleValidator
 from tqdm import tqdm
@@ -10,9 +8,6 @@ import torch
 from src.config import *
 from src.utils import set_config
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG
-)
 class ModelTrainer:
     """Model trainer with optional differential privacy."""
 
@@ -24,8 +19,8 @@ class ModelTrainer:
                  criterion,
                  device,
                  hparams: HParams,
-                 apply_dp=False,
-                 early_stopping=True,
+                 apply_dp,
+                 early_stopping,
                  **kwargs):
 
         self.paths = PathsConf()
@@ -41,16 +36,18 @@ class ModelTrainer:
         if self.apply_dp:
             self.dp_config = set_config(DifferentialPrivacyConfig, kwargs)
 
-        self.es_not_improved_epochs = 0
-        self.es_patience_epochs = 100
-        self.es_warmup_epochs = 100
-        self.es_improvement_threshold = 0.005
-        if mlflow.active_run():  # log early stopping params
-            mlflow.log_params({'es_not_improved_epochs': self.es_not_improved_epochs,
-                               'es_patience_epochs': self.es_patience_epochs,
-                               'es_warmup_epochs': self.es_warmup_epochs,
-                               'es_improvement_threshold': self.es_improvement_threshold
-                               })
+        if self.early_stopping:
+            logger.info("Early stopping ")
+            self.es_not_improved_epochs = 0
+            self.es_patience_epochs = 100
+            self.es_warmup_epochs = 100
+            self.es_improvement_threshold = 0.005
+            if mlflow.active_run():  # log early stopping params
+                mlflow.log_params({'es_not_improved_epochs': self.es_not_improved_epochs,
+                                   'es_patience_epochs': self.es_patience_epochs,
+                                   'es_warmup_epochs': self.es_warmup_epochs,
+                                   'es_improvement_threshold': self.es_improvement_threshold
+                                   })
 
         # Initialize metrics dict and best_checkpoint dict
         metrics = {'loss': float('inf'), 'val_loss': float('inf')}
@@ -58,12 +55,12 @@ class ModelTrainer:
         self.best_checkpoint: Dict[str, Any] = {'epoch': 0,
                                                 'model_state_dict': self.model.state_dict(),
                                                 'optimizer_state_dict': self.optimizer.state_dict(),
-                                                'metrics': metrics.copy()
+                                                'metrics': {'best_' + k: v for k, v in metrics.copy().items()}
                                                 }
 
         # Initialize differential privacy
         if self.apply_dp:
-            logging.info('Differential Privacy enabled.')
+            logger.info('Differential Privacy enabled.')
             self.privacy_engine = PrivacyEngine(accountant="rdp", secure_mode=self.dp_config.secure_mode)
             self.model = ModuleValidator.fix(self.model)
             self.model, self.optimizer, self.train_dl = self.privacy_engine.make_private_with_epsilon(
@@ -85,9 +82,7 @@ class ModelTrainer:
             # Training and validation
             train_metrics = self._training_loop(epoch)
             val_metrics = self._validation_loop()
-            epoch_metrics = train_metrics | val_metrics
-            self.log_metrics(epoch_metrics, epoch)
-
+            self.log_metrics(train_metrics | val_metrics, epoch)
             # Early stopping check
             if self.early_stopping and self._check_early_stopping(epoch, target='val_loss'):
                 break
@@ -155,8 +150,9 @@ class ModelTrainer:
 
         if self.metrics[target] < self.best_checkpoint['metrics'][target]:
             self.es_not_improved_epochs = 0
+            best_metrics = {'best_' + k: v for k, v in self.metrics.copy().items()}
             self.best_checkpoint.update({
-                'metrics': self.metrics.copy(),
+                'metrics': best_metrics,
                 'epoch': epoch,
                 'model_state_dict': self.model.state_dict(),
                 'optimizer_state_dict': self.optimizer.state_dict()

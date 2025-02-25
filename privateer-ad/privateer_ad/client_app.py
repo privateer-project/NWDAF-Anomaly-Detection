@@ -8,7 +8,7 @@ from flwr.client.mod import secaggplus_mod, fixedclipping_mod
 
 from src import config
 
-from src.handlers.model_trainer import ModelTrainer
+from src.train.trainer import ModelTrainer
 
 class FlowerClient(NumPyClient):
     """Flower client implementing federated learning client functionality."""

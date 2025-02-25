@@ -1,9 +1,8 @@
-import mlflow
 import optuna
 
-from src.train import train
+from src.train.train import train
 from src.utils import set_config
-from src.config import AutotuneConfig
+from src.config import AutotuneConfig, logger
 
 
 class ModelAutoTuner:
@@ -27,6 +26,7 @@ class ModelAutoTuner:
 
     @staticmethod
     def set_params(trial: optuna.Trial):
+        logger.info(f'Setting parameters for trial {trial.number}.')
         autotune_params = {'learning_rate': trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True),
                            'batch_size': trial.suggest_categorical('batch_size', [2048, 4096]),
                            'seq_len': trial.suggest_categorical('seq_len', [16, 32, 64, 128]),
@@ -44,12 +44,8 @@ class ModelAutoTuner:
     def objective(self, trial: optuna.Trial) -> float:
         """Objective function for optimization."""
         self.kwargs.update(self.set_params(trial))
-        metrics = train(**self.kwargs)
-        param_importance_fig = optuna.visualization.plot_param_importances(self.study)
-        optimization_hist_fig = optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target)
-        mlflow.log_figure(param_importance_fig, 'param_importances.png')
-        mlflow.log_figure(optimization_hist_fig, 'optimization_history.png')
-        return metrics[self.autotune_config.target]
+        report = train(**self.kwargs)
+        return report[self.autotune_config.target]
 
     def autotune(self):
         """Run hyperparameter tuning."""
