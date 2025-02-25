@@ -1,0 +1,64 @@
+import os
+from typing import Dict
+
+import pandas as pd
+from pandas import DataFrame
+from pytorch_forecasting import TimeSeriesDataSet
+from torch.utils.data import DataLoader
+
+from src.config import *
+from src.data_utils.utils import get_dataset_path
+
+class NWDAFDataloader:
+    """Handles creation of time series datasets."""
+
+    def __init__(self, hparams: HParams):
+        self.hparams = hparams
+
+    def get_dataloaders(self) -> Dict[str, DataLoader]:
+        """Get train, validation and test dataloaders."""
+        dataloader_params = {'num_workers': os.cpu_count(),
+                             'pin_memory': True,
+                             'prefetch_factor': self.hparams.batch_size * 100,
+                             'persistent_workers': True}
+        dataloaders = {}
+        for split in ['train', 'val', 'test']:
+            path = get_dataset_path(split)
+            try:
+                df = pd.read_csv(path)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"File {path} not found.")
+            if split in ('train', 'val'):
+                df = df[df['attack'] == 0]
+            df = df.sort_values(by=['_time'])
+            df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
+
+            dataset = self.get_ts_dataset(df)
+            dataloaders[split] = dataset.to_dataloader(train=split == 'train',
+                                                       batch_size=self.hparams.batch_size,
+                                                       **dataloader_params)
+        return dataloaders
+
+    def get_ts_dataset(self, df: DataFrame) -> TimeSeriesDataSet:
+        """Create a TimeSeriesDataSet from the preprocessed DataFrame."""
+        input_columns = [column for column in df.columns if column.startswith('pca')]
+        return TimeSeriesDataSet(
+            data=df,
+            time_idx='time_idx',
+            target='attack',
+            group_ids=['imeisv'],
+            max_encoder_length=self.hparams.seq_len,
+            max_prediction_length=1,
+            time_varying_unknown_reals=input_columns,
+            scalers=None,
+            target_normalizer=None,
+            allow_missing_timesteps=False)
+
+if __name__ == '__main__':
+    hparams = HParams()
+    dataloader = NWDAFDataloader(hparams=hparams)
+    dataloaders = dataloader.get_dataloaders()
+    for i in dataloaders['train']:
+        print(i)
+        break
+

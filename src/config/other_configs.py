@@ -9,7 +9,7 @@ load_dotenv(Path(__file__).parent.joinpath('.env'))
 DATEFORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
 @dataclass
-class ProjectPaths:
+class PathsConf:
    root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
    data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
    config: Path = Path(__file__).parent
@@ -18,7 +18,7 @@ class ProjectPaths:
    scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
    analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
    raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
-   studies: Path = Path(os.environ.get('STUDIES', root.joinpath('studies')))
+   experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))
 
 @dataclass
 class DifferentialPrivacyConfig:
@@ -32,7 +32,7 @@ class DifferentialPrivacyConfig:
 @dataclass
 class MLFlowConfig:
    track: bool = True
-   server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5000')
+   server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
 
 @dataclass

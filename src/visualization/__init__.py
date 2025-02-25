@@ -1,3 +1,3 @@
-from .plotter import FeatureAnalyzer
+from .plotter import Visualizer
 
-__all__ = ['FeatureAnalyzer']
+__all__ = ['Visualizer']

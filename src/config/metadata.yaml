@@ -1,58 +1,59 @@
+#file: noinspection YAMLSchemaValidation
 devices:
   '1':
     imeisv: '8642840401612300'
     ip: '10.20.10.2'
     type: 'raspberry'
     malicious: true
-    in_attacks: [ '1', '2', '3', '4' ]
+    in_attacks: [ 1, 2, 3, 4 ]
   '2':
     imeisv: '8642840401624200'
     ip: '10.20.10.4'
     type: 'raspberry'
     malicious: true
-    in_attacks: [ '1', '2', '3', '4', '5' ]
+    in_attacks: [ 1, 2, 3, 4, 5 ]
   '3':
     imeisv: '8642840401594200'
     ip: '10.20.10.6'
     type: 'waveshare_5g_cpe_box'
     malicious: true
-    in_attacks: [ '5' ]
+    in_attacks: [ 5 ]
   '4':
     imeisv: '8677660403123800'
     ip: '10.20.10.8'
     type: 'waveshare_industrial_5g_router'
     malicious: true
-    in_attacks: [ '5' ]
+    in_attacks: [ 5 ]
   '5':
     imeisv: '3557821101183501'
     ip: '10.20.10.10'
     type: 'dwr_2101_5g'
     malicious: true
-    in_attacks: [ '5' ]
+    in_attacks: [ 5 ]
   '6':
     imeisv: '8628490433231158'
     ip: '10.20.10.12'
     type: 'huawei_p40'
     malicious: false
-    in_attacks: [ '1', '2', '3', '4' ]
+    in_attacks: [ 1, 2, 3, 4 ]
   '7':
     imeisv: '8609960480859058'
     ip: '10.20.10.16'
     type: 'huawei_p40'
     malicious: false
-    in_attacks: [ '1', '4', '5' ]
+    in_attacks: [ 1, 4, 5 ]
   '8':
     imeisv: '8609960480666910'
     ip: '10.20.10.18'
     type: 'huawei_p40'
     malicious: false
-    in_attacks: [ '1', '2', '3', '4' ]
+    in_attacks: [ 1, 2, 3, 4 ]
   '9':
     imeisv: '8609960468879057'
     ip: '10.20.10.20'
     type: 'huawei_p40'
     malicious: false
-    in_attacks: [ '1', '2', '3', '4', '5' ]
+    in_attacks: [ 1, 2, 3, 4, 5 ]
 attacks:
   1:
     start: '2024-08-18 07:00:00.000'

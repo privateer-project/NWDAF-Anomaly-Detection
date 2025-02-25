@@ -5,8 +5,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from torch.utils.data import DataLoader
 
-from src.config import MetaData, ProjectPaths, HParams
-from src.data_handling.load import DataLoaderFactory
+from src.config import MetaData, PathsConf, HParams
+from src.data_utils.load import DataLoaderFactory
 
 def extract_features_and_labels(dataloader: DataLoader) -> (np.ndarray, np.ndarray):
     """Extract features and labels from a DataLoader."""
@@ -63,7 +63,7 @@ def train_xgboost(dataloader: DataLoader):
 
 if __name__ == '__main__':
     metadata = MetaData()
-    paths = ProjectPaths()
+    paths = PathsConf()
     hparams = HParams()
 
     # Initialize the DataLoaderFactory

@@ -3,42 +3,41 @@ import os
 import mlflow
 import torch
 
-from src import architectures, config
+from src import config, models
 from src.config import *
-from src.data_handling.load import NWDAFDataloader
-from src.cli.utils import filter_config_kwargs
-from src.training import ModelEvaluator
+from src.data_utils.load import NWDAFDataloader
+from src.utils import set_config
+from src.handlers import ModelEvaluator
+
 
 def main(model_path, **kwargs):
-    hparams = HParams(**filter_config_kwargs(HParams, kwargs))
-    partition_config = PartitionConfig(**filter_config_kwargs(PartitionConfig, kwargs))
-    mlflow_config = MLFlowConfig(**filter_config_kwargs(MLFlowConfig, kwargs))
+    hparams = set_config(HParams, kwargs)
+    partition_config = set_config(PartitionConfig, kwargs)
+    mlflow_config = set_config(MLFlowConfig, kwargs)
     metadata = MetaData()
     dataloader_params = {'num_workers': os.cpu_count(),
                          'pin_memory': True,
                          'prefetch_factor': hparams.batch_size * 100,
                          'persistent_workers': True
                          }
-    dl = NWDAFDataloader(metadata.features,
-                         hparams=hparams,
-                         paths=ProjectPaths(),
-                         partition_config=partition_config)
-    test_dl = dl.get_dataloader(path='test',
-                                train=False,
-                                **dataloader_params)
+    dl = NWDAFDataloader(hparams=hparams)
+    test_dl = dl.get_dataloaders()['test']
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     config_class_name = f"{hparams.model}Config"
     model_config_class = getattr(config, config_class_name, None)
     if not model_config_class:
         raise ValueError(f"Config class not found for model: {hparams.model}")
-    model_config = model_config_class(**filter_config_kwargs(model_config_class, kwargs))
-
-    model_class = getattr(architectures, hparams.model)
-    model = model_class(**model_config.__dict__)
+    # model_config = set_config(model_config_class, kwargs)
+    #
+    # model_class = getattr(models, hparams.model)
+    # model = model_class(**model_config.__dict__)
     # Load model checkpoint
+    model_uri = 'runs:/71045813a07646f48fe505ba19b48809/model'
+    # This is the input example logged with the model
+    model = mlflow.pyfunc.load_model(model_uri)
+    model = model.to(device)
     checkpoint = torch.load(model_path, map_location=device)
-
     model.load_state_dict(checkpoint['model_state_dict'])
     model = model.to(device)
     model.eval()

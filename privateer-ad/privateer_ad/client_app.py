@@ -8,7 +8,7 @@ from flwr.client.mod import secaggplus_mod, fixedclipping_mod
 
 from src import config
 
-from src.training.model_trainer import ModelTrainer
+from src.handlers.model_trainer import ModelTrainer
 
 class FlowerClient(NumPyClient):
     """Flower client implementing federated learning client functionality."""
@@ -60,7 +60,7 @@ class FlowerClient(NumPyClient):
 def create_client_components(context: Context):
     """Create all necessary components for the client."""
     # Initialize configs from context
-    paths = config.ProjectPaths()
+    paths = config.PathsConf()
     metadata = config.MetaData()
     hparams = config.HParams()
     partition_config = PartitionConfig(partition_id=context.node_config['partition-id'],

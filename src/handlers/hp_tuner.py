@@ -1,8 +1,8 @@
 import mlflow
 import optuna
 
-from src.cli.train import main as train_main
-from src.cli.utils import filter_config_kwargs
+from src.train import train
+from src.utils import set_config
 from src.config import AutotuneConfig
 
 
@@ -11,7 +11,7 @@ class ModelAutoTuner:
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.autotune_config = AutotuneConfig(**filter_config_kwargs(AutotuneConfig, self.kwargs))
+        self.autotune_config = AutotuneConfig(**set_config(AutotuneConfig, self.kwargs))
 
         storage = self.autotune_config.storage
         if not storage.endswith('.db'):
@@ -44,7 +44,7 @@ class ModelAutoTuner:
     def objective(self, trial: optuna.Trial) -> float:
         """Objective function for optimization."""
         self.kwargs.update(self.set_params(trial))
-        metrics = train_main(**self.kwargs)
+        metrics = train(**self.kwargs)
         param_importance_fig = optuna.visualization.plot_param_importances(self.study)
         optimization_hist_fig = optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target)
         mlflow.log_figure(param_importance_fig, 'param_importances.png')

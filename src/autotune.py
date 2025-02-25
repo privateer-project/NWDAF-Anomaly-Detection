@@ -1,13 +1,13 @@
 import os
 import mlflow
 
-from src.training import ModelAutoTuner
+from src.handlers import ModelAutoTuner
 from src.config import MLFlowConfig, AutotuneConfig
-from src.cli.utils import filter_config_kwargs
+from src.utils import set_config
 
 def main(**kwargs):
-    mlflow_config = MLFlowConfig(**filter_config_kwargs(MLFlowConfig, kwargs))
-    autotune_config = AutotuneConfig(**filter_config_kwargs(AutotuneConfig, kwargs))
+    mlflow_config = set_config(MLFlowConfig, kwargs)
+    autotune_config = set_config(AutotuneConfig, kwargs)
 
     if mlflow_config.track:
         mlflow.set_tracking_uri(mlflow_config.server_address)
@@ -23,7 +23,7 @@ def main(**kwargs):
         else:
             mlflow.start_run(run_name=autotune_config.study_name)
 
-    tuner = ModelAutoTuner(**kwargs)
+    tuner = ModelAutoTuner(set_config(AutotuneConfig, kwargs))
     param_importance_fig, optimization_hist_fig = tuner.autotune()
 
     mlflow.log_figure(param_importance_fig, 'param_importances.png')

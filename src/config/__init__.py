@@ -8,11 +8,12 @@ __all__ = [
     'DifferentialPrivacyConfig',
     'FeatureInfo',
     'HParams',
-    'LSTMAutoencoderConfig',
     'MetaData',
     'MLFlowConfig',
     'OptimizerConfig',
-    'ProjectPaths',
+    'PathsConf',
     'PartitionConfig',
-    'TransformerADConfig'
+    'TransformerADConfig',
+    'AutoEncoderConfig',
+
 ]
