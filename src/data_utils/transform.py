@@ -34,7 +34,7 @@ class DataProcessor:
         test_dfs = []
 
         for device, device_info in self.metadata.devices.items():
-            device_df: DataFrame = df.loc[df['imeisv'] == int(device_info.imeisv)]
+            device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
             logger.info(f'Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'
                   f' benign length: {len(device_df[device_df['attack'] == 0])}')
             device_df.loc[device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 1
@@ -109,8 +109,7 @@ class DataProcessor:
     def process_data(self, df: DataFrame) -> DataFrame:
         df = self.clean_data(df)
         df = self.scale_features(df)
-        df = self.apply_pca(df).sort_values('_time')
-        df = df.sort_values('_time').reset_index(drop=True)
+        df = self.apply_pca(df).sort_values('_time').reset_index(drop=True)
         return df
 
     def prepare_datasets(self, val_size: float = 0.1, test_size: float = 0.1) -> None:

@@ -87,7 +87,7 @@ def train(**kwargs):
     torch.save(model.state_dict(), os.path.join(trial_dir, 'model.pt'))
 
     if mlflow.active_run():
-        mlflow.log_metrics({'best_' + key: value for key, value in best_checkpoint['metrics'].items()})
+        mlflow.log_metrics({key: value for key, value in best_checkpoint['metrics'].items()})
 
     evaluator = ModelEvaluator(criterion=hparams.loss, device=device)
     test_report, figures = evaluator.evaluate(trainer.model, dataloaders['test'])

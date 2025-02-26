@@ -6,6 +6,7 @@ import mlflow
 import torch
 
 from src.config import *
+from src.config import EarlyStoppingConfig
 from src.utils import set_config
 
 class ModelTrainer:
@@ -39,9 +40,11 @@ class ModelTrainer:
         if self.early_stopping:
             logger.info("Early stopping ")
             self.es_not_improved_epochs = 0
-            self.es_patience_epochs = 10
-            self.es_warmup_epochs = 10
-            self.es_improvement_threshold = 0.005
+            self.es_conf = EarlyStoppingConfig()
+            self.es_patience_epochs = self.es_conf.es_patience_epochs
+            self.es_warmup_epochs = self.es_conf.es_warmup_epochs
+            self.es_improvement_threshold = self.es_conf.es_improvement_threshold
+
             if mlflow.active_run():  # log early stopping params
                 mlflow.log_params({'es_not_improved_epochs': self.es_not_improved_epochs,
                                    'es_patience_epochs': self.es_patience_epochs,
@@ -162,7 +165,7 @@ class ModelTrainer:
             self.es_not_improved_epochs += 1
             print(f'{target} have not increased for {self.es_not_improved_epochs} epochs.')
             print(f"{target}: "
-                  f"best= {self.best_checkpoint['metrics'][target]:.5f} - "
+                  f"best= {self.best_checkpoint['metrics']['best_' + target]:.5f} - "
                   f"current= {self.metrics[target]:.5f}\n"
                   f"")
         if self.es_not_improved_epochs > self.es_patience_epochs:

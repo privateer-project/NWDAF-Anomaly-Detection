@@ -29,6 +29,23 @@ class AutoEncoderConfig:
     dropout_rate: float = 0.1
 
 @dataclass
+class NewTransformerConfig:
+    input_dim: int = 7
+    seq_len: int = 12
+    d_model: int = 32
+    nhead: int = 8
+    num_layers: int = 2
+    dropout: float = 0.1
+
+
+@dataclass
+class EarlyStoppingConfig:
+    es_patience_epochs: int = 10
+    es_warmup_epochs: int = 10
+    es_improvement_threshold: int = 0.005
+
+
+@dataclass
 class OptimizerConfig:
     type: str = "Adam"
     params: Dict = field(default_factory=lambda: {"betas": [0.9, 0.999],
