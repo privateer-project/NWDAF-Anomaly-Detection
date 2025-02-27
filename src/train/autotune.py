@@ -23,7 +23,7 @@ def main(**kwargs):
         else:
             mlflow.start_run(run_name=autotune_config.study_name)
 
-    tuner = ModelAutoTuner(set_config(AutotuneConfig, kwargs))
+    tuner = ModelAutoTuner(**kwargs)
     param_importance_fig, optimization_hist_fig = tuner.autotune()
 
     mlflow.log_figure(param_importance_fig, 'param_importances.png')

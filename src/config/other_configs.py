@@ -37,12 +37,13 @@ class MLFlowConfig:
 
 @dataclass
 class AutotuneConfig:
-   study_name: str = 'study_0'
+   study_name: str = 'study_1'
    storage: str = 'optuna.db'
-   n_trials: int = 100
+   n_trials: int = 10
    timeout: int = 3600 * 8  # 8 hours
    target: str = 'f1-score'
    direction: str = 'maximize'
+   kwargs: dict = None
 
 @dataclass
 class PartitionConfig:

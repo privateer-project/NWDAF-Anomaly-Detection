@@ -1,7 +1,7 @@
 from .logger_config import logger
 from .hparams_config import (HParams, TransformerADConfig, AutoEncoderConfig,
-                             OptimizerConfig, NewTransformerConfig, EarlyStoppingConfig)
-from .data_config import *
+                             OptimizerConfig, SimpleTransformerConfig, EarlyStoppingConfig)
+from .data_config import DeviceInfo, AttackInfo, FeatureInfo, MetaData
 from .other_configs import (PathsConf,
                             DifferentialPrivacyConfig,
                             MLFlowConfig,
@@ -27,6 +27,6 @@ __all__ = [
     'PartitionConfig',
     'SecureAggregationConfig',
     'FlowerConfig',
-    'NewTransformerConfig',
+    'SimpleTransformerConfig',
     'EarlyStoppingConfig'
 ]

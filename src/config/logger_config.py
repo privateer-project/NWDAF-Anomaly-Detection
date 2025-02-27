@@ -2,8 +2,8 @@ import logging
 import sys
 
 def setup_logger():
-    logger = logging.getLogger('privateer')
-    logger.setLevel(logging.DEBUG)
+    lgr = logging.getLogger('privateer')
+    lgr.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     console_handler = logging.StreamHandler(sys.stdout)
@@ -12,8 +12,8 @@ def setup_logger():
     file_handler = logging.FileHandler('app.log')
     file_handler.setFormatter(formatter)
 
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-    return logger
+    lgr.addHandler(console_handler)
+    lgr.addHandler(file_handler)
+    return lgr
 
 logger = setup_logger()

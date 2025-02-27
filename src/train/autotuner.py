@@ -10,13 +10,16 @@ class ModelAutoTuner:
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.autotune_config = AutotuneConfig(**set_config(AutotuneConfig, self.kwargs))
+        self.autotune_config = set_config(AutotuneConfig, self.kwargs)
 
         storage = self.autotune_config.storage
         if not storage.endswith('.db'):
             storage = '.'.join([storage, 'db'])
         storage = '-'.join([self.autotune_config.study_name, storage])
         storage = 'sqlite:///' + storage
+        logger.info(f'Study: {self.autotune_config.study_name} | '
+                    f'target: {self.autotune_config.target} direction: {self.autotune_config.direction} |')
+
         self.study = optuna.create_study(
             study_name=self.autotune_config.study_name,
             direction=self.autotune_config.direction,
@@ -27,17 +30,12 @@ class ModelAutoTuner:
     @staticmethod
     def set_params(trial: optuna.Trial):
         logger.info(f'Setting parameters for trial {trial.number}.')
-        autotune_params = {'learning_rate': trial.suggest_float('learning_rate', 1e-5, 1e-3, log=True),
-                           'batch_size': trial.suggest_categorical('batch_size', [2048, 4096]),
-                           'seq_len': trial.suggest_categorical('seq_len', [16, 32, 64, 128]),
-                           'd_model': trial.suggest_categorical('embedding_dim', [64, 128]),
-                           'num_layers': trial.suggest_int('num_layers', 1, 4),
+        autotune_params = {'seq_len': trial.suggest_int('seq_len', 1, 60),
+                           'd_model': trial.suggest_categorical('d_model', [16, 32, 64, 128]),
+                           'nhead': trial.suggest_categorical('nhead', [1, 2, 4, 8]),
+                           'num_layers': trial.suggest_int('num_layers', 1, 6),
+                           'dropout': trial.suggest_float('dropout', 0.0, 0.35),
                            'run_name': '-'.join(['trial', str(trial.number)])}
-
-        if autotune_params['d_model'] == 4:
-            autotune_params['num_heads'] = 4
-        else:
-            autotune_params['num_heads'] = trial.suggest_categorical('num_heads', [4, 8, 16])
         autotune_params.update(autotune_params)
         return autotune_params
 

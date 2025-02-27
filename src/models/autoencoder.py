@@ -34,7 +34,3 @@ class AutoEncoder(nn.Module):
         encoded = self.encoder(x)
         decoded = self.decoder(encoded)
         return decoded
-
-if __name__ == '__main__':
-    x = AutoEncoder(AutoEncoderConfig())
-    x._save_to_state_dict()

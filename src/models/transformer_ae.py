@@ -1,24 +1,10 @@
 import torch
 from torch import nn
 
-import math
-
 from src.config import TransformerADConfig, AutoEncoderConfig
 from src.models import AutoEncoder
+from src.models.custom_layers.positional_encoding import PositionalEncoding
 
-
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_len: int = 300):
-        super(PositionalEncoding, self).__init__()
-        position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
-        pe = torch.zeros(max_len, d_model)
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        self.register_buffer('pe', pe)
-
-    def forward(self, x):
-        return x + self.pe[:x.size(1), :]
 
 class TransformerAD(nn.Module):
     def __init__(self, config: TransformerADConfig):

@@ -1,8 +1,8 @@
 from .autoencoder import *
-from .transf import NewTransformer
+from .simple_tranformer import SimpleTransformer
 from .transformer_ae import *
 __all__ = [
     'TransformerAD',
     'AutoEncoder',
-    'NewTransformer'
+    'SimpleTransformer'
 ]
