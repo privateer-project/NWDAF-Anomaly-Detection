@@ -55,12 +55,3 @@ class NWDAFDataloader:
             scalers=None,
             target_normalizer=None,
             allow_missing_timesteps=False)
-
-if __name__ == '__main__':
-    hparams = HParams()
-    dataloader = NWDAFDataloader(hparams=hparams)
-    dataloaders = dataloader.get_dataloaders()
-    for i in dataloaders['train']:
-        print(i)
-        break
-

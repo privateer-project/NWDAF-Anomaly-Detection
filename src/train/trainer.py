@@ -20,8 +20,6 @@ class ModelTrainer:
                  criterion,
                  device,
                  hparams: HParams,
-                 apply_dp,
-                 early_stopping,
                  **kwargs):
 
         self.paths = PathsConf()
@@ -32,9 +30,8 @@ class ModelTrainer:
         self.loss_fn = criterion
         self.device = device
         self.hparams = hparams
-        self.apply_dp = apply_dp
-        self.early_stopping = early_stopping
-        if self.apply_dp:
+        self.early_stopping = self.hparams.early_stopping
+        if self.hparams.apply_dp:
             self.dp_config = set_config(DifferentialPrivacyConfig, kwargs)
 
         if self.early_stopping:
@@ -62,7 +59,7 @@ class ModelTrainer:
                                                 }
 
         # Initialize differential privacy
-        if self.apply_dp:
+        if self.hparams.apply_dp:
             logger.info('Differential Privacy enabled.')
             self.privacy_engine = PrivacyEngine(accountant="rdp", secure_mode=self.dp_config.secure_mode)
             self.model = ModuleValidator.fix(self.model)
@@ -76,7 +73,7 @@ class ModelTrainer:
                 max_grad_norm=self.dp_config.max_grad_norm,
                 secure_mode=self.dp_config.secure_mode,
             )
-        if self.apply_dp and mlflow.active_run():
+        if self.hparams.apply_dp and mlflow.active_run():
             mlflow.log_params(self.dp_config.__dict__)
 
     def training(self):
@@ -87,7 +84,7 @@ class ModelTrainer:
             val_metrics = self._validation_loop()
             self.log_metrics(train_metrics | val_metrics, epoch)
             # Early stopping check
-            if self.early_stopping and self._check_early_stopping(epoch, target='val_loss'):
+            if self.early_stopping and self._check_early_stopping(epoch):
                 break
         return self.best_checkpoint
 
@@ -135,9 +132,18 @@ class ModelTrainer:
     def log_metrics(self, metrics, epoch: int):
         """Update and log metrics."""
         self.metrics.update(metrics)
-        if self.apply_dp:
+        if self.hparams.apply_dp:
             self.metrics.update({
                 'epsilon': self.privacy_engine.get_epsilon(self.dp_config.target_delta)
+            })
+
+        if self.metrics[self.hparams.target] <= self.best_checkpoint['metrics']['best_' + self.hparams.target]:
+            best_metrics = {'best_' + k: v for k, v in self.metrics.copy().items()}
+            self.best_checkpoint.update({
+                'metrics': best_metrics,
+                'epoch': epoch,
+                'model_state_dict': self.model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict()
             })
 
         if mlflow.active_run():
@@ -146,27 +152,19 @@ class ModelTrainer:
         _prnt = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
         print(f"Metrics: {' '.join(_prnt)}")
 
-    def _check_early_stopping(self, epoch: int, target='val_loss') -> bool:
+    def _check_early_stopping(self, epoch: int) -> bool:
         """Check early stopping conditions."""
         if epoch < self.es_warmup_epochs:
             return False
-
-        if self.metrics[target] < self.best_checkpoint['metrics']['best_' + target]:
+        if self.metrics[self.hparams.target] <= self.best_checkpoint['metrics']['best_' + self.hparams.target]:
             self.es_not_improved_epochs = 0
-            best_metrics = {'best_' + k: v for k, v in self.metrics.copy().items()}
-            self.best_checkpoint.update({
-                'metrics': best_metrics,
-                'epoch': epoch,
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict()
-            })
             return False
         else:
             self.es_not_improved_epochs += 1
-            print(f'{target} have not increased for {self.es_not_improved_epochs} epochs.')
-            print(f"{target}: "
-                  f"best= {self.best_checkpoint['metrics']['best_' + target]:.5f} - "
-                  f"current= {self.metrics[target]:.5f}\n"
+            print(f'{self.hparams.target} have not increased for {self.es_not_improved_epochs} epochs.')
+            print(f"{self.hparams.target}: "
+                  f"best= {self.best_checkpoint['metrics']['best_' + self.hparams.target]:.5f} - "
+                  f"current= {self.metrics[self.hparams.target]:.5f}\n"
                   f"")
         if self.es_not_improved_epochs > self.es_patience_epochs:
             print(f'Early stopping. No improvement for {self.es_not_improved_epochs} epochs.')

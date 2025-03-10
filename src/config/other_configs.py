@@ -1,8 +1,10 @@
 import os
-from dataclasses import dataclass
-from pathlib import Path
+import sys
+import logging
 
+from pathlib import Path
 from dotenv import load_dotenv
+from dataclasses import dataclass
 
 load_dotenv(Path(__file__).parent.joinpath('.env'))
 
@@ -19,6 +21,23 @@ class PathsConf:
    analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
    raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
    experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))
+
+def setup_logger():
+    lgr = logging.getLogger('privateer')
+    lgr.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(PathsConf.root.joinpath('logs.log'))
+    file_handler.setFormatter(formatter)
+
+    lgr.addHandler(console_handler)
+    lgr.addHandler(file_handler)
+    return lgr
+
+logger = setup_logger()
 
 @dataclass
 class DifferentialPrivacyConfig:

@@ -9,7 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from flwr_datasets.partitioner import PathologicalPartitioner
 
-from src.config import MetaData, PathsConf, logger
+from src.config import logger
 from src.data_utils.utils import check_existing_datasets, get_dataset_path
 
 
@@ -94,7 +94,8 @@ class DataProcessor:
         df = df.assign(**pca_df.to_dict(orient='list'))
         return df
 
-    def get_partition(self, df: DataFrame, partition_id, num_partitions, num_classes_per_partition) -> DataFrame:
+    @staticmethod
+    def get_partition(df: DataFrame, partition_id, num_partitions, num_classes_per_partition) -> DataFrame:
         """Partition data based on provided configuration."""
         partitioner = PathologicalPartitioner(
             num_partitions=num_partitions,
@@ -139,7 +140,6 @@ class DataProcessor:
         logger.info(f'Datasets saved at {self.paths.processed}')
 
 if __name__ == '__main__':
-    paths = PathsConf()
-    metadata = MetaData()
-    dp = DataProcessor(metadata, paths)
+    from src.config import MetaData, PathsConf
+    dp = DataProcessor(MetaData(), PathsConf())
     dp.prepare_datasets()

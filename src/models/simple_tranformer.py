@@ -9,21 +9,23 @@ from src.models.custom_layers.positional_encoding import PositionalEncoding
 class SimpleTransformer(nn.Module):
     def __init__(self, config: SimpleTransformerConfig):
         super().__init__()
-        self.input_embedding = nn.Linear(in_features=config.input_size,
-                                         out_features=config.d_model)
+        self.config = config
+        self.input_embedding = nn.Linear(in_features=self.config.input_size,
+                                         out_features=self.config.d_model)
 
         # Positional encoding
-        self.pos_encoder = PositionalEncoding(d_model=config.d_model, max_seq_length=config.seq_len)
-        self.dim_feedforward = config.d_model * 4
-        self.transformer = nn.Transformer(d_model=config.d_model,
-                                          nhead=config.nhead,
-                                          dropout=config.dropout,
+        self.pos_encoder = PositionalEncoding(d_model=self.config.d_model, max_seq_length=self.config.seq_len)
+        self.dim_feedforward = self.config.d_model * 4
+        self.transformer = nn.Transformer(d_model=self.config.d_model,
+                                          nhead=self.config.nhead,
+                                          dropout=self.config.dropout,
                                           batch_first=True,
-                                          num_encoder_layers=config.num_layers,
-                                          num_decoder_layers=config.num_layers,
+                                          num_encoder_layers=self.config.num_layers,
+                                          num_decoder_layers=self.config.num_layers,
                                           dim_feedforward=self.dim_feedforward)
-        self.output = nn.Linear(in_features=config.d_model,
-                                         out_features=config.input_size)
+        self.output = nn.Linear(in_features=self.config.d_model,
+                                         out_features=self.config.input_size)
+
     def forward(self, src) -> Tensor:
         emb = self.input_embedding(src)
         pos_enc = self.pos_encoder(emb)

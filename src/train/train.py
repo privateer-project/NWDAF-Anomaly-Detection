@@ -78,9 +78,7 @@ def train(**kwargs):
                            hparams=hparams,
                            model=model.to(device),
                            optimizer=optimizer,
-                           criterion=loss_fn,
-                           apply_dp=kwargs.get('apply_dp', False),
-                           early_stopping=kwargs.get('early_stopping', False))
+                           criterion=loss_fn)
 
     best_checkpoint = trainer.training()
     model.load_state_dict(best_checkpoint['model_state_dict'])

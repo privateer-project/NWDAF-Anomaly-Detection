@@ -3,7 +3,7 @@ import os
 import mlflow
 import torch
 
-from src import config, models
+from src import config
 from src.config import *
 from src.data_utils.load import NWDAFDataloader
 from src.evaluate.evaluator import ModelEvaluator
@@ -12,30 +12,16 @@ from src.utils import set_config
 
 def main(model_path, **kwargs):
     hparams = set_config(HParams, kwargs)
-    partition_config = set_config(PartitionConfig, kwargs)
     mlflow_config = set_config(MLFlowConfig, kwargs)
-    metadata = MetaData()
-    dataloader_params = {'num_workers': os.cpu_count(),
-                         'pin_memory': True,
-                         'prefetch_factor': hparams.batch_size * 100,
-                         'persistent_workers': True
-                         }
     dl = NWDAFDataloader(hparams=hparams)
     test_dl = dl.get_dataloaders()['test']
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    config_class_name = f"{hparams.model}Config"
-    model_config_class = getattr(config, config_class_name, None)
+    model_config_class = getattr(config, f"{hparams.model}Config", None)
     if not model_config_class:
         raise ValueError(f"Config class not found for model: {hparams.model}")
-    # model_config = set_config(model_config_class, kwargs)
-    #
-    # model_class = getattr(models, hparams.model)
-    # model = model_class(**model_config.__dict__)
     # Load model checkpoint
-    model_uri = 'runs:/71045813a07646f48fe505ba19b48809/model'
-    # This is the input example logged with the model
-    model = mlflow.pyfunc.load_model(model_uri)
+    model = torch.load(model_path)
     model = model.to(device)
     checkpoint = torch.load(model_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
