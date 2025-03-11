@@ -3,7 +3,7 @@ import os
 import mlflow
 import torch
 
-from src import config
+from src import config, models
 from src.config import *
 from src.data_utils.load import NWDAFDataloader
 from src.evaluate.evaluator import ModelEvaluator
@@ -13,7 +13,7 @@ from src.utils import set_config
 def main(model_path, **kwargs):
     hparams = set_config(HParams, kwargs)
     mlflow_config = set_config(MLFlowConfig, kwargs)
-    dl = NWDAFDataloader(hparams=hparams)
+    dl = NWDAFDataloader(batch_size=hparams.batch_size, seq_len=hparams.seq_len)
     test_dl = dl.get_dataloaders()['test']
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -21,9 +21,11 @@ def main(model_path, **kwargs):
     if not model_config_class:
         raise ValueError(f"Config class not found for model: {hparams.model}")
     # Load model checkpoint
-    model = torch.load(model_path)
-    model = model.to(device)
-    checkpoint = torch.load(model_path, map_location=device)
+    # Setup model
+    model_config = set_config(getattr(config, f"{hparams.model}Config", None), kwargs)
+    model_config.seq_len = hparams.seq_len
+    model = getattr(models, hparams.model)(model_config)
+    checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model = model.to(device)
     model.eval()

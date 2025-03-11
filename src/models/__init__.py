@@ -1,8 +1,8 @@
-from .autoencoder import *
+from .autoencoder import AutoEncoder
 from .simple_tranformer import SimpleTransformer
-from .attention_ae import *
+from .attention_ae import AttentionAutoencoder
 __all__ = [
-    'TransformerAD',
+    'AttentionAutoencoder',
     'AutoEncoder',
     'SimpleTransformer'
 ]

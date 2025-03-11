@@ -42,7 +42,7 @@ def train(**kwargs):
         mlflow.log_params(hparams.__dict__)
 
     # Setup dataloaders
-    nwdaf_dl = NWDAFDataloader(hparams=hparams)
+    nwdaf_dl = NWDAFDataloader(batch_size=hparams.batch_size, seq_len=hparams.seq_len)
     dataloaders = nwdaf_dl.get_dataloaders()
     sample = next(iter(dataloaders['train']))[0]['encoder_cont'][:1].to('cpu')
 

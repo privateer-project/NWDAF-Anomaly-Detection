@@ -9,89 +9,85 @@ import plotly.express as px
 from src.config import PathsConf, MetaData
 from src.data_utils.transform import DataProcessor
 
-paths = PathsConf()
-os.makedirs(paths.analysis, exist_ok=True)
-metadata = MetaData()
+
 # Load data
-df = pd.read_csv('/home/sse/projects/NWDAF-Anomaly-Detection/data/raw/amari_ue_data_merged_with_attack_number.csv')
+def pca_plots(datapath, pca, dim=(0, 1), labels=None):
+    df = pd.read_csv(datapath)
+    processed_df = dp.process_data(df).copy()
+    pca_features_df = processed_df[processed_df.columns[processed_df.columns.str.contains('pca')]]
+    pca_features_df['attack'] = processed_df['attack']
 
-dp = DataProcessor(metadata=metadata, paths=paths)
+    components_df = pd.DataFrame(pca.components_,
+                                 columns=labels,
+                                 index=['PCA' + str(x) for x in range(1, pca.n_components_ + 1)])
+    explained_variance_ratio = pca.explained_variance_ratio_
 
-processed_df = dp.process_data(df)
-cleaned_df = dp.clean_data(df)
-scaled_df = dp.scale_features(cleaned_df)
-pca = dp.get_pca()
+    # Correlation Circle
+    correlation_circle_path = paths.analysis.joinpath('correlation_circle.png')
+    if not correlation_circle_path.exists():
+        fig, ax = plt.subplots(figsize=(8, 8))
+        for i, (x, y) in enumerate(zip(pca.components_[dim[0]], pca.components_[dim[1]])):
+            ax.arrow(0, 0, x, y, head_width=0.05, head_length=0.05, fc='k', ec='k')
+            if labels is not None:
+                ax.text(x, y, labels[i], fontsize=12)
+        circle = plt.Circle((0, 0), 1, color='blue', fill=False)
+        ax.add_artist(circle)
+        ax.set_xlim(-1, 1)
+        ax.set_ylim(-1, 1)
+        ax.set_xlabel(f'PC{dim[0] + 1}')
+        ax.set_ylabel(f'PC{dim[1] + 1}')
+        ax.set_title('Correlation Circle')
+        plt.grid()
+        plt.savefig(correlation_circle_path)
+        plt.show()
+        plt.close()
 
-pca_data = dp.apply_pca(scaled_df)
-pca_data = pca_data[pca_data.columns[pca_data.columns.str.contains('pca')]]
+    # Plotting Explained Variance
+    explained_variance_path = paths.analysis.joinpath('explained_variance_ratio.png')
+    if not explained_variance_path.exists():
+        plt.figure(figsize=(8, 8))
+        plt.bar(range(1, len(explained_variance_ratio) + 1), explained_variance_ratio, alpha=0.5, align='center', label='Individual explained variance')
+        plt.step(range(1, len(explained_variance_ratio) + 1), np.cumsum(explained_variance_ratio), where='mid', label='Cumulative explained variance')
+        plt.ylabel('Explained variance ratio')
+        plt.xlabel('Principal component index')
+        plt.legend(loc='best')
+        plt.tight_layout()
+        plt.savefig(explained_variance_path)
+        plt.show()
+        plt.close()
 
-# Explained Variance by Principal Components
-explained_variance = pca.explained_variance_
-explained_variance_ratio = pca.explained_variance_ratio_
+    # PCA Components Heatmap
+    contributions_path = paths.analysis.joinpath('contribution_to_explained_variance.png')
+    if not contributions_path.exists():
+        plt.figure(figsize=(12, 10))
+        sns.heatmap(components_df, annot=True, cmap='viridis')
+        plt.title('Feature Contributions to Explained Variance')
+        plt.savefig(contributions_path)
+        plt.show()
+        plt.close()
 
-# Plotting Explained Variance
-plt.figure(figsize=(8, 5))
-plt.bar(range(1, len(explained_variance) + 1), explained_variance, alpha=0.5, align='center', label='Individual explained variance')
-plt.step(range(1, len(explained_variance_ratio) + 1), np.cumsum(explained_variance_ratio), where='mid', label='Cumulative explained variance')
-plt.ylabel('Explained variance ratio')
-plt.xlabel('Principal component index')
-plt.legend(loc='best')
-plt.tight_layout()
-plt.savefig(os.path.join(paths.analysis, 'explained_variance_ratio.png'))
-plt.show()
-plt.close()
+    # Pairplot of Principal Components
+    pairplot_path = paths.analysis.joinpath('pairplot.png')
+    if not pairplot_path.exists():
+        # Very slow do it once.
+        sns.pairplot(pca_features_df, hue='attack')
+        plt.savefig(pairplot_path)
+        plt.show()
+        plt.close()
 
-# PCA Components Heatmap
-plt.figure(figsize=(12, 6))
-sns.heatmap(pca_data, cmap='viridis', yticklabels=['PCA'+str(x) for x in range(1, pca.n_components_ + 1)], xticklabels=list(metadata.get_input_features()))
-plt.xlabel('Feature')
-plt.ylabel('Principal Component')
+    # Interactive 3D Scatter Plot of Principal Components
+    principal_components_path = paths.analysis.joinpath('principal_components.html')
+    if not principal_components_path.exists():
+        fig = px.scatter_3d(pca_features_df, x='pca0', y='pca1', z='pca2', color='attack', title='3D Scatter Plot of Principal Components')
+        fig.show()
+        fig.write_html(principal_components_path)
 
-plt.savefig(os.path.join(paths.analysis, 'pca_heatmap.png'))
-plt.show()
-plt.close()
+if __name__ == '__main__':
+    paths = PathsConf()
+    metadata = MetaData()
+    dp = DataProcessor(metadata=metadata, paths=paths)
 
-# Pairplot of Principal Components
-pca_df = pd.DataFrame(data=pca_data, columns=['PCA'+str(x) for x in range(1, pca.n_components_ + 1)])
-sns.pairplot(pca_df)
-
-plt.savefig(os.path.join(paths.analysis, 'pairplot.png'))
-plt.show()
-plt.close()
-
-# Feature Contributions to Explained Variance
-contributions = pd.DataFrame(pca.components_, columns=metadata.get_input_features(), index=['PCA'+str(x) for x in range(1, pca.n_components_ + 1)])
-plt.figure(figsize=(10, 8))
-sns.heatmap(contributions, annot=True, cmap='viridis')
-plt.title('Feature Contributions to Explained Variance')
-
-plt.savefig(os.path.join(paths.analysis, 'contribution_to_explained_variance.png'))
-plt.show()
-plt.close()
-
-# Interactive 3D Scatter Plot of Principal Components
-fig = px.scatter_3d(pca_df, x='PCA1', y='PCA2', z='PCA3', color='PCA1', title='3D Scatter Plot of Principal Components')
-plt.savefig(os.path.join(paths.analysis, 'principal_components'))
-plt.show()
-plt.close()
-
-# Correlation Circle
-def correlation_circle(pca, dim=(1, 2), labels=None):
-    fig, ax = plt.subplots(figsize=(8, 8))
-    for i, (x, y) in enumerate(zip(pca.components_[dim[0] - 1], pca.components_[dim[1] - 1])):
-        ax.arrow(0, 0, x, y, head_width=0.05, head_length=0.05, fc='k', ec='k')
-        if labels is not None:
-            ax.text(x, y, labels[i], fontsize=12)
-    circle = plt.Circle((0, 0), 1, color='blue', fill=False)
-    ax.add_artist(circle)
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
-    ax.set_xlabel(f'PC{dim[0]}')
-    ax.set_ylabel(f'PC{dim[1]}')
-    ax.set_title('Correlation Circle')
-    plt.grid()
-    plt.savefig(os.path.join(paths.analysis, 'corr_circle.png'))
-    plt.show()
-    plt.close()
-
-correlation_circle(pca, labels=cleaned_df.columns)
+    os.makedirs(paths.analysis, exist_ok=True)
+    pca_plots(datapath=paths.raw_dataset,
+              pca=dp.get_pca(),
+              labels=metadata.get_input_features())

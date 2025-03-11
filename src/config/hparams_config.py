@@ -16,8 +16,8 @@ class HParams:
 
 @dataclass
 class AttentionAutoencoderConfig:
-    input_size: int =  None
-    num_layers: int =  2
+    input_size: int =  7
+    num_layers: int =  4
     hidden_dim: int = 32
     latent_dim: int = 16
     num_heads: int = 8
@@ -41,9 +41,9 @@ class SimpleTransformerConfig:
 
 @dataclass
 class EarlyStoppingConfig:
-    es_patience_epochs: int = 10
-    es_warmup_epochs: int = 10
-    es_improvement_threshold: int = 0.005
+    es_patience_epochs: int = 20
+    es_warmup_epochs: int = 20
+    es_improvement_threshold: int = 0.0001
 
 @dataclass
 class OptimizerConfig:

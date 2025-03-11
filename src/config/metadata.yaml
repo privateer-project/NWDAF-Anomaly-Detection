@@ -41,7 +41,7 @@ devices:
     ip: '10.20.10.16'
     type: 'huawei_p40'
     malicious: false
-    in_attacks: [ 1, 4, 5 ]
+    in_attacks: [ 1, 4, 5 ] # se kamia
   '8':
     imeisv: '8609960480666910'
     ip: '10.20.10.18'

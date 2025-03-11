@@ -12,14 +12,15 @@ from src.data_utils.utils import get_dataset_path
 class NWDAFDataloader:
     """Handles creation of time series datasets."""
 
-    def __init__(self, hparams: HParams):
-        self.hparams = hparams
+    def __init__(self, batch_size, seq_len):
+        self.batch_size = batch_size
+        self.seq_len = seq_len
 
     def get_dataloaders(self) -> Dict[str, DataLoader]:
         """Get train, validation and test dataloaders."""
         dataloader_params = {'num_workers': os.cpu_count(),
                              'pin_memory': True,
-                             'prefetch_factor': self.hparams.batch_size * 100,
+                             'prefetch_factor': self.batch_size * 100,
                              'persistent_workers': True}
         dataloaders = {}
         logger.info('Loading datasets...')
@@ -32,11 +33,10 @@ class NWDAFDataloader:
             if split in ('train', 'val'):
                 df = df[df['attack'] == 0]
             df = df.sort_values(by=['_time'])
-            df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
 
             dataset = self.get_ts_dataset(df)
             dataloaders[split] = dataset.to_dataloader(train=split == 'train',
-                                                       batch_size=self.hparams.batch_size,
+                                                       batch_size=self.batch_size,
                                                        **dataloader_params)
         logger.info('Finished loading datasets.')
         return dataloaders
@@ -44,12 +44,13 @@ class NWDAFDataloader:
     def get_ts_dataset(self, df: DataFrame) -> TimeSeriesDataSet:
         """Create a TimeSeriesDataSet from the preprocessed DataFrame."""
         input_columns = [column for column in df.columns if column.startswith('pca')]
+        df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
         return TimeSeriesDataSet(
             data=df,
             time_idx='time_idx',
             target='attack',
             group_ids=['imeisv'],
-            max_encoder_length=self.hparams.seq_len,
+            max_encoder_length=self.seq_len,
             max_prediction_length=1,
             time_varying_unknown_reals=input_columns,
             scalers=None,
