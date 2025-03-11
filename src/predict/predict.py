@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from tqdm import tqdm
 
-from src.config import AttentionAutoencoderConfig, MetaData, PathsConf, HParams
+from src.config import AttentionAutoencoderConfig, MetaData, PathsConf
 from src.models import AttentionAutoencoder
 from src.data_utils.transform import DataProcessor
 from src.data_utils.load import NWDAFDataloader
@@ -87,14 +87,13 @@ def make_predictions(
     return np.asarray(inputs), np.array(losses), np.asarray(predictions), np.array(labels, dtype=int)
 
 if __name__ == '__main__':
-    hparams = HParams()
     paths = PathsConf()
 
     model_path = paths.experiments_dir.joinpath('20250310-143759').joinpath('model.pt')
     data_path = paths.raw_dataset
     batch_size = 32
-    seq_len = hparams.seq_len
-    criterion = hparams.loss
+    seq_len = 15
+    criterion = 'L1Loss'
     threshold = 0.8252406716346741
 
     inputs, losses, predictions, labels = make_predictions(
