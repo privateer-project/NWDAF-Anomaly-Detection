@@ -40,8 +40,8 @@ def create_device_monitoring_dashboard():
     # Focus on network performance metrics
     network_metrics = [
         'dl_bitrate', 'ul_bitrate', 'dl_tx', 'ul_tx', 'cqi', 'pusch_snr',
-        'dl_mcs', 'ul_mcs', 'dl_retx', 'ul_retx', 'ul_path_loss', 'epre',
-        'p_ue', 'ri', 'turbo_decoder_avg'
+        'dl_mcs', 'ul_mcs', 'dl_retx', 'ul_phr', 'ul_retx', 'ul_path_loss', 'epre',
+        'p_ue', 'ri', 'turbo_decoder_avg',
     ]
 
     available_metrics = [col for col in network_metrics if col in df.columns]
@@ -233,7 +233,7 @@ def create_device_monitoring_dashboard():
                         x=device_df['_time'],
                         y=device_df[metric],
                         mode='lines+markers',
-                        name=f"{str(device)[-4:]} ({device_type})",
+                        name=f"{str(device)[-5:]} ({device_type})",
                         line=dict(width=2, color=color),
                         marker=dict(size=4, color=color)
                     ))

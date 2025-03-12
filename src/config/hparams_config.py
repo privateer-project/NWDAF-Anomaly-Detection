@@ -3,24 +3,26 @@ from typing import Dict
 
 @dataclass
 class HParams:
-    epochs: int = 100
+    epochs: int = 500
     learning_rate: float = 1e-4
-    batch_size: int = 4096
-    seq_len: int = 15
+    batch_size: int = 8196
+    seq_len: int = 12
     model: str = 'AttentionAutoencoder'
     loss: str = 'L1Loss'
     target: str = 'val_loss'
     direction: str = 'minimize'
     early_stopping: bool = True
     apply_dp: bool = False
+    use_pca: bool = False
 
 @dataclass
 class AttentionAutoencoderConfig:
-    input_size: int =  7
-    num_layers: int =  4
+    input_size: int =  8
+    seq_len: int = 12
+    num_layers: int =  1
     hidden_dim: int = 32
     latent_dim: int = 16
-    num_heads: int = 8
+    num_heads: int = 1
     dropout: float = 0.1
 
 @dataclass

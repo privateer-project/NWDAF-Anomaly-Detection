@@ -11,9 +11,7 @@ from src.data_utils.transform import DataProcessor
 
 
 # Load data
-def pca_plots(datapath, pca, dim=(0, 1), labels=None):
-    df = pd.read_csv(datapath)
-    processed_df = dp.process_data(df).copy()
+def pca_plots(processed_df, pca, dim=(0, 1), labels=None):
     pca_features_df = processed_df[processed_df.columns[processed_df.columns.str.contains('pca')]]
     pca_features_df['attack'] = processed_df['attack']
 
@@ -85,9 +83,10 @@ def pca_plots(datapath, pca, dim=(0, 1), labels=None):
 if __name__ == '__main__':
     paths = PathsConf()
     metadata = MetaData()
-    dp = DataProcessor(metadata=metadata, paths=paths)
+    dp = DataProcessor()
+    processed_df = dp.preprocess_data(paths.raw_dataset, use_pca=True)
 
     os.makedirs(paths.analysis, exist_ok=True)
-    pca_plots(datapath=paths.raw_dataset,
-              pca=dp.get_pca(),
+    pca_plots(processed_df=processed_df,
+              pca=dp.load_pca(),
               labels=metadata.get_input_features())

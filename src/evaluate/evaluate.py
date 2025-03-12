@@ -5,7 +5,7 @@ import torch
 
 from src import config, models
 from src.config import *
-from src.data_utils.load import NWDAFDataloader
+from src.data_utils.transform import DataProcessor
 from src.evaluate.evaluator import ModelEvaluator
 from src.utils import set_config
 
@@ -13,8 +13,11 @@ from src.utils import set_config
 def main(model_path, **kwargs):
     hparams = set_config(HParams, kwargs)
     mlflow_config = set_config(MLFlowConfig, kwargs)
-    dl = NWDAFDataloader(batch_size=hparams.batch_size, seq_len=hparams.seq_len)
-    test_dl = dl.get_dataloaders()['test']
+    dl = DataProcessor()
+    test_dl = dl.get_dataloader('test',
+                                use_pca=hparams.use_pca,
+                                batch_size=hparams.batch_size,
+                                seq_len=hparams.seq_len)
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model_config_class = getattr(config, f"{hparams.model}Config", None)

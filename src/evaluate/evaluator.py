@@ -10,26 +10,25 @@ from src.visualizations.plotter import Visualizer
 
 
 class ModelEvaluator:
-    def __init__(self, criterion: str, device: torch.device):
+    def __init__(self, criterion, device: torch.device):
+        self.criterion = getattr(nn, criterion)(reduction='none')
         self.device = device
-        self.criterion = criterion
         self.visualizer = Visualizer()
 
     def compute_reconstruction_errors(self, model, dataloader) -> Tuple[np.ndarray, np.ndarray]:
         losses: List[float] = []
         labels: List[int] = []
         model.eval()
-        evaluation_criterion = getattr(nn, self.criterion)(reduction='none')
         with torch.no_grad():
             for inputs in tqdm(dataloader, desc="Computing reconstruction errors"):
                 x = inputs[0]['encoder_cont'].to(self.device)
                 targets = np.squeeze(inputs[1][0])
                 if model._get_name() == 'TransformerAD':
                     output = model(x)
-                    batch_rec_errors = evaluation_criterion(output['transformer_output'], output['ae_output'])
+                    batch_rec_errors = self.criterion(output['transformer_output'], output['ae_output'])
                 else:
                     output = model(x)
-                    batch_rec_errors = evaluation_criterion(x, output)
+                    batch_rec_errors = self.criterion(x, output)
 
                 loss_per_sample = batch_rec_errors.mean(dim=(1, 2))
                 losses.extend(loss_per_sample.cpu().tolist())
@@ -55,9 +54,10 @@ class ModelEvaluator:
         final_report.update(clf_report['macro avg'])
         return final_report
 
-    def evaluate(self, model, test_dataloader) -> Tuple[dict[str, float], dict]:
-        rec_errors, y_true = self.compute_reconstruction_errors(model, test_dataloader)
-        threshold = self.find_optimal_threshold(rec_errors, y_true)
+    def evaluate(self, model, dataloader,  threshold=None, prefix='') -> Tuple[dict[str, float], dict]:
+        rec_errors, y_true = self.compute_reconstruction_errors(model, dataloader)
+        if threshold is None:
+            threshold = self.find_optimal_threshold(rec_errors, y_true)
         y_pred = (rec_errors >= threshold).astype(int)
 
         target_names = ['benign', 'malicious']
@@ -76,6 +76,6 @@ class ModelEvaluator:
             scores=rec_errors,
             threshold=threshold,
             target_names=target_names,
-            prefix='test')
+            prefix=prefix)
 
         return final_report, self.visualizer.figures

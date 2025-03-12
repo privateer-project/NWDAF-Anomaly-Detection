@@ -4,13 +4,12 @@ from datetime import datetime
 import mlflow
 import torch
 from mlflow.models import infer_signature
-from torch import nn
 from torchinfo import summary
 
 from src import models, config
 from src.config import PathsConf, MLFlowConfig, HParams, OptimizerConfig, logger
+from src.data_utils.transform import DataProcessor
 from src.utils import set_config
-from src.data_utils.load import NWDAFDataloader
 from src.train.trainer import ModelTrainer
 from src.evaluate.evaluator import ModelEvaluator
 
@@ -19,7 +18,7 @@ def train(**kwargs):
     # Initialize project paths
     paths = PathsConf()
 
-    # setup mlflow
+    # Setup mlflow
     mlflow_config = set_config(MLFlowConfig, kwargs)
     if mlflow_config.track:
         mlflow.set_tracking_uri(mlflow_config.server_address)
@@ -31,7 +30,7 @@ def train(**kwargs):
     trial_dir = os.path.join(paths.experiments_dir, mlflow.active_run().info.run_name)
     os.makedirs(os.path.join(trial_dir), exist_ok=True)
 
-    # setup device to run training
+    # Setup device to run training
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if mlflow.active_run():
         mlflow.log_params({'device': device})
@@ -42,9 +41,23 @@ def train(**kwargs):
         mlflow.log_params(hparams.__dict__)
 
     # Setup dataloaders
-    nwdaf_dl = NWDAFDataloader(batch_size=hparams.batch_size, seq_len=hparams.seq_len)
-    dataloaders = nwdaf_dl.get_dataloaders()
-    sample = next(iter(dataloaders['train']))[0]['encoder_cont'][:1].to('cpu')
+    data_processor = DataProcessor()
+    train_dl = data_processor.get_dataloader('train',
+                                             use_pca=hparams.use_pca,
+                                             batch_size=hparams.batch_size,
+                                             seq_len=hparams.seq_len,
+                                             only_benign=True)
+    val_dl = data_processor.get_dataloader('val',
+                                             use_pca=hparams.use_pca,
+                                             batch_size=hparams.batch_size,
+                                             seq_len=hparams.seq_len,
+                                             only_benign=True)
+    test_dl = data_processor.get_dataloader('test',
+                                             use_pca=hparams.use_pca,
+                                             batch_size=hparams.batch_size,
+                                             seq_len=hparams.seq_len,
+                                             only_benign=False)
+    sample = next(iter(train_dl))[0]['encoder_cont'][:1].to('cpu')
 
     # Setup model
     model_config = set_config(getattr(config, f"{hparams.model}Config", None), kwargs)
@@ -69,26 +82,24 @@ def train(**kwargs):
     if mlflow.active_run():
         mlflow.log_params(optimizer_config.__dict__)
 
-    # Setup loss
-    loss_fn = getattr(nn, hparams.loss)(reduction='mean')
-
-    trainer = ModelTrainer(train_dl=dataloaders['train'],
-                           val_dl=dataloaders['val'],
+    trainer = ModelTrainer(train_dl=train_dl,
+                           val_dl=val_dl,
                            device=device,
                            hparams=hparams,
                            model=model.to(device),
                            optimizer=optimizer,
-                           criterion=loss_fn)
-
+                           criterion=hparams.loss)
     best_checkpoint = trainer.training()
     model.load_state_dict(best_checkpoint['model_state_dict'])
     torch.save(model.state_dict(), os.path.join(trial_dir, 'model.pt'))
-
+    torch.jit.script(model)
     if mlflow.active_run():
         mlflow.log_metrics({key: value for key, value in best_checkpoint['metrics'].items()})
 
-    evaluator = ModelEvaluator(criterion=hparams.loss, device=device)
-    test_report, figures = evaluator.evaluate(trainer.model, dataloaders['test'])
+
+    evaluator = ModelEvaluator(criterion=hparams.loss,
+                               device=device)
+    test_report, figures = evaluator.evaluate(trainer.model, test_dl)
     for name, fig in figures.items():
         fig.savefig(os.path.join(trial_dir, f'{name}.png'))
 
@@ -104,7 +115,7 @@ def train(**kwargs):
                                  signature=infer_signature(model_input=model_input.detach().numpy(),
                                                            model_output=model_output),
                                  pip_requirements=os.path.join(paths.root, 'requirements.txt'))
-        # log test metrics
+        # log metrics
         mlflow.log_metrics(test_report)
         for name, fig in figures.items():
             mlflow.log_figure(fig, f'{name}.png')
