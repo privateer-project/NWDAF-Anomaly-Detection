@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "privateer_ad"
+version = "0.1.0"
+description = "Anomaly Detection with Differential Privacy"
+authors = [
+    {name = "Giorgos Livanos", email = "livanos.g@gmail.com"}
+]
+license = "Apache-2.0"
+dependencies = [
+    "dash==2.18.2",
+    "dash_bootstrap_components==1.7.1",
+    "fire==0.7.0",
+    "flwr[simulation]==1.16.0",
+    "flwr-datasets==0.5.0",
+    "hatchling==1.27.0",
+    "matplotlib==3.10.1",
+    "mlflow==2.20.4",
+    "numpy==1.26.4",
+    "optuna==4.2.1",
+    "pandas==2.2.3",
+    "plotly==6.0.0",
+    "python-dotenv==1.0.1",
+    "pytorch-triton-rocm==3.2.0",
+    "pytorch-forecasting==1.3.0",
+    "PyYAML==6.0.2",
+    "requests==2.32.3",
+    "scikit-learn==1.6.1",
+    "seaborn==0.13.2",
+    "torch==2.6.0+rocm6.2.4",
+    "torchinfo==1.8.0",
+    "tqdm==4.67.1"
+]
+
+[project.scripts]
+train-ad = "privateer_ad.train.train:main"
+autotune-ad = "privateer_ad.train.autotune:main"
+server-app = "privateer_ad.server_app:app"
+client-app = "privateer_ad.client_app:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "gliv"
+
+[tool.flwr.app.components]
+serverapp = "privateer_ad.server_app:app"
+clientapp = "privateer_ad.client_app:app"
+
+[tool.flwr.app.config]
+num-server-rounds = 5
+fraction-fit =1.0
+n_clients=8
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+[tool.flwr.federations.local-simulation]
+options.num-supernodes = 8
+options.backend.client-resources.num-cpus = 2 # Each ClientApp will get assigned n CPU core
+options.backend.client-resources.num-gpus = 0.2 # Each ClientApp will get n * 100% of each available GPU VRAM
+options.backend.init_args.num_cpus = 16 # Only expose N CPU to the simulation
+options.backend.init_args.num_gpus = 1 # Expose N GPUs to the simulation
+
+[tool.flwr.federations.local-deployment]
+address = "localhost:9099"
+insecure = true
