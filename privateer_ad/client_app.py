@@ -20,7 +20,6 @@ class SecAggFlowerClient(NumPyClient):
 
     def __init__(
             self,
-            model,
             trainer,
             evaluator,
             train_dl,
@@ -63,7 +62,6 @@ class SecAggFlowerClient(NumPyClient):
 
         # Track original epochs setting
         original_epochs = self.trainer.hparams.epochs
-
         try:
             # Set trainer to run for specified local epochs
             self.trainer.hparams.epochs = local_epochs
@@ -98,7 +96,7 @@ class SecAggFlowerClient(NumPyClient):
         self.set_parameters(parameters)
 
         # Evaluate the model
-        metrics, _ = self.evaluator.evaluate(self.trainer.model, self.test_dl)
+        metrics, figs = self.evaluator.evaluate(self.trainer.model, self.test_dl)
 
         # Get loss (or a default value if not available)
         loss = metrics.get("val_loss", 0.0)
@@ -126,6 +124,7 @@ def get_client_partition(data_processor, df, partition_config, client_id):
 
 def client_fn(context: Context):
     """Create and return a Flower client."""
+    # train(**context.run_config)
     # Create all components
     hparams = set_config(HParams, context.run_config)
     secagg_config = set_config(SecureAggregationConfig, context.run_config)
@@ -189,7 +188,6 @@ def client_fn(context: Context):
 
     # Initialize SecAgg client
     client = SecAggFlowerClient(
-        model=model,
         trainer=trainer,
         evaluator=evaluator,
         train_dl=train_dl,

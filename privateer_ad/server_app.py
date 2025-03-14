@@ -14,17 +14,26 @@ from privateer_ad.models import AttentionAutoencoder
 from privateer_ad.utils import set_config
 
 
+def make_config():
+    config = {}
+    config.update(HParams().__dict__)
+    config.update(AttentionAutoencoderConfig().__dict__)
+    config.update(DifferentialPrivacyConfig().__dict__)
+    config.update(SecureAggregationConfig().__dict__)
+    config.update(MLFlowConfig().__dict__)
+    return config
+
 def on_fit_config(server_round: int):
     """Generate training configuration for each round."""
     # Create the configuration dictionary
-    config = HParams().__dict__
+    config = make_config()
     config["current_round"] = server_round
     return config
 
 def on_evaluate_config(server_round: int):
     """Generate evaluation configuration for each round."""
     # Create the configuration dictionary
-    config = HParams().__dict__
+    config = make_config()
     config["current_round"] = server_round
     return config
 
@@ -51,19 +60,19 @@ app = ServerApp()
 def main(driver: Driver, context: Context) -> None:
     server_address: str = "[::]:8081"
     n_clients = context.run_config['n_clients']
-
-    mlflow_config = set_config(MLFlowConfig, context.run_config)
-    secagg_config = set_config(SecureAggregationConfig, context.run_config)
-    difprv_config = DifferentialPrivacyConfig()
-
+    config = make_config()
+    model_config = set_config(AttentionAutoencoderConfig, config)
+    dp_config = set_config(DifferentialPrivacyConfig, config)
+    secagg_config = set_config(SecureAggregationConfig, config)
+    mlflow_config = set_config(MLFlowConfig, config)
     # Configure MLflow if enabled
     if mlflow_config.track:
         mlflow.set_tracking_uri(mlflow_config.server_address)
         mlflow.set_experiment(mlflow_config.experiment_name)
-        mlflow.start_run(run_name=f"federated_secagg_{context.run_config['num-server-rounds']}_rounds")
+        mlflow.start_run(run_name=f"federated_{context.run_config['num-server-rounds']}_rounds")
 
     # Get initial parameters from the model
-    model = AttentionAutoencoder(AttentionAutoencoderConfig())
+    model = AttentionAutoencoder(model_config)
     initial_parameters = get_model_weights(model)
 
     # Define strategy
@@ -82,8 +91,8 @@ def main(driver: Driver, context: Context) -> None:
         config=ServerConfig(num_rounds=context.run_config['num-server-rounds']),
         strategy=DifferentialPrivacyClientSideFixedClipping(
             strategy=strategy,
-            noise_multiplier=difprv_config.noise_multiplier,
-            clipping_norm=difprv_config.max_grad_norm,
+            noise_multiplier=dp_config.noise_multiplier,
+            clipping_norm=dp_config.max_grad_norm,
             num_sampled_clients=n_clients)
     )
     # Configure SecAgg+ workflow
