@@ -41,7 +41,6 @@ logger = setup_logger()
 
 @dataclass
 class DifferentialPrivacyConfig:
-   enable: bool = False
    target_epsilon: float = 2.0
    target_delta: float = 1e-7
    max_grad_norm: float = 2.0

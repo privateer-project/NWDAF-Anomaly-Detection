@@ -3,15 +3,15 @@ from typing import Dict
 
 @dataclass
 class HParams:
-    epochs: int = 500
-    learning_rate: float = 0.001
+    model: str = 'AttentionAutoencoder'
     batch_size: int = 4096
     seq_len: int = 12
-    model: str = 'AttentionAutoencoder'
+    learning_rate: float = 0.001
+    epochs: int = 500
     loss: str = 'L1Loss'
+    early_stopping: bool = True
     target: str = 'val_loss'
     direction: str = 'minimize'
-    early_stopping: bool = True
     apply_dp: bool = False
     use_pca: bool = False
 
