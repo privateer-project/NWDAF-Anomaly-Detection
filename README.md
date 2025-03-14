@@ -21,21 +21,13 @@ venv\Scripts\activate  # For Windows
 
 ## 3. Install Requirements
 
-Install all dependencies from [requirements.txt](./requirements.txt):
+Install all dependencies from [pyproject.toml](pyproject.toml):
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-## 4. Set Up MLflow Tracking Server
-
-Install MLflow:
-
-```bash
-pip install mlflow
-```
-
-Run the MLflow server on port **5001**:
+## 4. Run the MLflow server on port **5001**:
 
 ```bash
 mlflow server --backend-store-uri sqlite:///mlflow.db \
@@ -46,7 +38,7 @@ mlflow server --backend-store-uri sqlite:///mlflow.db \
 
 ## 5. Configure Environment Variables
 
-In the [src/config](https://github.com/privateer-project/NWDAF-Anomaly-Detection/tree/dev/src/config) folder, create a `.env` file. Copy the content from `.env.example` (which should live in the same directory as your configuration files). Then update the `ROOT_DIR` variable to point to the **absolute path** of the project's [root directory](.).
+In the [config](https://github.com/privateer-project/NWDAF-Anomaly-Detection/tree/dev/privateer_ad/config) folder, create a `.env` file. Copy the content from `.env.example` (which should live in the same directory as your configuration files). Then update the `ROOT_DIR` variable to point to the **absolute path** of the project's [root directory](.).
 
 Here is an example of the variables to include:
 
@@ -88,13 +80,13 @@ Additional CUDA versions can be found on the [official PyTorch website](https://
 From the project's [root directory](.), run:
 
 ```bash
-PYTHONPATH=./ python src/data_utils/extract.py
+PYTHONPATH=./ python privateer_ad/data_utils/extract.py
 ```
 
 Followed by:
 
 ```bash
-PYTHONPATH=./ python src/data_utils/transform.py
+PYTHONPATH=./ python privateer_ad/data_utils/transform.py
 ```
 
 These commands will create a [data](./data) folder in the project root with [data/raw](./data/raw) and [data/processed](./data/processed) subfolders.
@@ -104,7 +96,7 @@ These commands will create a [data](./data) folder in the project root with [dat
 Finally, execute the training script from the [root directory](.):
 
 ```bash
-PYTHONPATH=./ python src/train/train.py
+PYTHONPATH=./ python privateer_ad/train/train.py
 ```
 
 MLflow will track experiments and store artifacts in the [mlruns](./mlruns) directory by default (or any path you configured).
