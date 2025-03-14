@@ -10,7 +10,7 @@ from evaluate.evaluator import ModelEvaluator
 from utils import set_config
 
 
-def main(model_path, **kwargs):
+def evaluate(model_path, **kwargs):
     hparams = set_config(HParams, kwargs)
     mlflow_config = set_config(MLFlowConfig, kwargs)
     dl = DataProcessor()
@@ -23,7 +23,6 @@ def main(model_path, **kwargs):
     model_config_class = getattr(config, f"{hparams.model}Config", None)
     if not model_config_class:
         raise ValueError(f"Config class not found for model: {hparams.model}")
-    # Load model checkpoint
     # Setup model
     model_config = set_config(getattr(config, f"{hparams.model}Config", None), kwargs)
     model_config.seq_len = hparams.seq_len
@@ -49,4 +48,4 @@ def main(model_path, **kwargs):
 
 if __name__ == '__main__':
     from fire import Fire
-    Fire(main)
+    Fire(evaluate)
