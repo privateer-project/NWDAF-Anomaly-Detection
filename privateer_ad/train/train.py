@@ -61,8 +61,8 @@ def train(**kwargs):
 
     # Setup model
     model_config = set_config(getattr(config, f"{hparams.model}Config", None), kwargs)
-    model_config.seq_len = hparams.seq_len
     model_config.input_size = sample.shape[-1]
+    model_config.seq_len = hparams.seq_len
     torch.serialization.add_safe_globals([getattr(models, hparams.model)])
     model = getattr(models, hparams.model)(model_config)
     model_summary = summary(model,
@@ -101,17 +101,16 @@ def train(**kwargs):
             target_epsilon=dp_config.target_epsilon,
             target_delta=dp_config.target_delta,
             max_grad_norm=dp_config.max_grad_norm,
-            # secure_mode=dp_config.secure_mode,
         )
         if mlflow.active_run():
             mlflow.log_params(dp_config.__dict__)
 
-    trainer = ModelTrainer(device=device,
-                           hparams=hparams,
-                           model=model.to(device),
+    trainer = ModelTrainer(model=model.to(device),
                            optimizer=optimizer,
-                           criterion=hparams.loss)
-
+                           criterion=hparams.loss,
+                           device=device,
+                           hparams=hparams
+                           )
     best_checkpoint = trainer.training(train_dl=train_dl, val_dl=val_dl)
     model.load_state_dict(best_checkpoint['model_state_dict'])
     torch.save(model.state_dict(), os.path.join(trial_dir, 'model.pt'))
