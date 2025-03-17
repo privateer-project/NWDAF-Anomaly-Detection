@@ -102,7 +102,7 @@ class ModelTrainer:
                 val_metrics = self._validation_loop(val_dl)
                 self.log_metrics(train_metrics | val_metrics, epoch)
                 current_val = self.metrics[self.hparams.target]
-                best_val = self.best_checkpoint['metrics']['best_' + self.hparams.target]
+                best_val = self.best_checkpoint['metrics'][self.hparams.target]
                 if self.hparams.direction == 'maximize':
                     is_best = current_val >= best_val
                 else:
