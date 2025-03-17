@@ -71,7 +71,7 @@ class ModelTrainer:
         self.best_checkpoint: Dict[str, Any] = {'epoch': 0,
                                                 'model_state_dict': self.model.state_dict(),
                                                 'optimizer_state_dict': self.optimizer.state_dict(),
-                                                'metrics': {'best_' + k: v for k, v in metrics.copy().items()}
+                                                'metrics': {k: v for k, v in metrics.copy().items()}
                                                 }
 
     def training(self, train_dl, val_dl):
