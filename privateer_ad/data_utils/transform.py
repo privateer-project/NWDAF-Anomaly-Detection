@@ -38,12 +38,12 @@ class DataProcessor:
 
         for device, device_info in self.devices.items():
             device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
-            logger.info(f'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'
-                  f' benign length: {len(device_df[device_df['attack'] == 0])}')
+            logger.info(f"'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'"
+                  f" benign length: {len(device_df[device_df['attack'] == 0])}")
             device_df.loc[device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 1
             device_df.loc[~device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 0
-            logger.info(f'After Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'
-                  f' benign length: {len(device_df[device_df['attack'] == 0])}')
+            logger.info(f"After Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])} "
+                        f"benign length: {len(device_df[device_df['attack'] == 0])}")
             df_train, df_tmp = train_test_split(device_df,
                                                 train_size=train_size,
                                                 stratify=device_df['attack_number'],
@@ -59,8 +59,8 @@ class DataProcessor:
         df_val = pd.concat(val_dfs)
         df_test = pd.concat(test_dfs)
         for i, df in enumerate([df_train, df_val, df_test]):
-            logger.info(f'Dataset {i} attack length: {len(df[df['attack'] == 1])}'
-                  f' benign length: {len(df[df['attack'] == 0])}')
+            logger.info(f"Dataset {i} attack length: {len(df[df['attack'] == 1])} "
+                        f"benign length: {len(df[df['attack'] == 0])}")
 
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
         [logger.info(f'{key} shape: {df.shape}') for key, df in datasets.items()]
@@ -149,7 +149,7 @@ class DataProcessor:
             if path in ('val', 'test'):
                 logger.error(f'Setup on {path} is not allowed.')
                 raise ValueError(f'Setup on {path} is not allowed.')
-            logger.warning(f'{'#' * 30} Scalers will be fitted on {path}. {'#' * 30}')
+            logger.warning(f"{'#' * 30} Scalers will be fitted on {path}. {'#' * 30}")
         if path in ('train', 'val', 'test'):
             path = get_dataset_path(path)
         try:

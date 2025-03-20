@@ -144,7 +144,8 @@ def train(**kwargs):
         for name, fig in figures.items():
             mlflow.log_figure(fig, f'{name}.png')
 
-    logger.info(f'Test metrics:\n{''.join([f'{key}: {value}\n' for key, value in test_report.items()])}')
+    metrics_logs = '\n'.join([f'{key}: {value}' for key, value in test_report.items()])
+    logger.info(f"Test metrics:\n{metrics_logs}")
     if mlflow.active_run():
         mlflow.end_run()
     return test_report
