@@ -5,10 +5,10 @@ import torch
 from torch import nn
 from tqdm import tqdm
 
-from config import AttentionAutoencoderConfig, PathsConf, HParams
-from evaluate.evaluator import ModelEvaluator
-from models import AttentionAutoencoder
-from data_utils.transform import DataProcessor
+from privateer_ad.config import AttentionAutoencoderConfig, PathsConf, HParams
+from privateer_ad.evaluate.evaluator import ModelEvaluator
+from privateer_ad.models import AttentionAutoencoder
+from privateer_ad.data_utils.transform import DataProcessor
 
 def make_predictions(
         model,
@@ -78,16 +78,16 @@ if __name__ == '__main__':
     batch_size = hparams.batch_size
     seq_len = hparams.seq_len
     use_pca = hparams.use_pca
-    dl = dp.get_dataloader(paths.raw_dataset,
+    dl = dp.get_dataloader('val',
                            use_pca=use_pca,
                            batch_size=batch_size,
                            seq_len=seq_len,
                            only_benign=False)
 
     # Load model
-    model_path = paths.experiments_dir.joinpath('20250312-180942').joinpath('model.pt')
+    model_path = paths.experiments_dir.joinpath('20250313-114045').joinpath('model.pt')
     trained_model = AttentionAutoencoder(config=AttentionAutoencoderConfig())
-    model_state_dict = torch.load(model_path)
+    model_state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     trained_model.load_state_dict(model_state_dict)
     trained_model = trained_model.to(device)
 
@@ -97,3 +97,9 @@ if __name__ == '__main__':
         criterion_fn=getattr(nn, criterion)(reduction='none'),
         threshold=threshold,
     )
+
+    print(inputs) # [[[-0.72621727 -0.5796423  -0.71206337 ... -0.76596683 -0.87546867
+    print(losses) #  [0.01801082 0.01814457 0.0181863  ... 0.01919543 0.01885694 0.01860643]
+
+    print(predictions) # [False False False ... False False False]
+    print(labels) # [0 0 0 ... 0 0 0]

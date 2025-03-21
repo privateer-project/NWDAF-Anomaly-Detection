@@ -68,6 +68,10 @@ def train(**kwargs):
     model_summary = summary(model,
                             input_data=sample,
                             col_names=('input_size', 'output_size', 'num_params', 'params_percent'))
+    if hparams.apply_dp:
+        from opacus.validators import ModuleValidator
+        model = ModuleValidator.fix(model)
+
     if mlflow.active_run():
         mlflow.log_text(str(model_summary), 'model_summary.txt')
         mlflow.log_params(model_config.__dict__)
@@ -86,13 +90,10 @@ def train(**kwargs):
     # Initialize differential privacy
     if hparams.apply_dp:
         from opacus import PrivacyEngine
-        from opacus.validators import ModuleValidator
-
         dp_config = set_config(DifferentialPrivacyConfig, kwargs)
         logger.info('Differential Privacy enabled.')
         privacy_engine = PrivacyEngine(accountant="rdp", secure_mode=dp_config.secure_mode)
-        # model = ModuleValidator.fix(model)
-        ModuleValidator.validate(model)
+        # ModuleValidator.validate(model)
         model, optimizer, train_dl = privacy_engine.make_private_with_epsilon(
             module=model,
             optimizer=optimizer,

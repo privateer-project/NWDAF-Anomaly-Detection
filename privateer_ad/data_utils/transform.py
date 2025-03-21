@@ -205,7 +205,6 @@ class DataProcessor:
                 df = df[df['attack'] == 0]
             else:
                 logger.warning('Cannot get benign data. No column named `attack` in dataset.')
-        print('after if only_benign df.shape', df.shape)
         df = df.sort_values(by=['_time'])
         if use_pca:
             input_columns = [column for column in df.columns if column.startswith('pca')]
