@@ -104,7 +104,7 @@ def main(driver: Driver, context: Context) -> None:
     # Execute workflow
 
     flwr.common.logger.FLOWER_LOGGER.info(f'Starting Flower server with SecAgg+ at {server_address}')
-    flwr.common.logger.FLOWER_LOGGER.info(f'Server will run for {context.run_config['num-server-rounds']} rounds')
+    flwr.common.logger.FLOWER_LOGGER.info(f'Server will run for {context.run_config["num-server-rounds"]} rounds')
     flwr.common.logger.FLOWER_LOGGER.info(f'Minimum clients per round: {n_clients}')
     flwr.common.logger.FLOWER_LOGGER.info(f'SecAgg+ config: {secagg_config.num_shares} shares\n'
                                           f'{secagg_config.reconstruction_threshold} reconstruction threshold')
