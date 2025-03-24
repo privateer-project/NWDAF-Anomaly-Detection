@@ -4,16 +4,15 @@ import numpy as np
 import torch
 from torch import nn
 from tqdm import tqdm
-
+from fire import Fire
+from sklearn.metrics import classification_report
 from privateer_ad.config import AttentionAutoencoderConfig, PathsConf, HParams
-from privateer_ad.evaluate.evaluator import ModelEvaluator
 from privateer_ad.models import AttentionAutoencoder
 from privateer_ad.data_utils.transform import DataProcessor
 
 def make_predictions(
-        model,
-        dataloader,
-        criterion_fn,
+        modelpath,
+        datapath,
         threshold: float
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -21,11 +20,9 @@ def make_predictions(
     Parameters:
     -----------
     model_path : str
-        Path to the saved model state dictionary.
+        Path to the saved model state dictionary or the experiment directory (eg. '20250317-100421').
     data_path : str
-        Path to the CSV file containing the data to evaluate.
-    criterion : str
-        Name of the PyTorch loss function to use for reconstruction error calculation.
+        Path to the CSV file containing the data to evaluate or 'train', 'val', 'test' for prepared datasets.
     threshold : float
         Precalculated threshold.
     Returns:
@@ -36,16 +33,37 @@ def make_predictions(
         - labels: Array of shape (n_samples,) containing integer labels
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    paths = PathsConf()
+    hparams = HParams()
+
+    if paths.experiments_dir.joinpath(modelpath).exists():
+        modelpath = paths.experiments_dir.joinpath(modelpath).joinpath('model.pt')
+
+    # Load Data
+    dp = DataProcessor()
+    dl = dp.get_dataloader(datapath,
+                           use_pca=hparams.use_pca,
+                           batch_size=hparams.batch_size,
+                           seq_len=hparams.seq_len,
+                           only_benign=False)
+
+    # Load model
+    model = AttentionAutoencoder(config=AttentionAutoencoderConfig())
+    state_dict = torch.load(modelpath, map_location=torch.device('cpu'))
+    state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
+    model.load_state_dict(state_dict)
+    model = model.to(device)
+
     model.to(device)
     inputs: List[float] = []
     losses: List[float] = []
     predictions: List[int] = []
     labels: List[int] = []
-
+    criterion_fn = getattr(nn, hparams.loss)(reduction='none')
     model.eval()
 
     with torch.no_grad(): # Collect results
-        for batch in tqdm(dataloader, desc="Computing reconstruction errors"):
+        for batch in tqdm(dl, desc="Computing reconstruction errors"):
             x = batch[0]['encoder_cont'].to(device)
             targets = np.squeeze(batch[1][0])
             labels.extend(targets.cpu().tolist())
@@ -59,47 +77,27 @@ def make_predictions(
             inputs.extend(x.cpu().tolist())
             predictions.extend((loss_per_sample > threshold).cpu().tolist())
 
-    return np.asarray(inputs), np.array(losses), np.asarray(predictions), np.array(labels, dtype=int)
+    inputs_np = np.asarray(inputs)
+    losses_np = np.array(losses)
+    predictions_np = np.asarray(predictions)
+    labels_np = np.array(labels, dtype=int)
 
-if __name__ == '__main__':
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Keep same n samples for balanced metrics
+    ben_labels = labels_np[labels_np == 0]
+    ben_predictions = predictions_np[labels_np == 0]
 
-    paths = PathsConf()
-    dp = DataProcessor()
-    hparams = HParams()
-    threshold = 0.026970019564032555
+    mal_labels = labels_np[labels_np == 1]
+    mal_predictions = predictions_np[labels_np == 1]
 
-    criterion = hparams.loss
-    criterion_fn = getattr(nn, criterion)(reduction='none')
+    _len = len(mal_labels)
+    ben_labels = ben_labels[:_len]
+    ben_predictions = ben_predictions[:_len]
+    mal_labels = mal_labels[:_len]
+    mal_predictions = mal_predictions[:_len]
+    labels = np.concatenate([ben_labels, mal_labels])
+    predictions = np.concatenate([ben_predictions, mal_predictions])
+    print(classification_report(labels, predictions))
+    return inputs_np, losses_np, predictions_np, labels_np
 
-    evaluator = ModelEvaluator(criterion=criterion,
-                               device=device)
-
-    batch_size = hparams.batch_size
-    seq_len = hparams.seq_len
-    use_pca = hparams.use_pca
-    dl = dp.get_dataloader('val',
-                           use_pca=use_pca,
-                           batch_size=batch_size,
-                           seq_len=seq_len,
-                           only_benign=False)
-
-    # Load model
-    model_path = paths.experiments_dir.joinpath('20250313-114045').joinpath('model.pt')
-    trained_model = AttentionAutoencoder(config=AttentionAutoencoderConfig())
-    model_state_dict = torch.load(model_path, map_location=torch.device('cpu'))
-    trained_model.load_state_dict(model_state_dict)
-    trained_model = trained_model.to(device)
-
-    inputs, losses, predictions, labels = make_predictions(
-        model=trained_model,
-        dataloader=dl,
-        criterion_fn=getattr(nn, criterion)(reduction='none'),
-        threshold=threshold,
-    )
-
-    print(inputs) # [[[-0.72621727 -0.5796423  -0.71206337 ... -0.76596683 -0.87546867
-    print(losses) #  [0.01801082 0.01814457 0.0181863  ... 0.01919543 0.01885694 0.01860643]
-
-    print(predictions) # [False False False ... False False False]
-    print(labels) # [0 0 0 ... 0 0 0]
+def main():
+    Fire(make_predictions)
