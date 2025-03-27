@@ -1,0 +1,15 @@
+artifact_uri: mlflow-artifacts:/304908286791224575/924cff160b844c1bb25fb0a04e0d76da/artifacts
+end_time: 1741862105240
+entry_point_name: ''
+experiment_id: '304908286791224575'
+lifecycle_stage: active
+run_id: 924cff160b844c1bb25fb0a04e0d76da
+run_name: local_trained_model_with_differential_privacy
+run_uuid: 924cff160b844c1bb25fb0a04e0d76da
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1741858845964
+status: 3
+tags: []
+user_id: giorgos
