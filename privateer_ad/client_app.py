@@ -51,34 +51,21 @@ class SecAggFlowerClient(NumPyClient):
 
     def fit(self, parameters, config):
         """Train model on local data with secure aggregation."""
-        server_round = config.get("server_round", 0)
+        server_round = config.get('server_round', 0)
         logger.info(f"Client {self.client_id}: Starting round {server_round} training with SecAgg+")
 
         # Set received parameters
         self.set_parameters(parameters)
 
-        # Get local epochs from config
-        local_epochs = config.get("local_epochs", 1)
+        # Perform training
+        best_checkpoint = self.trainer.training(self.train_dl, self.val_dl)
 
-        # Track original epochs setting
-        original_epochs = self.trainer.hparams.epochs
-        try:
-            # Set trainer to run for specified local epochs
-            self.trainer.hparams.epochs = local_epochs
+        # Load best model from checkpoint
+        self.trainer.model.load_state_dict(best_checkpoint['model_state_dict'])
 
-            # Perform training
-            best_checkpoint = self.trainer.training(self.train_dl, self.val_dl)
-
-            # Load best model from checkpoint
-            self.trainer.model.load_state_dict(best_checkpoint['model_state_dict'])
-
-            # Calculate metrics
-            metrics = {k: v for k, v in best_checkpoint['metrics'].items() if not k.startswith('best_')}
-            logger.info(f"Client {self.client_id}: Training completed with metrics: {metrics}")
-
-        finally:
-            # Restore original epochs setting
-            self.trainer.hparams.epochs = original_epochs
+        # Calculate metrics
+        metrics = {k: v for k, v in best_checkpoint['metrics'].items()}
+        logger.info(f"Client {self.client_id}: Training completed with metrics: {metrics}")
 
         # Get updated model parameters
         updated_parameters = self.get_parameters(config)
@@ -108,27 +95,16 @@ class SecAggFlowerClient(NumPyClient):
         return float(loss), num_examples, metrics
 
 
-def get_client_partition(data_processor, df, partition_config, client_id):
-    """Get data partition for specific client."""
-    # If partition_id is not specified, use client_id
-    partition_id = partition_config.partition_id if partition_config.partition_id != 0 else client_id
-
-    # Get partition using client's partition ID
-    return data_processor.get_partition(
-        df,
-        partition_id=partition_id,
-        num_partitions=partition_config.num_partitions,
-        num_classes_per_partition=partition_config.num_classes_per_partition
-    )
-
-
 def client_fn(context: Context):
     """Create and return a Flower client."""
     # train(**context.run_config)
     # Create all components
     hparams = set_config(HParams, context.run_config)
+
     secagg_config = set_config(SecureAggregationConfig, context.run_config)
+    logger.info(f"CLIENT_FN CONTEXT: {context}")
     client_id = context.node_config.get("partition-id", 0)
+    num_partitions = context.node_config.get('num-partitions', 1)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Client {client_id}: Using device: {device}")
 
@@ -139,18 +115,21 @@ def client_fn(context: Context):
                                              use_pca=hparams.use_pca,
                                              batch_size=hparams.batch_size,
                                              partition_id=client_id,
+                                             num_partitions=num_partitions,
                                              seq_len=hparams.seq_len,
                                              only_benign=True)
     val_dl = data_processor.get_dataloader('val',
                                            use_pca=hparams.use_pca,
                                            batch_size=hparams.batch_size,
                                            partition_id=client_id,
+                                           num_partitions=num_partitions,
                                            seq_len=hparams.seq_len,
                                            only_benign=True)
     test_dl = data_processor.get_dataloader('test',
                                             use_pca=hparams.use_pca,
                                             batch_size=hparams.batch_size,
                                             partition_id=client_id,
+                                            num_partitions=num_partitions,
                                             seq_len=hparams.seq_len,
                                             only_benign=False)
 
