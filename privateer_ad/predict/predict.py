@@ -9,11 +9,12 @@ from sklearn.metrics import classification_report
 from privateer_ad.config import AttentionAutoencoderConfig, PathsConf, HParams
 from privateer_ad.models import AttentionAutoencoder
 from privateer_ad.data_utils.transform import DataProcessor
+from pathlib import Path
 
 def make_predictions(
-        modelpath,
-        datapath,
-        threshold: float
+        model_path,
+        data_path,
+        threshold: float = 0.026970019564032555
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load a trained model and make predictions on the specified dataset.
@@ -36,12 +37,13 @@ def make_predictions(
     paths = PathsConf()
     hparams = HParams()
 
-    if paths.experiments_dir.joinpath(modelpath).exists():
-        modelpath = paths.experiments_dir.joinpath(modelpath).joinpath('model.pt')
+    model_path = Path(model_path)
+    if paths.experiments_dir.joinpath(model_path).exists():
+        model_path = paths.experiments_dir.joinpath(model_path)
 
     # Load Data
     dp = DataProcessor()
-    dl = dp.get_dataloader(datapath,
+    dl = dp.get_dataloader(data_path,
                            use_pca=hparams.use_pca,
                            batch_size=hparams.batch_size,
                            seq_len=hparams.seq_len,
@@ -49,7 +51,7 @@ def make_predictions(
 
     # Load model
     model = AttentionAutoencoder(config=AttentionAutoencoderConfig())
-    state_dict = torch.load(modelpath, map_location=torch.device('cpu'))
+    state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
     model.load_state_dict(state_dict)
     model = model.to(device)
