@@ -4,6 +4,7 @@ from pathlib import Path
 import joblib
 
 import pandas as pd
+import numpy as np
 from pandas import DataFrame
 from datasets import Dataset
 from pytorch_forecasting import TimeSeriesDataSet
@@ -37,7 +38,8 @@ class DataProcessor:
         test_dfs = []
 
         for device, device_info in self.devices.items():
-            device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
+            device_df = df.loc[df['cell_id'] == int(device_info.cell_id)]
+            # device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
             logger.info(f"'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'"
                   f" benign length: {len(device_df[device_df['attack'] == 0])}")
             device_df.loc[device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 1
@@ -143,7 +145,8 @@ class DataProcessor:
                         path: str | Path,
                         use_pca: bool=False,
                         n_components=None,
-                        partition_id=None,
+                        partition_id=0,
+                        num_partitions=1,
                         setup=False) -> DataFrame:
         if setup:
             if path in ('val', 'test'):
@@ -156,8 +159,12 @@ class DataProcessor:
             df = pd.read_csv(path, low_memory=False)
         except FileNotFoundError:
             raise FileNotFoundError(f"File {path} not found.")
-        if partition_id is not None:
-            df = self.get_partition(df, partition_id, num_partitions=len(self.devices))
+        # print(num_partitions)
+        # print(df.shape)
+        # print(partition_id)
+        df = self.get_partition(df,
+                                 partition_id=partition_id,
+                                 num_partitions=num_partitions)
         df = self.clean_data(df)
         if setup:
             self.setup_scaler(df)
@@ -169,14 +176,24 @@ class DataProcessor:
         df = df.sort_values('_time').reset_index(drop=True)
         return df
 
-    def get_partition(self, df: DataFrame, partition_id, num_partitions) -> DataFrame:
+    def get_partition(self, df: DataFrame, partition_id=0, num_partitions=1) -> DataFrame:
         """Partition data based on provided configuration."""
+        if num_partitions == 1:
+             num_classes_per_partition = 3
+            #  num_classes_per_partition = len(self.devices)
+        elif num_partitions == 3:
+        # elif num_partitions == len(self.devices):
+            num_classes_per_partition = 1
+        else:
+            num_classes_per_partition = 3 // num_partitions
+            # num_classes_per_partition = len(self.devices) // num_partitions
         if self.partitioner is None:
             self.partitioner = PathologicalPartitioner(
                 num_partitions=num_partitions,
-                num_classes_per_partition=1,
-                partition_by='imeisv',
-                class_assignment_mode='random')
+                num_classes_per_partition=num_classes_per_partition,
+                partition_by='cell_id',
+                # partition_by='imeisv',
+                class_assignment_mode='first-deterministic')
             self.partitioner.dataset = Dataset.from_pandas(df)
         partitioned_df = self.partitioner.load_partition(partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
@@ -186,7 +203,8 @@ class DataProcessor:
                        use_pca,
                        batch_size,
                        seq_len,
-                       partition_id=None,
+                       partition_id=0,
+                       num_partitions=1,
                        only_benign=False) -> DataLoader:
 
         """Get train, validation and test dataloaders."""
@@ -199,7 +217,11 @@ class DataProcessor:
 
         logger.info('Loading datasets...')
 
-        df = self.preprocess_data(path, use_pca, partition_id=partition_id, setup=False)
+        df = self.preprocess_data(path,
+                                   use_pca,
+                                   partition_id=partition_id,
+                                   num_partitions=num_partitions,
+                                   setup=False)
         if only_benign:
             if 'attack' in df.columns:
                 df = df[df['attack'] == 0]
@@ -210,11 +232,14 @@ class DataProcessor:
             input_columns = [column for column in df.columns if column.startswith('pca')]
         else:
             input_columns = self.input_features
-        df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
+        df['time_idx'] = df.groupby('cell_id')['_time'].cumcount()
+        # df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
+        # df.to_csv(f"our_df_with_id_{partition_id}_and_path_id_{path}") # Uncomment when used once, not needed to run for all models as should be same data
         dataloader = TimeSeriesDataSet(data=df,
                                        time_idx='time_idx',
                                        target='attack',
-                                       group_ids=['imeisv'],
+                                       group_ids=['cell_id'],
+                                    #    group_ids=['imeisv'],
                                        max_encoder_length=seq_len,
                                        max_prediction_length=1,
                                        time_varying_unknown_reals=input_columns,
