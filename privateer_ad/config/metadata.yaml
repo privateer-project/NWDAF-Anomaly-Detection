@@ -362,6 +362,6 @@ features:
     process: [ ]
   cell_id:
     dtype: 'string'
-    drop: true
+    drop: false
     is_input: false
     process: [ ]

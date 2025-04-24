@@ -7,7 +7,7 @@ class HParams:
     batch_size: int = 4096
     seq_len: int = 12
     learning_rate: float = 0.001
-    epochs: int = 500
+    epochs: int = 1  # 50 epochs * 10 aggs --> 500 epochs \approx 500 epochs used on models without FL
     loss: str = 'L1Loss'
     early_stopping: bool = True
     target: str = 'val_loss'

@@ -41,7 +41,7 @@ logger = setup_logger()
 
 @dataclass
 class DifferentialPrivacyConfig:
-   target_epsilon: float = 2.0
+   target_epsilon: float = 10.0  # Changed from 2 to 10
    target_delta: float = 1e-7
    max_grad_norm: float = 2.0
    noise_multiplier: float = 0.2

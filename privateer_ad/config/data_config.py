@@ -7,6 +7,7 @@ from privateer_ad.config.other_configs import PathsConf
 @dataclass
 class DeviceInfo:
    imeisv: str
+   # cell_id: str  # Want to use this, as makes sense in an FL settting, but need to configure metadata.yaml properly to do so... (devices must be related to cell_id, not imeisv)
    ip: str
    type: str
    malicious: bool
