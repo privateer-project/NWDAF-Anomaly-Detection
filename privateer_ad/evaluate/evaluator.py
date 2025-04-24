@@ -50,7 +50,8 @@ class ModelEvaluator:
                                            target_names=target_names,
                                            output_dict=True)
         final_report = {'threshold': threshold,
-                        'roc_auc': roc_auc_score(y_true=y_true, y_score=rec_errors)}
+                        'roc_auc': roc_auc_score(y_true=y_true, y_score=rec_errors),
+                        'acc': np.mean(y_true==y_pred)}
         final_report.update(clf_report['macro avg'])
         return final_report
 
