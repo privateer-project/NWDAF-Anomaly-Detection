@@ -13,25 +13,34 @@ from privateer_ad.utils import set_config
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
 
-
 def train(**kwargs):
     # Initialize project paths
     paths = PathsConf()
 
     # Setup mlflow
     mlflow_config = set_config(MLFlowConfig, kwargs)
+
+    
     if mlflow_config.track:
+
         mlflow.set_tracking_uri(mlflow_config.server_address)
         mlflow.set_experiment(mlflow_config.experiment_name)
         mlflow.start_run(run_name=kwargs.get('run_name', datetime.now().strftime("%Y%m%d-%H%M%S")),
                          nested=mlflow.active_run() is not None)
 
-    # Setup trial dir
-    trial_dir = os.path.join(paths.experiments_dir, mlflow.active_run().info.run_name)
-    os.makedirs(os.path.join(trial_dir), exist_ok=True)
 
+    # Setup trial dir
+    if mlflow.active_run():
+        trial_dir = os.path.join(paths.experiments_dir, mlflow.active_run().info.run_name)
+    else:
+        trial_dir = os.path.join(paths.experiments_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))
+        
+    os.makedirs(os.path.join(trial_dir), exist_ok=True)
+    
     # Setup device to run training
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
     if mlflow.active_run():
         mlflow.log_params({'device': device})
 
@@ -86,7 +95,7 @@ def train(**kwargs):
                                                             **optimizer_config.params)
     if mlflow.active_run():
         mlflow.log_params(optimizer_config.__dict__)
-
+    print(3)
     # Initialize differential privacy
     if hparams.apply_dp:
         from opacus import PrivacyEngine
@@ -112,9 +121,11 @@ def train(**kwargs):
                            device=device,
                            hparams=hparams
                            )
+    print(4)
     best_checkpoint = trainer.training(train_dl=train_dl, val_dl=val_dl)
     model.load_state_dict(best_checkpoint['model_state_dict'])
     torch.save(model.state_dict(), os.path.join(trial_dir, 'model.pt'))
+    print(5)
     if mlflow.active_run():
         mlflow.log_metrics({key: value for key, value in best_checkpoint['metrics'].items()})
         if hparams.apply_dp:
@@ -154,3 +165,8 @@ def train(**kwargs):
 def main():
     from fire import Fire
     Fire(train)
+
+# Using the special variable 
+# __name__
+if __name__=="__main__":
+    main()

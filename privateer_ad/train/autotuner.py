@@ -1,8 +1,9 @@
 import optuna
 
-from train.train import train
-from utils import set_config
-from config import AutotuneConfig, logger
+from privateer_ad.config.hparams_config import AutotuneParams
+from privateer_ad.train.train import train
+from privateer_ad.utils import set_config
+from privateer_ad.config import AutotuneConfig, logger
 
 
 class ModelAutoTuner:
@@ -27,21 +28,42 @@ class ModelAutoTuner:
             load_if_exists=True
         )
 
-    @staticmethod
-    def set_params(trial: optuna.Trial):
-        logger.info(f'Setting parameters for trial {trial.number}.')
-        autotune_params = {'seq_len': trial.suggest_int('seq_len', 1, 60),
-                           'd_model': trial.suggest_categorical('d_model', [16, 32, 64, 128]),
-                           'nhead': trial.suggest_categorical('nhead', [1, 2, 4, 8]),
-                           'num_layers': trial.suggest_int('num_layers', 1, 6),
-                           'dropout': trial.suggest_float('dropout', 0.0, 0.35),
-                           'run_name': '-'.join(['trial', str(trial.number)])}
-        autotune_params.update(autotune_params)
-        return autotune_params
-
     def objective(self, trial: optuna.Trial) -> float:
         """Objective function for optimization."""
-        self.kwargs.update(self.set_params(trial))
+        logger.info(f'Setting parameters for trial {trial.number}.')
+        for param in AutotuneParams.params:
+            suggest = trial.__getattribute__(f"suggest_{param.type}")
+            if param.type == 'float':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      low=param.low,
+                                                                      high=param.high,
+                                                                      step=param.step,
+                                                                      log=param.log)
+            elif param.type == 'uniform':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      low=param.low,
+                                                                      high=param.high)
+            elif param.type == 'loguniform':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      low=param.low,
+                                                                      high=param.high)
+            elif param.type == 'discrete_uniform':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      low=param.low,
+                                                                      high=param.high,
+                                                                      q=param.q)
+            elif param.type == 'int':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      low=param.low,
+                                                                      high=param.high,
+                                                                      step=param.step,
+                                                                      log=param.log)
+            elif param.type == 'categorical':
+                self.__getattribute__('kwargs')[param.name] = suggest(name=param.name,
+                                                                      choices=param.choices)
+            else:
+                raise NotImplementedError(f'Parameter type `{param.type}`not implemented.')
+        self.__getattribute__('kwargs')['run_name'] = '-'.join(['trial', str(trial.number)])
         report = train(**self.kwargs)
         return report[self.autotune_config.target]
 
@@ -54,12 +76,12 @@ class ModelAutoTuner:
             timeout=self.autotune_config.timeout,
             show_progress_bar=True
         )
-        print("Best trial:")
+        logger.info("Best trial:")
         trial = self.study.best_trial
-        print(f"  Value: {trial.value:.5f}")
-        print("  Params: ")
+        logger.info(f"  Value: {trial.value:.5f}")
+        logger.info("  Params: ")
         for key, value in trial.params.items():
-            print(f"    {key}: {value}")
+            logger.info(f"    {key}: {value}")
 
         param_importance_fig = optuna.visualization.plot_param_importances(self.study)
         optimization_hist_fig = optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target)

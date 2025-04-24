@@ -37,6 +37,10 @@ def setup_logger():
     lgr.addHandler(file_handler)
     return lgr
 
+def _str2bool(value):
+    return str(value).lower() in {"1", "true", "yes", "on"}
+
+
 logger = setup_logger()
 
 @dataclass
@@ -49,7 +53,7 @@ class DifferentialPrivacyConfig:
 
 @dataclass
 class MLFlowConfig:
-   track: bool = True
+   track: bool = _str2bool(os.environ.get('MLFLOW_ENABLE_TRACKING', True))
    server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
 
