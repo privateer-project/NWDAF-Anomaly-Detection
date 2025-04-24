@@ -62,18 +62,20 @@ serverapp = "privateer_ad.server_app:app"
 clientapp = "privateer_ad.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 5
-fraction-fit =1.0
-n_clients=8
+num-server-rounds = 100 # --> 10 round of aggregation/training of local training for each node
+fraction-fit = 1.0  
+n_clients = 3
+max_grad_norm = 2.0
+noise_multiplier = 0.2
 
 [tool.flwr.federations]
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 8
-options.backend.client-resources.num-cpus = 2 # Each ClientApp will get assigned n CPU core
-options.backend.client-resources.num-gpus = 0.2 # Each ClientApp will get n * 100% of each available GPU VRAM
-options.backend.init_args.num_cpus = 16 # Only expose N CPU to the simulation
+options.num-supernodes = 3
+options.backend.client-resources.num-cpus = 9 # Each ClientApp will get assigned n CPU core
+options.backend.client-resources.num-gpus = 0.33 # Each ClientApp will get n * 100% of each available GPU VRAM
+options.backend.init_args.num_cpus = 30 # Only expose N CPU to the simulation
 options.backend.init_args.num_gpus = 1 # Expose N GPUs to the simulation
 
 [tool.flwr.federations.local-deployment]
