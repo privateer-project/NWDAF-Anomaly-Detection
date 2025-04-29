@@ -45,10 +45,10 @@ logger = setup_logger()
 
 @dataclass
 class DifferentialPrivacyConfig:
-   target_epsilon: float = 2.0
-   target_delta: float = 1e-7
-   max_grad_norm: float = 2.0
-   noise_multiplier: float = 0.2
+   target_epsilon: float = 2.0     # This value is eventually used to compute the noise_multiplier used client-side through opacus.make_private_with_epsilon(...)
+   target_delta: float = 1e-7      # This value is eventually used to compute the noise_multiplier used client-side through opacus.make_private_with_epsilon(...)
+   max_grad_norm: float = 2.0      # This value is only used client-side, but is set both to DifferentialPrivacyClientSideFixedClipping *and* opacus.make_private_with_epsilon(...)
+   noise_multiplier: float = 0.2   # This value is only used client-side and is used as input to DifferentialPrivacyClientSideFixedClipping
    secure_mode: bool = False
 
 @dataclass
