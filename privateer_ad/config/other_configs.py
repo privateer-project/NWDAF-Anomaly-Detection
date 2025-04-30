@@ -37,6 +37,10 @@ def setup_logger():
     lgr.addHandler(file_handler)
     return lgr
 
+def _str2bool(value):
+    return str(value).lower() in {"1", "true", "yes", "on"}
+
+
 logger = setup_logger()
 
 @dataclass

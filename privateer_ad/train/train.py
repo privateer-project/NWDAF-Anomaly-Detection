@@ -20,18 +20,13 @@ def train(**kwargs):
     
     # Setup mlflow
     mlflow_config = set_config(MLFlowConfig, kwargs)
-
-    
     if mlflow_config.track:
-
         mlflow.set_tracking_uri(mlflow_config.server_address)
         print(1.3)
         mlflow.set_experiment(mlflow_config.experiment_name)
         print(1.4)
         mlflow.start_run(run_name=kwargs.get('run_name', datetime.now().strftime("%Y%m%d-%H%M%S")),
                          nested=mlflow.active_run() is not None)
-        print(1.5)
-
 
 
     # Setup trial dir

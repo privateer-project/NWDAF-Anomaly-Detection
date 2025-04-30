@@ -22,8 +22,13 @@ from sklearn.metrics import classification_report
 
 from privateer_ad.config import AlertFilterConfig, PathsConf, logger
 from privateer_ad.models import AlertFilterModel
+<<<<<<< HEAD
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
 from privateer_ad.train_alert_filter.alert_filter_trainer import AlertFilterTrainer
+=======
+from privateer_ad.train.feedback_collector import FeedbackCollector
+from privateer_ad.train.alert_filter_trainer import AlertFilterTrainer
+>>>>>>> c7411fd18bf05e20473804486ae34226394eaaa1
 from privateer_ad.predict.predict import make_predictions, make_predictions_with_filter
 
 def main():

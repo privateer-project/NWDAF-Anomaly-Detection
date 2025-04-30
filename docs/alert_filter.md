@@ -54,7 +54,11 @@ inputs, latents, losses, anomaly_decisions, filtered_decisions = make_prediction
 ### Collecting Feedback
 
 ```python
+<<<<<<< HEAD
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
+=======
+from privateer_ad.train.feedback_collector import FeedbackCollector
+>>>>>>> c7411fd18bf05e20473804486ae34226394eaaa1
 
 # Initialize feedback collector
 feedback_collector = FeedbackCollector()
@@ -77,7 +81,11 @@ print(f"False positives: {stats['false_positives']}")
 ### Training the Alert Filter Model
 
 ```python
+<<<<<<< HEAD
 from privateer_ad.train_alert_filter.alert_filter_trainer import AlertFilterTrainer
+=======
+from privateer_ad.train.alert_filter_trainer import AlertFilterTrainer
+>>>>>>> c7411fd18bf05e20473804486ae34226394eaaa1
 from privateer_ad.config import AlertFilterConfig
 
 # Initialize trainer with default configuration
