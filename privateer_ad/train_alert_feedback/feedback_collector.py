@@ -1,0 +1,171 @@
+import os
+import json
+import torch
+import numpy as np
+from pathlib import Path
+from typing import Dict, List, Union, Optional
+from datetime import datetime
+
+from privateer_ad.config import PathsConf, logger
+
+class FeedbackCollector:
+    """
+    Collects and manages user feedback for the alert filter model.
+    
+    This class handles storing and retrieving user feedback on alerts,
+    which is used to train the alert filter model to reduce false positives.
+    
+    Attributes:
+        storage_path (Path): Path to the directory where feedback data is stored
+        feedback_data (Dict): Dictionary containing feedback data
+    """
+    
+    def __init__(self, storage_path: Optional[Path] = None):
+        """
+        Initialize the feedback collector.
+        
+        Args:
+            storage_path (Path, optional): Path to the directory where feedback data is stored.
+                If None, uses the default path from PathsConf.
+        """
+        paths = PathsConf()
+        self.storage_path = storage_path or paths.root.joinpath('feedback_data')
+        self.storage_file = self.storage_path.joinpath('feedback.json')
+        
+        self.feedback_data = {
+            'latent': [],
+            'anomaly_decision': [],
+            'reconstruction_error': [],
+            'user_feedback': []  # 1 = true positive (allow), 0 = false positive (deny)
+        }
+        
+        # Create storage directory if it doesn't exist
+        os.makedirs(self.storage_path, exist_ok=True)
+        
+        # Load existing data if available
+        self._load_existing_data()
+        
+    def _load_existing_data(self):
+        """Load existing feedback data from storage."""
+        if self.storage_file.exists():
+            try:
+                with open(self.storage_file, 'r') as f:
+                    data = json.load(f)
+                
+                # Convert lists to numpy arrays for easier processing
+                self.feedback_data = {
+                    'latent': [np.array(x) for x in data.get('latent', [])],
+                    'anomaly_decision': np.array(data.get('anomaly_decision', [])).tolist(),
+                    'reconstruction_error': np.array(data.get('reconstruction_error', [])).tolist(),
+                    'user_feedback': np.array(data.get('user_feedback', [])).tolist()
+                }
+                
+                logger.info(f"Loaded {len(self.feedback_data['user_feedback'])} feedback entries")
+            except Exception as e:
+                logger.error(f"Error loading feedback data: {e}")
+                # Initialize with empty data if loading fails
+                self.feedback_data = {
+                    'latent': [],
+                    'anomaly_decision': [],
+                    'reconstruction_error': [],
+                    'user_feedback': []
+                }
+    
+    def _save_data(self):
+        """Save feedback data to storage."""
+        try:
+            # Convert numpy arrays to lists for JSON serialization
+            data_to_save = {
+                'latent': [x.tolist() if isinstance(x, np.ndarray) else x for x in self.feedback_data['latent']],
+                'anomaly_decision': self.feedback_data['anomaly_decision'],
+                'reconstruction_error': self.feedback_data['reconstruction_error'],
+                'user_feedback': self.feedback_data['user_feedback']
+            }
+            
+            with open(self.storage_file, 'w') as f:
+                json.dump(data_to_save, f)
+                
+            logger.info(f"Saved {len(self.feedback_data['user_feedback'])} feedback entries")
+        except Exception as e:
+            logger.error(f"Error saving feedback data: {e}")
+    
+    def add_feedback(self, 
+                     latent: Union[np.ndarray, torch.Tensor], 
+                     anomaly_decision: Union[bool, int, float, np.ndarray, torch.Tensor], 
+                     reconstruction_error: Union[float, np.ndarray, torch.Tensor], 
+                     user_feedback: Union[bool, int, float, np.ndarray, torch.Tensor]):
+        """
+        Add user feedback for an alert.
+        
+        Args:
+            latent (Union[np.ndarray, torch.Tensor]): Latent representation from the autoencoder
+            anomaly_decision (Union[bool, int, float, np.ndarray, torch.Tensor]): Whether the autoencoder flagged an anomaly
+            reconstruction_error (Union[float, np.ndarray, torch.Tensor]): Reconstruction error from the autoencoder
+            user_feedback (Union[bool, int, float, np.ndarray, torch.Tensor]): User feedback (1 = true positive, 0 = false positive)
+        """
+        # Convert torch tensors to numpy arrays
+        if isinstance(latent, torch.Tensor):
+            latent = latent.detach().cpu().numpy()
+        if isinstance(anomaly_decision, torch.Tensor):
+            anomaly_decision = anomaly_decision.item()
+        if isinstance(reconstruction_error, torch.Tensor):
+            reconstruction_error = reconstruction_error.item()
+        if isinstance(user_feedback, torch.Tensor):
+            user_feedback = user_feedback.item()
+            
+        # Convert boolean to int
+        if isinstance(anomaly_decision, bool):
+            anomaly_decision = int(anomaly_decision)
+        if isinstance(user_feedback, bool):
+            user_feedback = int(user_feedback)
+            
+        # Add feedback to data
+        self.feedback_data['latent'].append(latent)
+        self.feedback_data['anomaly_decision'].append(anomaly_decision)
+        self.feedback_data['reconstruction_error'].append(reconstruction_error)
+        self.feedback_data['user_feedback'].append(user_feedback)
+        
+        # Save data
+        self._save_data()
+        
+        logger.info(f"Added feedback: anomaly={anomaly_decision}, user_feedback={user_feedback}")
+    
+    def get_training_data(self) -> Dict[str, torch.Tensor]:
+        """
+        Get training data for the alert filter model.
+        
+        Returns:
+            Dict[str, torch.Tensor]: Dictionary containing training data as torch tensors
+        """
+        if not self.feedback_data['user_feedback']:
+            logger.warning("No feedback data available for training")
+            return None
+            
+        # Convert data to torch tensors
+        return {
+            'latent': torch.tensor(np.array(self.feedback_data['latent']), dtype=torch.float32),
+            'anomaly_decision': torch.tensor(np.array(self.feedback_data['anomaly_decision']), dtype=torch.float32),
+            'reconstruction_error': torch.tensor(np.array(self.feedback_data['reconstruction_error']), dtype=torch.float32),
+            'user_feedback': torch.tensor(np.array(self.feedback_data['user_feedback']), dtype=torch.float32)
+        }
+    
+    def get_stats(self) -> Dict[str, int]:
+        """
+        Get statistics about the feedback data.
+        
+        Returns:
+            Dict[str, int]: Dictionary containing statistics
+        """
+        if not self.feedback_data['user_feedback']:
+            return {
+                'total': 0,
+                'true_positives': 0,
+                'false_positives': 0
+            }
+            
+        user_feedback = np.array(self.feedback_data['user_feedback'])
+        return {
+            'total': len(user_feedback),
+            'true_positives': int(np.sum(user_feedback == 1)),
+            'false_positives': int(np.sum(user_feedback == 0))
+        }

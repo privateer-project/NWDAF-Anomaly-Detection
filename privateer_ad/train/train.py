@@ -36,10 +36,11 @@ def train(**kwargs):
         trial_dir = os.path.join(paths.experiments_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))
         
     os.makedirs(os.path.join(trial_dir), exist_ok=True)
+    print(f"Trial directory: {trial_dir}")
+    
     
     # Setup device to run training
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Using device: {device}")
     
     if mlflow.active_run():
         mlflow.log_params({'device': device})

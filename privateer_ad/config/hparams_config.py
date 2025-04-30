@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, Sequence
+from typing import Dict, Sequence, List
 
 from optuna.distributions import CategoricalChoiceType
 
@@ -39,6 +39,15 @@ class OptimizerConfig:
     params: Dict = field(default_factory=lambda: {"betas": [0.9, 0.999],
                                                   "eps": 1e-8,
                                                   "weight_decay": 0.0})
+
+@dataclass
+class AlertFilterConfig:
+    latent_dim: int = 16
+    hidden_dims: List[int] = field(default_factory=lambda: [32, 16])
+    dropout: float = 0.2
+    learning_rate: float = 0.001
+    batch_size: int = 32
+    epochs: int = 100
 
 @dataclass
 class AutotuneParam:
