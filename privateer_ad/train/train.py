@@ -13,25 +13,40 @@ from privateer_ad.utils import set_config
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
 
-
 def train(**kwargs):
+    print(1)
     # Initialize project paths
     paths = PathsConf()
-
+    
     # Setup mlflow
     mlflow_config = set_config(MLFlowConfig, kwargs)
+
+    
     if mlflow_config.track:
+
         mlflow.set_tracking_uri(mlflow_config.server_address)
+        print(1.3)
         mlflow.set_experiment(mlflow_config.experiment_name)
+        print(1.4)
         mlflow.start_run(run_name=kwargs.get('run_name', datetime.now().strftime("%Y%m%d-%H%M%S")),
                          nested=mlflow.active_run() is not None)
+        print(1.5)
+
+
 
     # Setup trial dir
-    trial_dir = os.path.join(paths.experiments_dir, mlflow.active_run().info.run_name)
+    if mlflow.active_run():
+        trial_dir = os.path.join(paths.experiments_dir, mlflow.active_run().info.run_name)
+    else:
+        trial_dir = os.path.join(paths.experiments_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))
+        
     os.makedirs(os.path.join(trial_dir), exist_ok=True)
-
+    print(f"Trial directory: {trial_dir}")
+    
+    
     # Setup device to run training
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
     if mlflow.active_run():
         mlflow.log_params({'device': device})
 
@@ -68,6 +83,10 @@ def train(**kwargs):
     model_summary = summary(model,
                             input_data=sample,
                             col_names=('input_size', 'output_size', 'num_params', 'params_percent'))
+    if hparams.apply_dp:
+        from opacus.validators import ModuleValidator
+        model = ModuleValidator.fix(model)
+
     if mlflow.active_run():
         mlflow.log_text(str(model_summary), 'model_summary.txt')
         mlflow.log_params(model_config.__dict__)
@@ -82,17 +101,14 @@ def train(**kwargs):
                                                             **optimizer_config.params)
     if mlflow.active_run():
         mlflow.log_params(optimizer_config.__dict__)
-
+    print(3)
     # Initialize differential privacy
     if hparams.apply_dp:
         from opacus import PrivacyEngine
-        from opacus.validators import ModuleValidator
-
         dp_config = set_config(DifferentialPrivacyConfig, kwargs)
         logger.info('Differential Privacy enabled.')
         privacy_engine = PrivacyEngine(accountant="rdp", secure_mode=dp_config.secure_mode)
-        # model = ModuleValidator.fix(model)
-        ModuleValidator.validate(model)
+        # ModuleValidator.validate(model)
         model, optimizer, train_dl = privacy_engine.make_private_with_epsilon(
             module=model,
             optimizer=optimizer,
@@ -111,9 +127,11 @@ def train(**kwargs):
                            device=device,
                            hparams=hparams
                            )
+    print(4)
     best_checkpoint = trainer.training(train_dl=train_dl, val_dl=val_dl)
     model.load_state_dict(best_checkpoint['model_state_dict'])
     torch.save(model.state_dict(), os.path.join(trial_dir, 'model.pt'))
+    print(5)
     if mlflow.active_run():
         mlflow.log_metrics({key: value for key, value in best_checkpoint['metrics'].items()})
         if hparams.apply_dp:
@@ -144,7 +162,8 @@ def train(**kwargs):
         for name, fig in figures.items():
             mlflow.log_figure(fig, f'{name}.png')
 
-    logger.info(f'Test metrics:\n{''.join([f'{key}: {value}\n' for key, value in test_report.items()])}')
+    metrics_logs = '\n'.join([f'{key}: {value}' for key, value in test_report.items()])
+    logger.info(f"Test metrics:\n{metrics_logs}")
     if mlflow.active_run():
         mlflow.end_run()
     return test_report
@@ -152,3 +171,8 @@ def train(**kwargs):
 def main():
     from fire import Fire
     Fire(train)
+
+# Using the special variable 
+# __name__
+if __name__=="__main__":
+    main()

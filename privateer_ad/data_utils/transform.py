@@ -38,12 +38,12 @@ class DataProcessor:
 
         for device, device_info in self.devices.items():
             device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
-            logger.info(f'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'
-                  f' benign length: {len(device_df[device_df['attack'] == 0])}')
+            logger.info(f"'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'"
+                  f" benign length: {len(device_df[device_df['attack'] == 0])}")
             device_df.loc[device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 1
             device_df.loc[~device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 0
-            logger.info(f'After Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'
-                  f' benign length: {len(device_df[device_df['attack'] == 0])}')
+            logger.info(f"After Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])} "
+                        f"benign length: {len(device_df[device_df['attack'] == 0])}")
             df_train, df_tmp = train_test_split(device_df,
                                                 train_size=train_size,
                                                 stratify=device_df['attack_number'],
@@ -59,8 +59,8 @@ class DataProcessor:
         df_val = pd.concat(val_dfs)
         df_test = pd.concat(test_dfs)
         for i, df in enumerate([df_train, df_val, df_test]):
-            logger.info(f'Dataset {i} attack length: {len(df[df['attack'] == 1])}'
-                  f' benign length: {len(df[df['attack'] == 0])}')
+            logger.info(f"Dataset {i} attack length: {len(df[df['attack'] == 1])} "
+                        f"benign length: {len(df[df['attack'] == 0])}")
 
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
         [logger.info(f'{key} shape: {df.shape}') for key, df in datasets.items()]
@@ -143,21 +143,23 @@ class DataProcessor:
                         path: str | Path,
                         use_pca: bool=False,
                         n_components=None,
-                        partition_id=None,
+                        partition_id=0,
+                        num_partitions=1,
                         setup=False) -> DataFrame:
         if setup:
             if path in ('val', 'test'):
                 logger.error(f'Setup on {path} is not allowed.')
                 raise ValueError(f'Setup on {path} is not allowed.')
-            logger.warning(f'{'#' * 30} Scalers will be fitted on {path}. {'#' * 30}')
+            logger.warning(f"{'#' * 30} Scalers will be fitted on {path}. {'#' * 30}")
         if path in ('train', 'val', 'test'):
             path = get_dataset_path(path)
         try:
             df = pd.read_csv(path, low_memory=False)
         except FileNotFoundError:
             raise FileNotFoundError(f"File {path} not found.")
-        if partition_id is not None:
-            df = self.get_partition(df, partition_id, num_partitions=len(self.devices))
+        df = self.get_partition(df,
+                                partition_id=partition_id,
+                                num_partitions=num_partitions)
         df = self.clean_data(df)
         if setup:
             self.setup_scaler(df)
@@ -169,14 +171,22 @@ class DataProcessor:
         df = df.sort_values('_time').reset_index(drop=True)
         return df
 
-    def get_partition(self, df: DataFrame, partition_id, num_partitions) -> DataFrame:
+    def get_partition(self, df: DataFrame, partition_id=0, num_partitions=1) -> DataFrame:
         """Partition data based on provided configuration."""
+        #  if name != 'support'
+        if num_partitions == 1:
+            num_classes_per_partition = len(self.devices)
+        elif num_partitions == len(self.devices):
+            num_classes_per_partition = 1
+        else:
+            num_classes_per_partition = len(self.devices) // num_partitions
+
         if self.partitioner is None:
             self.partitioner = PathologicalPartitioner(
                 num_partitions=num_partitions,
-                num_classes_per_partition=1,
+                num_classes_per_partition=num_classes_per_partition,
                 partition_by='imeisv',
-                class_assignment_mode='random')
+                class_assignment_mode='first-deterministic')
             self.partitioner.dataset = Dataset.from_pandas(df)
         partitioned_df = self.partitioner.load_partition(partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
@@ -186,7 +196,8 @@ class DataProcessor:
                        use_pca,
                        batch_size,
                        seq_len,
-                       partition_id=None,
+                       partition_id=0,
+                       num_partitions=1,
                        only_benign=False) -> DataLoader:
 
         """Get train, validation and test dataloaders."""
@@ -199,13 +210,16 @@ class DataProcessor:
 
         logger.info('Loading datasets...')
 
-        df = self.preprocess_data(path, use_pca, partition_id=partition_id, setup=False)
+        df = self.preprocess_data(path,
+                                  use_pca,
+                                  partition_id=partition_id,
+                                  num_partitions=num_partitions,
+                                  setup=False)
         if only_benign:
             if 'attack' in df.columns:
                 df = df[df['attack'] == 0]
             else:
                 logger.warning('Cannot get benign data. No column named `attack` in dataset.')
-        print('after if only_benign df.shape', df.shape)
         df = df.sort_values(by=['_time'])
         if use_pca:
             input_columns = [column for column in df.columns if column.startswith('pca')]

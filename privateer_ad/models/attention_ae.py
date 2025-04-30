@@ -43,10 +43,13 @@ class AttentionAutoencoder(nn.Module):
                                     nn.ReLU())
         self.output = nn.Linear(self.latent_dim, self.input_size)
 
-    def forward(self, x):
+    def forward(self, x, return_latent=False):
         x = self.embed(x)
         x = self.pos_enc(x)
         x = self.transformer_encoder(x)
-        x = self.compress(x)
-        x = self.output(x)
-        return x
+        latent = self.compress(x)
+        output = self.output(latent)
+        
+        if return_latent:
+            return output, latent
+        return output

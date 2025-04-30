@@ -1,9 +1,9 @@
 import os
 import mlflow
 
-from train.autotuner import ModelAutoTuner
-from config import MLFlowConfig, AutotuneConfig
-from utils import set_config
+from privateer_ad.train.autotuner import ModelAutoTuner
+from privateer_ad.config import MLFlowConfig, AutotuneConfig
+from privateer_ad.utils import set_config
 
 def autotune(**kwargs):
     mlflow_config = set_config(MLFlowConfig, kwargs)

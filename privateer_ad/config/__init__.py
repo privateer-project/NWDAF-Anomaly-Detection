@@ -1,5 +1,5 @@
 from .hparams_config import (HParams, AttentionAutoencoderConfig,
-                             OptimizerConfig, EarlyStoppingConfig)
+                             OptimizerConfig, EarlyStoppingConfig, AlertFilterConfig)
 from .data_config import DeviceInfo, AttackInfo, FeatureInfo, MetaData
 from .other_configs import (PathsConf,
                             DifferentialPrivacyConfig,
@@ -24,5 +24,6 @@ __all__ = [
     'AutotuneConfig',
     'PartitionConfig',
     'SecureAggregationConfig',
-    'EarlyStoppingConfig'
+    'EarlyStoppingConfig',
+    'AlertFilterConfig',
 ]

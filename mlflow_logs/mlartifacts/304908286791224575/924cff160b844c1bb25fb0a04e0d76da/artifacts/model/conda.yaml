@@ -1,0 +1,35 @@
+channels:
+- conda-forge
+dependencies:
+- python=3.12.3
+- pip<=25.0.1
+- pip:
+  - dash==2.18.2
+  - datasets==3.1.0
+  - flwr[simulation]==1.14.0
+  - flwr-datasets==0.5.0
+  - joblib==1.4.2
+  - kaleido==0.2.1
+  - mlflow==2.19.0
+  - numpy==1.26.4
+  - opacus==1.5.2
+  - optuna==4.2.0
+  - optuna-integration[mlflow]==4.2.1
+  - pandas==2.2.3
+  - plotly==5.24.1
+  - pyaml==25.1.0
+  - python-dotenv==1.0.1
+  - pytorch-forecasting==1.2.0
+  - ray==2.41.0
+  - requests==2.32.3
+  - scikit-learn==1.6.1
+  - seaborn==0.13.2
+  - statsmodels==0.14.4
+  - tqdm==4.67.1
+  - torch==2.6.0
+  - torchinfo==1.8.0
+  - PyYAML~=6.0.2
+  - fire~=0.7.0
+  - mlflow-skinny~=2.19.0
+  - matplotlib~=3.10.0
+name: mlflow-env

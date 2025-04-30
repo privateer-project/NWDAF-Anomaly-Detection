@@ -6,7 +6,7 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from config import logger, PathsConf
+from privateer_ad.config import logger, PathsConf
 
 @dataclass
 class DownloadConfig:

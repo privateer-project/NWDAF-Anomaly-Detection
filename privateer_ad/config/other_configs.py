@@ -49,7 +49,7 @@ class DifferentialPrivacyConfig:
 
 @dataclass
 class MLFlowConfig:
-   track: bool = True
+   track: bool = os.environ.get('MLFLOW_TRACKING', 'true').lower() == 'true'
    server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
 
