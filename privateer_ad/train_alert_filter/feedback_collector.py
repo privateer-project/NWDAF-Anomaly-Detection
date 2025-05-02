@@ -50,6 +50,7 @@ class FeedbackCollector:
         if self.storage_file.exists():
             try:
                 with open(self.storage_file, 'r') as f:
+                    
                     data = json.load(f)
                 
                 # Convert lists to numpy arrays for easier processing
@@ -103,6 +104,7 @@ class FeedbackCollector:
             reconstruction_error (Union[float, np.ndarray, torch.Tensor]): Reconstruction error from the autoencoder
             user_feedback (Union[bool, int, float, np.ndarray, torch.Tensor]): User feedback (1 = true positive, 0 = false positive)
         """
+
         # Convert torch tensors to numpy arrays
         if isinstance(latent, torch.Tensor):
             latent = latent.detach().cpu().numpy()
@@ -113,17 +115,36 @@ class FeedbackCollector:
         if isinstance(user_feedback, torch.Tensor):
             user_feedback = user_feedback.item()
             
+            
+
         # Convert boolean to int
         if isinstance(anomaly_decision, bool):
             anomaly_decision = int(anomaly_decision)
         if isinstance(user_feedback, bool):
             user_feedback = int(user_feedback)
             
+            
+        # Convert bool_ numpy arrays to int
+        if isinstance(anomaly_decision, np.bool_):
+            anomaly_decision = int(anomaly_decision.item())
+        if isinstance(user_feedback, np.bool_):
+            user_feedback = int(user_feedback.item())
+            
+        # Convert numpy.int64 to int
+        if isinstance(user_feedback, np.int64): 
+            user_feedback = int(user_feedback.item())
+        
         # Add feedback to data
         self.feedback_data['latent'].append(latent)
         self.feedback_data['anomaly_decision'].append(anomaly_decision)
         self.feedback_data['reconstruction_error'].append(reconstruction_error)
         self.feedback_data['user_feedback'].append(user_feedback)
+        
+        # logger.info(f"Feedback added: latent={latent}, anomaly_decision={anomaly_decision}, "
+                    # f"reconstruction_error={reconstruction_error}, user_feedback={user_feedback}")
+        logger.info(f"Feedback data types - latent: {type(latent)}, anomaly_decision: {type(anomaly_decision)}, "
+                    f"reconstruction_error: {type(reconstruction_error)}, user_feedback: {type(user_feedback)}")
+        
         
         # Save data
         self._save_data()
