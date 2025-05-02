@@ -11,7 +11,7 @@ class ModelTrainer:
 
      This class handles the training workflow for autoencoder models, including
      training loop, validation, metrics tracking, and early stopping functionality.
-     It also provides integration with MLflow for experiment tracking.
+     It also provides integration with MLFlow for experiment tracking.
 
      Attributes:
          model: The PyTorch model to be trained.
@@ -23,6 +23,8 @@ class ModelTrainer:
          metrics (Dict[str, float]): Dictionary to track training metrics.
          best_checkpoint (Dict[str, Any]): Dictionary to store the best model checkpoint.
      """
+    es_conf = EarlyStoppingConfig()
+
     def __init__(self,
                  model,
                  optimizer,
@@ -46,24 +48,17 @@ class ModelTrainer:
         self.device = device
         self.hparams = hparams
         self.early_stopping = self.hparams.early_stopping
-
         if self.early_stopping:
             logger.info("Early stopping ")
             self.es_not_improved_epochs = 0
-            es_conf = EarlyStoppingConfig()
-            self.es_patience_epochs = es_conf.es_patience_epochs
-            self.es_warmup_epochs = es_conf.es_warmup_epochs
-            self.es_improvement_threshold = es_conf.es_improvement_threshold
+
             if self.hparams.direction not in ('maximize', 'minimize'):
                 raise ValueError(
                 "direction must be 'maximize' or 'minimize'. Current value: {}".format(self.hparams.direction))
 
             if mlflow.active_run():  # log early stopping params
-                mlflow.log_params({'es_not_improved_epochs': self.es_not_improved_epochs,
-                                   'es_patience_epochs': self.es_patience_epochs,
-                                   'es_warmup_epochs': self.es_warmup_epochs,
-                                   'es_improvement_threshold': self.es_improvement_threshold
-                                   })
+                with mlflow.active_run():
+                    mlflow.log_params(self.es_conf.__dict__)
 
         # Initialize metrics dict and best_checkpoint dict
         metrics = {'loss': float('inf'), 'val_loss': float('inf')}
@@ -74,7 +69,7 @@ class ModelTrainer:
                                                 'metrics': {k: v for k, v in metrics.copy().items()}
                                                 }
 
-    def training(self, train_dl, val_dl):
+    def training(self, train_dl, val_dl, start_epoch=0):
         """Executes the full training process with validation and early stopping.
 
         Trains the model for the specified number of epochs or until early stopping
@@ -88,6 +83,7 @@ class ModelTrainer:
         Args:
             train_dl: DataLoader for training data.
             val_dl: DataLoader for validation data.
+            start_epoch:
 
         Returns:
             Dict[str, Any]: The best checkpoint dictionary containing:
@@ -96,8 +92,10 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
+        current_epoch = start_epoch
         try:
-            for epoch in range(1, self.hparams.epochs + 1): # Training and validation loop
+            for epoch in range(start_epoch, start_epoch + self.hparams.epochs): # Training and validation loop
+                current_epoch = epoch
                 train_metrics = self._training_loop(epoch, train_dl)
                 val_metrics = self._validation_loop(val_dl)
                 self.log_metrics(train_metrics | val_metrics, epoch)
@@ -122,7 +120,7 @@ class ModelTrainer:
             # Save the current state as the best checkpoint if we don't have one
             if self.best_checkpoint['epoch'] == 0:
                 self.best_checkpoint.update({
-                    'epoch': epoch,
+                    'epoch': current_epoch,
                     'model_state_dict': self.model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict()
                 })
@@ -184,16 +182,17 @@ class ModelTrainer:
     def log_metrics(self, metrics, epoch: int):
         """Updates and logs metrics.
 
-        Updates the internal metrics dictionary with new values, logs them to MLflow
+        Updates the internal metrics dictionary with new values, logs them to MLFlow
         if an active run exists, and prints them to console.
 
         Args:
             metrics (Dict[str, float]): Dictionary of metrics to log.
-            epoch (int): Current epoch number for MLflow logging.
+            epoch (int): Current epoch number for MLFlow logging.
         """
         self.metrics.update(metrics)
         if mlflow.active_run():
-            mlflow.log_metrics(self.metrics, step=epoch)
+            with mlflow.active_run():
+                mlflow.log_metrics(self.metrics, step=epoch)
 
         _prnt = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
         print(f"Metrics: {' '.join(_prnt)}")
@@ -213,7 +212,7 @@ class ModelTrainer:
         Returns:
             bool: True if training should be stopped, False otherwise.
         """
-        if self.early_stopping and epoch > self.es_warmup_epochs:  # Early stopping check
+        if self.early_stopping and epoch > self.es_conf.es_warmup_epochs:  # Early stopping check
             if is_best:
                 self.es_not_improved_epochs = 0
                 return False
@@ -224,7 +223,7 @@ class ModelTrainer:
                       f"best= {self.best_checkpoint['metrics'][self.hparams.target]:.5f} - "
                       f"current= {self.metrics[self.hparams.target]:.5f}\n"
                       f"")
-            if self.es_not_improved_epochs >= self.es_patience_epochs:
+            if self.es_not_improved_epochs >= self.es_conf.es_patience_epochs:
                 print(f'Early stopping. No improvement for {self.es_not_improved_epochs} epochs.')
                 return True
         return False
