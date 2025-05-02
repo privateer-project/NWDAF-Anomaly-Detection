@@ -31,7 +31,6 @@ class AttentionAutoencoderConfig:
 class EarlyStoppingConfig:
     es_patience_epochs: int = 20
     es_warmup_epochs: int = 20
-    es_improvement_threshold: int = 0.0001
 
 @dataclass
 class OptimizerConfig:
