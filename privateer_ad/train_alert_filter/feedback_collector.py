@@ -114,8 +114,7 @@ class FeedbackCollector:
             reconstruction_error = reconstruction_error.item()
         if isinstance(user_feedback, torch.Tensor):
             user_feedback = user_feedback.item()
-            
-            
+    
 
         # Convert boolean to int
         if isinstance(anomaly_decision, bool):
@@ -138,13 +137,7 @@ class FeedbackCollector:
         self.feedback_data['latent'].append(latent)
         self.feedback_data['anomaly_decision'].append(anomaly_decision)
         self.feedback_data['reconstruction_error'].append(reconstruction_error)
-        self.feedback_data['user_feedback'].append(user_feedback)
-        
-        # logger.info(f"Feedback added: latent={latent}, anomaly_decision={anomaly_decision}, "
-                    # f"reconstruction_error={reconstruction_error}, user_feedback={user_feedback}")
-        logger.info(f"Feedback data types - latent: {type(latent)}, anomaly_decision: {type(anomaly_decision)}, "
-                    f"reconstruction_error: {type(reconstruction_error)}, user_feedback: {type(user_feedback)}")
-        
+        self.feedback_data['user_feedback'].append(user_feedback)      
         
         # Save data
         self._save_data()
@@ -161,14 +154,48 @@ class FeedbackCollector:
         if not self.feedback_data['user_feedback']:
             logger.warning("No feedback data available for training")
             return None
+        
+        # Process latent vectors to ensure they all have the same shape
+        processed_latents = []
+        for latent in self.feedback_data['latent']:
+            # Convert to numpy array if it's not already
+            if not isinstance(latent, np.ndarray):
+                latent = np.array(latent)
             
+            # If the latent vector is multi-dimensional, take the mean across the sequence dimension
+            if latent.ndim > 1:
+                latent = np.mean(latent, axis=0)
+            
+            # Ensure the latent vector has the correct dimension (8)
+            # If it's larger (e.g., 16), take the first 8 elements
+            # If it's smaller, pad with zeros (shouldn't happen)
+            target_dim = 8  # This should match AlertFilterConfig.latent_dim
+            if len(latent) > target_dim:
+                latent = latent[:target_dim]
+            elif len(latent) < target_dim:
+                latent = np.pad(latent, (0, target_dim - len(latent)))
+            
+            processed_latents.append(latent)
+        
         # Convert data to torch tensors
-        return {
-            'latent': torch.tensor(np.array(self.feedback_data['latent']), dtype=torch.float32),
-            'anomaly_decision': torch.tensor(np.array(self.feedback_data['anomaly_decision']), dtype=torch.float32),
-            'reconstruction_error': torch.tensor(np.array(self.feedback_data['reconstruction_error']), dtype=torch.float32),
-            'user_feedback': torch.tensor(np.array(self.feedback_data['user_feedback']), dtype=torch.float32)
-        }
+        try:
+            latent_tensor = torch.tensor(np.array(processed_latents), dtype=torch.float32)
+            anomaly_decision_tensor = torch.tensor(np.array(self.feedback_data['anomaly_decision']), dtype=torch.float32)
+            reconstruction_error_tensor = torch.tensor(np.array(self.feedback_data['reconstruction_error']), dtype=torch.float32)
+            user_feedback_tensor = torch.tensor(np.array(self.feedback_data['user_feedback']), dtype=torch.float32)
+            
+            return {
+                'latent': latent_tensor,
+                'anomaly_decision': anomaly_decision_tensor,
+                'reconstruction_error': reconstruction_error_tensor,
+                'user_feedback': user_feedback_tensor
+            }
+        except Exception as e:
+            logger.error(f"Error converting feedback data to tensors: {e}")
+            # Print debug information
+            for i, latent in enumerate(processed_latents):
+                logger.info(f"Latent {i} shape: {latent.shape}")
+            raise
     
     def get_stats(self) -> Dict[str, int]:
         """

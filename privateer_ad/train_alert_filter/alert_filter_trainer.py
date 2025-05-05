@@ -88,6 +88,8 @@ class AlertFilterTrainer:
         
         # Set number of epochs
         epochs = epochs or self.config.epochs
+
+        print
         
         # Training loop
         self.model.train()

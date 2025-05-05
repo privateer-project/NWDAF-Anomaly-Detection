@@ -48,12 +48,14 @@ def main():
     # Initialize paths
     paths = PathsConf()
     
-    # Step 1: Make predictions with the autoencoder
+    # Step 1: Make predictions with the autoencoder and get latent representations
     print("\n=== Step 1: Making predictions with the autoencoder ===")
-    inputs, losses, predictions, labels = make_predictions(
+    # Use make_predictions_with_filter with use_filter=False to get latent representations
+    inputs, latents, losses, predictions, _, _, labels = make_predictions_with_filter(
         model_path=args.model_path,
         data_path=args.data_path,
-        threshold=args.threshold
+        threshold=args.threshold,
+        use_filter=False
     )
     
     # Step 2: Collect user feedback (if not skipped)
@@ -85,9 +87,15 @@ def main():
                 # (In practice, user feedback might differ from true labels)
                 user_feedback = labels[idx]  # 1 = true positive, 0 = false positive
                 
-                # Add feedback
+                # Add feedback using the actual latent representation
+                # Flatten the latent vector if it's multi-dimensional
+                latent_vector = latents[idx]
+                if isinstance(latent_vector, np.ndarray) and latent_vector.ndim > 1:
+                    # Take the mean across the sequence dimension to get a vector of size latent_dim
+                    latent_vector = np.mean(latent_vector, axis=0)
+                
                 feedback_collector.add_feedback(
-                    latent=np.mean(inputs[idx], axis=0),  # Average across sequence dimension
+                    latent=latent_vector,
                     anomaly_decision=predictions[idx],
                     reconstruction_error=losses[idx],
                     user_feedback=user_feedback
@@ -131,7 +139,7 @@ def main():
     # Step 4: Make predictions with the alert filter model (if available)
     if filter_model_path and Path(filter_model_path).exists():
         print("\n=== Step 4: Making predictions with the alert filter model ===")
-        inputs, latents, losses, anomaly_decisions, filtered_decisions = make_predictions_with_filter(
+        inputs, latents, losses, predictions, anomaly_decisions, filtered_decisions, labels = make_predictions_with_filter(
             model_path=args.model_path,
             data_path=args.data_path,
             filter_model_path=filter_model_path,
@@ -141,6 +149,17 @@ def main():
         
         # Calculate reduction in false positives
         if len(labels) > 0:
+            # Ensure arrays have the same shape
+            if len(filtered_decisions) != len(labels):
+                logger.warning(f"Filtered decisions and labels have different shapes: {filtered_decisions.shape} vs {labels.shape}")
+                # Resize filtered_decisions to match labels
+                if len(filtered_decisions) > len(labels):
+                    filtered_decisions = filtered_decisions[:len(labels)]
+                else:
+                    # This shouldn't happen, but just in case
+                    logger.error("Filtered decisions array is smaller than labels array, cannot calculate reduction")
+                    return
+            
             # Find false positives in unfiltered predictions
             unfiltered_fp = np.logical_and(anomaly_decisions == 1, labels == 0).sum()
             

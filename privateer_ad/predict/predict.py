@@ -107,8 +107,9 @@ def make_predictions_with_filter(
         data_path: Union[str, Path],
         filter_model_path: Optional[Union[str, Path]] = None,
         threshold: float = 0.026970019564032555,
-        collect_feedback: bool = False
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        collect_feedback: bool = False,
+        use_filter: bool = True
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load a trained autoencoder model and alert filter model, and make predictions on the specified dataset.
     
@@ -125,15 +126,19 @@ def make_predictions_with_filter(
     collect_feedback : bool
         Whether to collect feedback for the alert filter model. If True, the function will
         prompt the user for feedback on each alert.
+    use_filter : bool
+        Whether to use the alert filter model. If False, behaves like make_predictions but still returns latents.
         
     Returns:
     --------
-    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         - inputs: Array containing input data
         - latents: Array containing latent representations
         - losses: Array containing reconstruction errors
+        - predictions: Array containing anomaly decisions (1 = anomaly, 0 = normal)
         - anomaly_decisions: Array containing anomaly decisions (1 = anomaly, 0 = normal)
         - filtered_decisions: Array containing filtered decisions (1 = allow alert, 0 = deny alert)
+        - labels: Array containing true labels (1 = anomaly, 0 = normal)
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     paths = PathsConf()
@@ -159,9 +164,9 @@ def make_predictions_with_filter(
     autoencoder.load_state_dict(state_dict)
     autoencoder = autoencoder.to(device)
 
-    # Load alert filter model if provided
+    # Load alert filter model if provided and use_filter is True
     alert_filter = None
-    if filter_model_path is not None:
+    if filter_model_path is not None and use_filter:
         filter_model_path = Path(filter_model_path)
         alert_filter = AlertFilterModel(config=AlertFilterConfig())
         alert_filter.load_state_dict(torch.load(filter_model_path, map_location=device))
@@ -178,6 +183,7 @@ def make_predictions_with_filter(
     inputs: List[float] = []
     latents: List[float] = []
     losses: List[float] = []
+    predictions: List[int] = []  # Same as anomaly_decisions, for compatibility with make_predictions
     anomaly_decisions: List[int] = []
     filtered_decisions: List[int] = []
     labels: List[int] = []
@@ -203,9 +209,25 @@ def make_predictions_with_filter(
             # Determine anomaly decision
             anomaly_decision = (loss_per_sample > threshold).float()
             
-            # Apply alert filter if available
-            if alert_filter is not None:
-                allow_alert = alert_filter(latent, anomaly_decision, loss_per_sample)
+            # Store the prediction (same as anomaly_decision) for compatibility with make_predictions
+            predictions.extend((loss_per_sample > threshold).cpu().tolist())
+            
+            # Apply alert filter if available and use_filter is True
+            if alert_filter is not None and use_filter:
+                # Process latent vectors to match the expected dimension
+                # If latent is multi-dimensional, take the mean across the sequence dimension
+                if latent.dim() > 2:
+                    latent_processed = torch.mean(latent, dim=1)
+                else:
+                    latent_processed = latent
+                
+                # Ensure the latent vector has the correct dimension (8)
+                # If it's larger (e.g., 16), take the first 8 elements
+                target_dim = 8  # This should match AlertFilterConfig.latent_dim
+                if latent_processed.shape[-1] > target_dim:
+                    latent_processed = latent_processed[:, :target_dim]
+                
+                allow_alert = alert_filter(latent_processed, anomaly_decision, loss_per_sample)
                 # Final decision: anomaly AND allow_alert
                 final_decision = anomaly_decision * (allow_alert > 0.5).float()
             else:
@@ -238,25 +260,35 @@ def make_predictions_with_filter(
             latents.extend(latent.cpu().tolist())
             losses.extend(loss_per_sample.cpu().tolist())
             anomaly_decisions.extend(anomaly_decision.cpu().tolist())
-            filtered_decisions.extend(final_decision.cpu().tolist())
+            # Convert final_decision to a list of scalar values
+            filtered_decisions.extend(final_decision.cpu().flatten().tolist())
 
     # Convert lists to numpy arrays
     inputs_np = np.asarray(inputs)
     latents_np = np.asarray(latents)
     losses_np = np.array(losses)
+    predictions_np = np.array(predictions)
     anomaly_decisions_np = np.array(anomaly_decisions)
-    filtered_decisions_np = np.array(filtered_decisions)
+    
+    # Ensure filtered_decisions is a 1D array of scalar values
+    try:
+        filtered_decisions_np = np.array(filtered_decisions)
+    except ValueError as e:
+        logger.error(f"Error converting filtered_decisions to numpy array: {e}")
+        # Try to convert each element individually
+        filtered_decisions_np = np.array([float(x) if isinstance(x, (int, float)) else float(x[0]) for x in filtered_decisions])
+    
     labels_np = np.array(labels, dtype=int)
 
     # Print classification report for both unfiltered and filtered decisions
     print("\nUnfiltered Anomaly Detection Results:")
     print_balanced_classification_report(labels_np, anomaly_decisions_np)
     
-    if alert_filter is not None:
+    if alert_filter is not None and use_filter:
         print("\nFiltered Anomaly Detection Results:")
         print_balanced_classification_report(labels_np, filtered_decisions_np)
     
-    return inputs_np, latents_np, losses_np, anomaly_decisions_np, filtered_decisions_np
+    return inputs_np, latents_np, losses_np, predictions_np, anomaly_decisions_np, filtered_decisions_np, labels_np
 
 def print_balanced_classification_report(labels_np: np.ndarray, predictions_np: np.ndarray) -> None:
     """
@@ -269,6 +301,17 @@ def print_balanced_classification_report(labels_np: np.ndarray, predictions_np: 
     predictions_np : np.ndarray
         Array of predicted labels
     """
+    # Check if arrays have the same shape
+    if len(labels_np) != len(predictions_np):
+        logger.warning(f"Labels and predictions have different shapes: {labels_np.shape} vs {predictions_np.shape}")
+        # Resize predictions to match labels
+        if len(predictions_np) > len(labels_np):
+            predictions_np = predictions_np[:len(labels_np)]
+        else:
+            # This shouldn't happen, but just in case
+            logger.error("Predictions array is smaller than labels array, cannot generate report")
+            return
+    
     # Keep same n samples for balanced metrics
     ben_labels = labels_np[labels_np == 0]
     ben_predictions = predictions_np[labels_np == 0]

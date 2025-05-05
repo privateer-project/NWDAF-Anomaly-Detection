@@ -42,7 +42,7 @@ class OptimizerConfig:
 
 @dataclass
 class AlertFilterConfig:
-    latent_dim: int = 16
+    latent_dim: int = 8  # Changed from 16 to 8 to match the actual latent dimension
     hidden_dims: List[int] = field(default_factory=lambda: [32, 16])
     dropout: float = 0.2
     learning_rate: float = 0.001
