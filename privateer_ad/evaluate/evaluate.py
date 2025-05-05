@@ -6,13 +6,17 @@ import torch
 from privateer_ad import config, models
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.evaluate.evaluator import ModelEvaluator
-from privateer_ad.utils import set_config
+from privateer_ad.config import setup_logger, HParams, MLFlowConfig, PathsConf
 
+logger = setup_logger('evaluate')
 
 def evaluate(model_path, data_path='test', threshold=None, **kwargs):
-    hparams = set_config(config.HParams, kwargs)
-    mlflow_config = set_config(config.MLFlowConfig, kwargs)
-    paths = set_config(config.PathsConf, kwargs)
+    # Setup configs
+    hparams = HParams()
+    mlflow_config = MLFlowConfig()
+    paths = PathsConf()
+    model_config = models.AttentionAutoencoderConfig(seq_len=hparams.seq_len)
+
     dp = DataProcessor()
     dl = dp.get_dataloader(data_path,
                            use_pca=hparams.use_pca,
@@ -20,13 +24,12 @@ def evaluate(model_path, data_path='test', threshold=None, **kwargs):
                            seq_len=hparams.seq_len)
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model_config_class = getattr(config, f"{hparams.model}Config", None)
+    logger.info(f'Using device: {device}')
+    model_config_class = getattr(config, f'{hparams.model}Config', None)
     if not model_config_class:
-        raise ValueError(f"Config class not found for model: {hparams.model}")
-    # Setup model
-    model_config = set_config(getattr(config, f"{hparams.model}Config", None), kwargs)
-    model_config.seq_len = hparams.seq_len
-    model = getattr(models, hparams.model)(model_config)
+        raise ValueError(f'Config class not found for model: {hparams.model}')
+
+    model = models.AttentionAutoencoder(model_config)
     if paths.experiments_dir.joinpath(model_path).exists():
         model_state_dict = torch.load(paths.experiments_dir.joinpath(model_path).joinpath('model.pt'))
     else:
@@ -36,17 +39,21 @@ def evaluate(model_path, data_path='test', threshold=None, **kwargs):
     model = model.to(device)
     model.eval()
 
+    logger.info(f'Initialize evaluator.')
     evaluator = ModelEvaluator(criterion=hparams.loss, device=device)
+    logger.info(f'Evaluate model on {data_path} dataset.')
     metrics, figures = evaluator.evaluate(model, dl, threshold)
 
     if mlflow_config.track and mlflow.active_run():
+        logger.info(f'Log metrics to MLFlow server.')
         mlflow.log_metrics(metrics)
         for path, fig in figures.items():
             mlflow.log_figure(fig, os.path.join('figures', path))
     _fmt = ''.join([f'{key}: {value}\n' for key, value in metrics.items()])
-    print(f'Test metrics:\n{_fmt}')
+    logger.info(f'Test metrics:\n{_fmt}')
 
     if mlflow_config.track:
+        logger.info(f'Stop MLFlow run.')
         mlflow.end_run()
     return metrics, figures
 
