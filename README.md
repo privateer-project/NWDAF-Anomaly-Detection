@@ -80,7 +80,7 @@ Additional CUDA versions can be found on the [official PyTorch website](https://
 From the project's [root directory](.), run:
 
 ```bash
-PYTHONPATH=./ python privateer_ad/data_utils/extract.py
+PYTHONPATH=./ python privateer_ad/data_utils/download.py
 ```
 
 Followed by:
