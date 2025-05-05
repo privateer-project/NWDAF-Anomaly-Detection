@@ -13,9 +13,10 @@ from sklearn.model_selection import train_test_split
 from flwr_datasets.partitioner import PathologicalPartitioner
 from torch.utils.data import DataLoader
 
-from privateer_ad.config import logger, MetaData, PathsConf
+from privateer_ad.config import MetaData, PathsConf, setup_logger
 from privateer_ad.data_utils.utils import check_existing_datasets, get_dataset_path
 
+logger = setup_logger('transform')
 
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
@@ -38,12 +39,12 @@ class DataProcessor:
 
         for device, device_info in self.devices.items():
             device_df = df.loc[df['imeisv'] == int(device_info.imeisv)]
-            logger.info(f"'Before Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])}'"
-                  f" benign length: {len(device_df[device_df['attack'] == 0])}")
+            logger.info(f'Before Device: {device}, attack length: {len(device_df[device_df["attack"] == 1])}'
+                        f' benign length: {len(device_df[device_df["attack"] == 0])}')
             device_df.loc[device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 1
             device_df.loc[~device_df['attack_number'].isin(device_info.in_attacks), 'attack'] = 0
-            logger.info(f"After Device: {device}, attack length: {len(device_df[device_df['attack'] == 1])} "
-                        f"benign length: {len(device_df[device_df['attack'] == 0])}")
+            logger.info(f'After Device: {device}, attack length: {len(device_df[device_df["attack"] == 1])} '
+                        f'benign length: {len(device_df[device_df["attack"] == 0])}')
             df_train, df_tmp = train_test_split(device_df,
                                                 train_size=train_size,
                                                 stratify=device_df['attack_number'],
@@ -59,8 +60,8 @@ class DataProcessor:
         df_val = pd.concat(val_dfs)
         df_test = pd.concat(test_dfs)
         for i, df in enumerate([df_train, df_val, df_test]):
-            logger.info(f"Dataset {i} attack length: {len(df[df['attack'] == 1])} "
-                        f"benign length: {len(df[df['attack'] == 0])}")
+            logger.info(f'Dataset {i} attack length: {len(df[df["attack"] == 1])} '
+                        f'benign length: {len(df[df["attack"] == 0])}')
 
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
         [logger.info(f'{key} shape: {df.shape}') for key, df in datasets.items()]
@@ -150,16 +151,14 @@ class DataProcessor:
             if path in ('val', 'test'):
                 logger.error(f'Setup on {path} is not allowed.')
                 raise ValueError(f'Setup on {path} is not allowed.')
-            logger.warning(f"{'#' * 30} Scalers will be fitted on {path}. {'#' * 30}")
+            logger.warning(f'{"#" * 30} Scalers will be fitted on {path}. {"#" * 30}')
         if path in ('train', 'val', 'test'):
             path = get_dataset_path(path)
         try:
             df = pd.read_csv(path, low_memory=False)
         except FileNotFoundError:
-            raise FileNotFoundError(f"File {path} not found.")
-        df = self.get_partition(df,
-                                partition_id=partition_id,
-                                num_partitions=num_partitions)
+            raise FileNotFoundError(f'File {path} not found.')
+        df = self.get_partition(df, partition_id=partition_id, num_partitions=num_partitions)
         df = self.clean_data(df)
         if setup:
             self.setup_scaler(df)
@@ -173,19 +172,21 @@ class DataProcessor:
 
     def get_partition(self, df: DataFrame, partition_id=0, num_partitions=1) -> DataFrame:
         """Partition data based on provided configuration."""
+        logger.info(f'partition_id: {partition_id} - num_partitions: {num_partitions}')
         #  if name != 'support'
-        if num_partitions == 1:
-            num_classes_per_partition = len(self.devices)
-        elif num_partitions == len(self.devices):
-            num_classes_per_partition = 1
-        else:
-            num_classes_per_partition = len(self.devices) // num_partitions
-
+        # if num_partitions == 1:
+        #     num_classes_per_partition = len(self.devices)
+        # elif num_partitions == len(self.devices):
+        #     num_classes_per_partition = 1
+        # else:
+        #     num_classes_per_partition = len(self.devices) // num_partitions
+        num_classes_per_partition = 1
         if self.partitioner is None:
+            # _time,imeisv,5g_tmsi,amf_ue_id,bearer_0_apn,bearer_0_dl_total_bytes,bearer_0_ip,bearer_0_ipv6,bearer_0_pdu_session_id,bearer_0_qos_flow_id,bearer_0_sst,bearer_0_ul_total_bytes,bearer_1_apn,bearer_1_dl_total_bytes,bearer_1_ip,bearer_1_pdu_session_id,bearer_1_qos_flow_id,bearer_1_sst,bearer_1_ul_total_bytes,dl_bitrate,ran_id,ran_plmn,ran_ue_id,registered,rnti,t3512,tac,tac_plmn,ue_aggregate_max_bitrate_dl,ue_aggregate_max_bitrate_ul,ul_bitrate,bearer_1_ipv6,cell,ul_retx,ul_err,ul_mcs,ul_n_layer,ul_path_loss,ul_phr,ul_rank,dl_err,dl_mcs,dl_retx,dl_tx,cqi,epre,initial_ta,p_ue,pusch_snr,ri,turbo_decoder_avg,turbo_decoder_max,turbo_decoder_min,ul_tx,cell_id,attack,malicious,attack_number
             self.partitioner = PathologicalPartitioner(
                 num_partitions=num_partitions,
                 num_classes_per_partition=num_classes_per_partition,
-                partition_by='imeisv',
+                partition_by='cell',
                 class_assignment_mode='first-deterministic')
             self.partitioner.dataset = Dataset.from_pandas(df)
         partitioned_df = self.partitioner.load_partition(partition_id).to_pandas(batched=False)
