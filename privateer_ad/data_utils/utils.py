@@ -14,4 +14,4 @@ def check_existing_datasets():
 
 def get_scaler_path(scaler_name: str) -> str:
     """Get full path for a scaler file."""
-    return str(PathsConf.scalers.joinpath(f"{scaler_name}.scaler"))
+    return str(PathsConf.scalers.joinpath(f'{scaler_name}.scaler'))
