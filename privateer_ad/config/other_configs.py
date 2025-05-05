@@ -6,25 +6,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 from dataclasses import dataclass
 
+from privateer_ad.config.data_config import PathsConf
+
 load_dotenv(Path(__file__).parent.joinpath('.env'))
 
 DATEFORMAT = '%Y-%m-%d %H:%M:%S.%f'
 
-@dataclass
-class PathsConf:
-   root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
-   data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
-   config: Path = Path(__file__).parent
-   raw: Path = Path(os.environ.get('RAW_DIR', data.joinpath('raw')))
-   processed: Path = Path(os.environ.get('PROCESSED_DIR', data.joinpath('processed')))
-   scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
-   analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
-   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
-   experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))
 
-def setup_logger():
-    lgr = logging.getLogger('privateer')
-    lgr.setLevel(logging.INFO)
+def setup_logger(name):
+    logger = logging.getLogger(name)
+    # Clear any existing handlers to prevent duplicates
+    if logger.handlers:
+        logger.handlers.clear()
+
+    logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     console_handler = logging.StreamHandler(sys.stdout)
@@ -33,15 +28,13 @@ def setup_logger():
     file_handler = logging.FileHandler(PathsConf.root.joinpath('logs.log'))
     file_handler.setFormatter(formatter)
 
-    lgr.addHandler(console_handler)
-    lgr.addHandler(file_handler)
-    return lgr
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 def _str2bool(value):
-    return str(value).lower() in {"1", "true", "yes", "on"}
+    return str(value).lower() in {'1', 'true', 'yes', 'on'}
 
-
-logger = setup_logger()
 
 @dataclass
 class DifferentialPrivacyConfig:
@@ -56,16 +49,6 @@ class MLFlowConfig:
    track: bool = _str2bool(os.environ.get('MLFLOW_ENABLE_TRACKING', True))
    server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
-
-@dataclass
-class AutotuneConfig:
-   study_name: str = 'study_1'
-   storage: str = 'optuna.db'
-   n_trials: int = 10
-   timeout: int = 3600 * 8  # 8 hours
-   target: str = 'f1-score'
-   direction: str = 'maximize'
-   kwargs: dict = None
 
 @dataclass
 class PartitionConfig:
