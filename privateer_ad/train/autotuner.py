@@ -93,8 +93,9 @@ class ModelAutoTuner:
         logger.info('Best trial:')
         trial = self.study.best_trial
         logger.info(f'    Value: {trial.value:.5f}')
-        params_logs = [f'    {key}: {value}' for key, value in trial.params.items()]
-        logger.info(f'   Params: {'\n'.join(params_logs)}')
+        params_logs = [f'    {key}: {value}\n' for key, value in trial.params.items()]
+        _log = ''.join(params_logs)
+        logger.info(f'   Params: {_log}')
         param_importance_fig = optuna.visualization.plot_param_importances(self.study)
         optimization_hist_fig = optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target)
         return param_importance_fig, optimization_hist_fig
