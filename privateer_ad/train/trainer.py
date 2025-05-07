@@ -1,11 +1,13 @@
 from copy import deepcopy
 from typing import Dict, Any
-from torch import nn
+
 from tqdm import tqdm
 import mlflow
 import torch
 
-from privateer_ad.config import HParams, EarlyStoppingConfig, setup_logger
+from mlflow.models import infer_signature
+
+from privateer_ad.config import HParams, EarlyStoppingConfig, setup_logger, PathsConf
 
 logger = setup_logger('trainer')
 
@@ -32,7 +34,8 @@ class ModelTrainer:
                  optimizer,
                  criterion,
                  device,
-                 hparams: HParams):
+                 hparams: HParams,
+                 run_id=None):
         """Initializes the ModelTrainer with model, optimizer, and training configuration.
 
                 Args:
@@ -43,23 +46,21 @@ class ModelTrainer:
                     hparams (HParams): Hyperparameters for training including epochs,
                                       early stopping flag, and target metric.
         """
-
+        self.run_id = run_id
         self.device = device
         self.model = model.to(self.device)
         self.optimizer = optimizer
-        self.loss_fn = getattr(nn, criterion)(reduction='mean')
+        self.loss_fn = getattr(torch.nn, criterion)(reduction='mean')
         self.hparams = hparams
+        self.paths = PathsConf()
         if self.hparams.early_stopping:
             logger.info('Early stopping enabled.')
             self.es_not_improved_epochs = 0
 
             if self.hparams.direction not in ('maximize', 'minimize'):
                 raise ValueError(f'direction must be `maximize` or `minimize`. Current value: {self.hparams.direction}')
-            try:
-                with mlflow.active_run():
-                    mlflow.log_params(self.es_conf.__dict__)
-            except:
-                pass
+            if self.run_id:
+                mlflow.log_params(self.es_conf.__dict__, run_id=self.run_id)
 
         # Initialize metrics dict and best_checkpoint dict
         metrics = {'loss': float('inf'), 'val_loss': float('inf')}
@@ -116,6 +117,25 @@ class ModelTrainer:
                     break
         except KeyboardInterrupt: # Break training loop when Ctrl+C pressed (Manual early stopping)
             logger.warning('Training interrupted by user...')
+        if self.run_id:
+            # log model with signature to mlflow
+            self.model.to('cpu')
+            sample = next(iter(train_dl))[0]['encoder_cont'][:1].to('cpu')
+
+            _input = sample.to('cpu')
+            _output = self.model(_input)
+            if isinstance(_output, dict):
+                _output = {key: val.detach().numpy() for key, val in _output.items()}
+            else:
+                _output = _output.detach().numpy()
+
+            mlflow.pytorch.log_model(pytorch_model=self.model,
+                                     artifact_path='model',
+                                     signature=infer_signature(model_input=_input.detach().numpy(),
+                                                               model_output=_output),
+                                     pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix(),
+                                     run_id=self.run_id)
+
         return self.best_checkpoint
 
     def _training_loop(self, epoch: int, train_dl) -> Dict[str, float]:
@@ -182,11 +202,8 @@ class ModelTrainer:
             epoch (int): Current epoch number for MLFlow logging.
         """
         self.metrics.update(metrics)
-        try:
-            with mlflow.active_run():
-                mlflow.log_metrics(self.metrics, step=epoch)
-        except:
-            pass
+        if self.run_id:
+            mlflow.log_metrics(self.metrics, step=epoch, run_id=self.run_id)
 
         _prnt = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
         logger.info(f'Metrics: {" ".join(_prnt)}')

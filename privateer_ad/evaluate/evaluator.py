@@ -1,19 +1,21 @@
 from typing import Tuple, List
-
 from tqdm import tqdm
+
+import mlflow
 import numpy as np
 import torch
-import torch.nn as nn
+
 from sklearn.metrics import roc_curve, roc_auc_score, classification_report
 
 from privateer_ad.visualizations.plotter import Visualizer
 
 
 class ModelEvaluator:
-    def __init__(self, criterion, device: torch.device):
-        self.criterion = getattr(nn, criterion)(reduction='none')
+    def __init__(self, criterion, device: torch.device, run_id=None):
+        self.criterion = getattr(torch.nn, criterion)(reduction='none')
         self.device = device
         self.visualizer = Visualizer()
+        self.run_id = run_id
 
     def compute_reconstruction_errors(self, model, dataloader) -> Tuple[np.ndarray, np.ndarray]:
         losses: List[float] = []
@@ -43,7 +45,7 @@ class ModelEvaluator:
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
         return thresholds[optimal_idx]
 
-    def evaluate(self, model, dataloader, threshold: int = None, prefix='') -> Tuple[dict[str, float], dict]:
+    def evaluate(self, model, dataloader, threshold: int = None, prefix='', step=0) -> Tuple[dict[str, float], dict]:
         rec_errors, y_true = self.compute_reconstruction_errors(model, dataloader)
         if threshold is None:
             threshold = self.find_optimal_threshold(y_true, rec_errors)
@@ -67,6 +69,12 @@ class ModelEvaluator:
                                   scores=rec_errors,
                                   threshold=threshold,
                                   target_names=target_names,
-                                  prefix=prefix)
+                                  prefix=prefix
+                                  )
 
+        if self.run_id:
+            mlflow.log_metrics(metrics, step=step, run_id=self.run_id)
+            with mlflow.start_run(run_id=self.run_id):
+                for name, fig in self.visualizer.figures.items():
+                    mlflow.log_figure(fig, f'{name}_{step}.png')
         return metrics, self.visualizer.figures
