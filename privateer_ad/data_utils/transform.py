@@ -174,13 +174,13 @@ class DataProcessor:
         """Partition data based on provided configuration."""
         logger.info(f'partition_id: {partition_id} - num_partitions: {num_partitions}')
         #  if name != 'support'
-        # if num_partitions == 1:
-        #     num_classes_per_partition = len(self.devices)
-        # elif num_partitions == len(self.devices):
-        #     num_classes_per_partition = 1
-        # else:
-        #     num_classes_per_partition = len(self.devices) // num_partitions
-        num_classes_per_partition = 1
+        if num_partitions == 1:
+            num_classes_per_partition = 3
+        elif num_partitions == 3:
+            num_classes_per_partition = 1
+        else:
+             num_classes_per_partition = 3 // num_partitions
+
         if self.partitioner is None:
             # _time,imeisv,5g_tmsi,amf_ue_id,bearer_0_apn,bearer_0_dl_total_bytes,bearer_0_ip,bearer_0_ipv6,bearer_0_pdu_session_id,bearer_0_qos_flow_id,bearer_0_sst,bearer_0_ul_total_bytes,bearer_1_apn,bearer_1_dl_total_bytes,bearer_1_ip,bearer_1_pdu_session_id,bearer_1_qos_flow_id,bearer_1_sst,bearer_1_ul_total_bytes,dl_bitrate,ran_id,ran_plmn,ran_ue_id,registered,rnti,t3512,tac,tac_plmn,ue_aggregate_max_bitrate_dl,ue_aggregate_max_bitrate_ul,ul_bitrate,bearer_1_ipv6,cell,ul_retx,ul_err,ul_mcs,ul_n_layer,ul_path_loss,ul_phr,ul_rank,dl_err,dl_mcs,dl_retx,dl_tx,cqi,epre,initial_ta,p_ue,pusch_snr,ri,turbo_decoder_avg,turbo_decoder_max,turbo_decoder_min,ul_tx,cell_id,attack,malicious,attack_number
             self.partitioner = PathologicalPartitioner(
