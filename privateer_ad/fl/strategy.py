@@ -41,7 +41,7 @@ class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
         model_config = AttentionAutoencoderConfig()
         self.model = AttentionAutoencoder(config=model_config)
         data_processor = DataProcessor()
-
+        self.logger = FLOWER_LOGGER
         self.test_dl = data_processor.get_dataloader('test',
                                                  use_pca=hparams.use_pca,
                                                  batch_size=hparams.batch_size,
@@ -74,9 +74,9 @@ class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
             if len(parent_runs) > 0:
                 # Use existing run
                 self.parent_run_id = parent_runs.iloc[0].run_id
-                FLOWER_LOGGER.info(f'Found existing parent run: {run_name} with id: {self.parent_run_id}')
+                self.logger.info(f'Found existing parent run: {run_name} with id: {self.parent_run_id}')
             else:
-                FLOWER_LOGGER.info(f'No Parent run with name {run_name} found. Creating parent run.')
+                self.logger.info(f'No Parent run with name {run_name} found. Creating parent run.')
                 with mlflow.start_run(run_name=run_name):
                     self.parent_run_id = mlflow.active_run().info.run_id
 
@@ -113,18 +113,18 @@ class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
         else:
             _output = _output.detach().numpy()
 
-        if self.mlflow_config.track:
-            with mlflow.start_run(self.parent_run_id):
-                mlflow.pytorch.log_model(pytorch_model=self.model,
-                                         artifact_path=f'fl_model_{server_round}',
-                                         registered_model_name=f'fl_model_{server_round}',
-                                         signature=infer_signature(model_input=_input.detach().numpy(),
-                                                                   model_output=_output),
-                                         pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
-                for key, value in aggregated_metrics.items():
-                    mlflow.log_metric(key=key,
-                                      value=value,
-                                      step=server_round)
+        if self.parent_run_id:
+            mlflow.pytorch.log_model(pytorch_model=self.model,
+                                     artifact_path=f'fl_model_{server_round}',
+                                     registered_model_name=f'fl_model_{server_round}',
+                                     signature=infer_signature(model_input=_input.detach().numpy(),
+                                                               model_output=_output),
+                                     pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix(),
+                                     run_id=self.parent_run_id)
+
+            mlflow.log_metrics(aggregated_metrics,
+                               step=server_round,
+                               run_id=self.parent_run_id)
 
         return aggregated_parameters, aggregated_metrics
 
@@ -140,18 +140,17 @@ class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
 
     def evaluate(self, server_round: int, parameters: Parameters) -> Optional[tuple[float, dict[str, Scalar]]]:
         """Evaluate model parameters using an evaluation function."""
-        FLOWER_LOGGER.info('Evaluating model on Server')
+        self.logger.info('Evaluating model on Server')
         parameters_ndarrays = parameters_to_ndarrays(parameters)
         params_dict = zip(self.model.state_dict().keys(), parameters_ndarrays)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         self.model.load_state_dict(state_dict, strict=True)
         self.model.to(self.device)
-        metrics, figures = self.evaluator.evaluate(self.model, self.test_dl, prefix='eval')
-        if self.mlflow_config.track:
-            with mlflow.start_run(self.parent_run_id):
-                for key, value in metrics.items():
-                    mlflow.log_metric(key=key, value=value, step=server_round)
+        metrics, figures = self.evaluator.evaluate(self.model, self.test_dl, prefix='eval', step=server_round)
+        if self.parent_run_id:
+            mlflow.log_metrics(metrics, step=server_round, run_id=self.parent_run_id)
                 # Log figures in the parent run
+            with mlflow.start_run(run_id=self.parent_run_id):
                 for name, fig in figures.items():
                     mlflow.log_figure(fig, f'server_{name}_round_{server_round}.png')
         loss = metrics.pop('eval_loss')
