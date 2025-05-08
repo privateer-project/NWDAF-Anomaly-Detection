@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Optional, Union
+from typing import List, Tuple, Optional, Union
 
 import numpy as np
 import torch
@@ -6,17 +6,18 @@ from torch import nn
 from tqdm import tqdm
 from fire import Fire
 from sklearn.metrics import classification_report
-from privateer_ad.config import AttentionAutoencoderConfig, AlertFilterConfig, PathsConf, HParams, logger
+from privateer_ad.config import AttentionAutoencoderConfig, AlertFilterConfig, PathsConf, HParams, setup_logger
 from privateer_ad.models import AttentionAutoencoder, AlertFilterModel
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
 from pathlib import Path
 
-def make_predictions(
-        model_path,
-        data_path,
-        threshold: float = 0.026970019564032555
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+logger = setup_logger('predict')
+
+def make_predictions(model_path: str,
+                     data_path: str,
+                     threshold: float
+                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load a trained model and make predictions on the specified dataset.
     Parameters:
@@ -52,22 +53,22 @@ def make_predictions(
                            only_benign=False)
 
     # Load model
-    model = AttentionAutoencoder(config=AttentionAutoencoderConfig())
+    model = AttentionAutoencoder()
     state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
     model.load_state_dict(state_dict)
     model = model.to(device)
 
     model.to(device)
-    inputs: List[float] = []
-    losses: List[float] = []
-    predictions: List[int] = []
-    labels: List[int] = []
+    inputs = []
+    losses = []
+    predictions = []
+    labels = []
     criterion_fn = getattr(nn, hparams.loss)(reduction='none')
     model.eval()
 
     with torch.no_grad(): # Collect results
-        for batch in tqdm(dl, desc="Computing reconstruction errors"):
+        for batch in tqdm(dl, desc='Computing reconstruction errors'):
             x = batch[0]['encoder_cont'].to(device)
             targets = np.squeeze(batch[1][0])
             labels.extend(targets.cpu().tolist())
@@ -81,27 +82,25 @@ def make_predictions(
             inputs.extend(x.cpu().tolist())
             predictions.extend((loss_per_sample > threshold).cpu().tolist())
 
-    inputs_np = np.asarray(inputs)
-    losses_np = np.array(losses)
-    predictions_np = np.asarray(predictions)
-    labels_np = np.array(labels, dtype=int)
+    inputs = np.asarray(inputs)
+    losses = np.array(losses)
+    predictions = np.asarray(predictions)
+    labels = np.array(labels, dtype=int)
+
+    ben_labels = labels[labels == 0]
+    mal_labels = labels[labels == 1]
+    _len = len(labels[labels == 1])
+
+    ben_predictions = predictions[labels == 0]
+    mal_predictions = predictions[labels == 1]
 
     # Keep same n samples for balanced metrics
-    ben_labels = labels_np[labels_np == 0]
-    ben_predictions = predictions_np[labels_np == 0]
-
-    mal_labels = labels_np[labels_np == 1]
-    mal_predictions = predictions_np[labels_np == 1]
-
-    _len = len(mal_labels)
-    ben_labels = ben_labels[:_len]
     ben_predictions = ben_predictions[:_len]
-    mal_labels = mal_labels[:_len]
     mal_predictions = mal_predictions[:_len]
-    labels = np.concatenate([ben_labels, mal_labels])
-    predictions = np.concatenate([ben_predictions, mal_predictions])
-    print(classification_report(labels, predictions))
-    return inputs_np, losses_np, predictions_np, labels_np
+    labels = np.concatenate([ben_labels[:_len], mal_labels[:_len]])
+    predictions = np.concatenate([ben_predictions[:_len], mal_predictions[:_len]])
+    logger.info(classification_report(int(labels), int(predictions)))
+    return inputs, losses, predictions, labels
 
 def make_predictions_with_filter(
         model_path: Union[str, Path],

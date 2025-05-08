@@ -33,8 +33,8 @@ def create_device_monitoring_dashboard():
         else:
             benign_devices.append(device)
 
-    print(f"Malicious devices: {len(malicious_devices)}")
-    print(f"Benign devices: {len(benign_devices)}")
+    print(f'Malicious devices: {len(malicious_devices)}')
+    print(f'Benign devices: {len(benign_devices)}')
 
     # Get potential metrics for visualization
     # Focus on network performance metrics
@@ -50,7 +50,7 @@ def create_device_monitoring_dashboard():
     app.layout = html.Div([
         dbc.Card(
             dbc.CardBody([
-                html.H1("Network Device Monitoring Dashboard", className="card-title"),
+                html.H1('Network Device Monitoring Dashboard', className='card-title'),
                 html.Hr(),
 
                 # Controls
@@ -58,28 +58,28 @@ def create_device_monitoring_dashboard():
                     dbc.Col([
                         dbc.Card(
                             dbc.CardBody([
-                                html.H4("Display Controls", className="card-title"),
+                                html.H4('Display Controls', className='card-title'),
                                 dbc.Checklist(
                                     options=[
-                                        {"label": "Show Malicious Devices", "value": "malicious"},
-                                        {"label": "Show Benign Devices", "value": "benign"},
+                                        {'label': 'Show Malicious Devices', 'value': 'malicious'},
+                                        {'label': 'Show Benign Devices', 'value': 'benign'},
                                     ],
-                                    value=["malicious", "benign"],  # Both options checked by default
-                                    id="device-type-checklist",
+                                    value=['malicious', 'benign'],  # Both options checked by default
+                                    id='device-type-checklist',
                                     inline=True,
                                     switch=True,
                                 ),
                                 html.Br(),
-                                html.Label("Select Metric:"),
+                                html.Label('Select Metric:'),
                                 dcc.Dropdown(
-                                    id="metric-dropdown",
-                                    options=[{"label": col.replace('_', ' '), "value": col}
+                                    id='metric-dropdown',
+                                    options=[{'label': col.replace('_', ' '), 'value': col}
                                              for col in available_metrics],
                                     value=available_metrics[0] if available_metrics else None,
                                     clearable=False,
                                 ),
                             ]),
-                            className="mb-3",
+                            className='mb-3',
                         ),
                     ]),
                 ]),
@@ -87,7 +87,7 @@ def create_device_monitoring_dashboard():
                 # Plot
                 dbc.Row([
                     dbc.Col([
-                        dcc.Graph(id="timeseries-plot", style={"height": "600px"}),
+                        dcc.Graph(id='timeseries-plot', style={'height': '600px'}),
                     ]),
                 ]),
 
@@ -96,42 +96,42 @@ def create_device_monitoring_dashboard():
                     dbc.Col([
                         html.Div([
                             html.P([
-                                "This visualization shows network metrics for each device over time. "
-                                "Toggle the checkboxes to show/hide malicious or benign devices. "
-                                "Select different metrics from the dropdown menu."
+                                'This visualization shows network metrics for each device over time. '
+                                'Toggle the checkboxes to show/hide malicious or benign devices. '
+                                'Select different metrics from the dropdown menu.'
                             ]),
                             html.P([
-                                html.Span("", style={"display": "inline-block", "width": "12px",
-                                                     "height": "12px", "border-radius": "50%",
-                                                     "background-color": "#ff6b6b", "margin-right": "5px"}),
-                                " Malicious devices ",
-                                html.Span("", style={"display": "inline-block", "width": "12px",
-                                                     "height": "12px", "border-radius": "50%",
-                                                     "background-color": "#51cf66",
-                                                     "margin-right": "5px", "margin-left": "15px"}),
-                                " Benign devices"
+                                html.Span('', style={'display': 'inline-block', 'width': '12px',
+                                                     'height': '12px', 'border-radius': '50%',
+                                                     'background-color': '#ff6b6b', 'margin-right': '5px'}),
+                                ' Malicious devices ',
+                                html.Span('', style={'display': 'inline-block', 'width': '12px',
+                                                     'height': '12px', 'border-radius': '50%',
+                                                     'background-color': '#51cf66',
+                                                     'margin-right': '5px', 'margin-left': '15px'}),
+                                ' Benign devices'
                             ]),
                             html.P([
-                                "Background colors: ",
-                                html.Span("Green", className="bg-success text-white px-2 rounded"),
-                                " = Normal operation, ",
-                                html.Span("Red", className="bg-danger text-white px-2 rounded ml-2"),
-                                " = Attack period"
+                                'Background colors: ',
+                                html.Span('Green', className='bg-success text-white px-2 rounded'),
+                                ' = Normal operation, ',
+                                html.Span('Red', className='bg-danger text-white px-2 rounded ml-2'),
+                                ' = Attack period'
                             ]),
-                        ], className="text-muted small mt-3"),
+                        ], className='text-muted small mt-3'),
                     ]),
                 ]),
             ]),
-            className="shadow-sm",
+            className='shadow-sm',
         ),
-    ], className="container-fluid p-4")
+    ], className='container-fluid p-4')
 
     # Define callback to update graph
     @app.callback(
-        Output("timeseries-plot", "figure"),
+        Output('timeseries-plot', 'figure'),
         [
-            Input("device-type-checklist", "value"),
-            Input("metric-dropdown", "value"),
+            Input('device-type-checklist', 'value'),
+            Input('metric-dropdown', 'value'),
         ],
     )
     def update_timeseries(device_types, metric):
@@ -151,14 +151,14 @@ def create_device_monitoring_dashboard():
                 y_max = 1
 
             fig.add_shape(
-                type="rect",
+                type='rect',
                 x0=time_range['min'],
                 x1=time_range['max'],
                 y0=y_min,
                 y1=y_max,
-                fillcolor="rgba(0, 255, 0, 0.1)",
+                fillcolor='rgba(0, 255, 0, 0.1)',
                 line=dict(width=0),
-                layer="below"
+                layer='below'
             )
 
             # Check if there are any attack periods
@@ -184,28 +184,28 @@ def create_device_monitoring_dashboard():
                     elif not time_groups[time]['attack'] and start is not None:
                         # Add red background for attack period
                         fig.add_shape(
-                            type="rect",
+                            type='rect',
                             x0=start,
                             x1=times[i - 1],
                             y0=y_min,
                             y1=y_max,
-                            fillcolor="rgba(255, 0, 0, 0.1)",
+                            fillcolor='rgba(255, 0, 0, 0.1)',
                             line=dict(width=0),
-                            layer="below"
+                            layer='below'
                         )
                         start = None
 
                 # Handle ongoing attack at the end
                 if start is not None:
                     fig.add_shape(
-                        type="rect",
+                        type='rect',
                         x0=start,
                         x1=times[-1],
                         y0=y_min,
                         y1=y_max,
-                        fillcolor="rgba(255, 0, 0, 0.1)",
+                        fillcolor='rgba(255, 0, 0, 0.1)',
                         line=dict(width=0),
-                        layer="below"
+                        layer='below'
                     )
 
             # Add traces for each device
@@ -215,50 +215,50 @@ def create_device_monitoring_dashboard():
                 # Check if this device type should be displayed
                 display_device = False
 
-                if device in malicious_devices and "malicious" in device_types:
+                if device in malicious_devices and 'malicious' in device_types:
                     display_device = True
-                    color = "#ff6b6b"  # Red for malicious
-                    device_type = "malicious"
-                elif device in benign_devices and "benign" in device_types:
+                    color = '#ff6b6b'  # Red for malicious
+                    device_type = 'malicious'
+                elif device in benign_devices and 'benign' in device_types:
                     display_device = True
-                    color = "#51cf66"  # Green for benign
-                    device_type = "benign"
+                    color = '#51cf66'  # Green for benign
+                    device_type = 'benign'
 
                 if display_device and len(device_df) > 0 and metric in device_df.columns:
                     # Sort by time
-                    device_df = device_df.sort_values(by="_time")
+                    device_df = device_df.sort_values(by='_time')
 
                     # Add trace
                     fig.add_trace(go.Scatter(
                         x=device_df['_time'],
                         y=device_df[metric],
                         mode='lines+markers',
-                        name=f"{str(device)[-5:]} ({device_type})",
+                        name=f'{str(device)[-5:]} ({device_type})',
                         line=dict(width=2, color=color),
                         marker=dict(size=4, color=color)
                     ))
 
             # Improve y-axis scaling for some metrics with large ranges
             if metric in ['dl_bitrate', 'ul_bitrate', 'bearer_0_dl_total_bytes', 'bearer_1_dl_total_bytes']:
-                fig.update_layout(yaxis_type="log")
+                fig.update_layout(yaxis_type='log')
 
             # Update layout
             metric_name = metric.replace('_', ' ')
             fig.update_layout(
-                title=f"{metric_name} Values Over Time",
+                title=f'{metric_name} Values Over Time',
                 xaxis=dict(
-                    title="Time",
+                    title='Time',
                     # rangeslider=dict(visible=True),
-                    type="date"
+                    type='date'
                 ),
                 yaxis=dict(
-                    title=f"{metric_name}"
+                    title=f'{metric_name}'
                 ),
                 legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
+                    orientation='h',
+                    yanchor='bottom',
                     y=-0.2,
-                    xanchor="left",
+                    xanchor='left',
                     x=0
                 ),
                 margin=dict(l=50, r=50, t=80, b=180),
@@ -270,24 +270,24 @@ def create_device_monitoring_dashboard():
                 fig.add_annotation(
                     x=0.5,
                     y=0.5,
-                    xref="paper",
-                    yref="paper",
-                    text="No data available for the selected filters",
+                    xref='paper',
+                    yref='paper',
+                    text='No data available for the selected filters',
                     showarrow=False,
                     font=dict(size=20)
                 )
 
         except Exception as e:
-            print(f"Error updating plot: {e}")
+            print(f'Error updating plot: {e}')
             # Create an empty figure with error message
             fig.add_annotation(
                 x=0.5,
                 y=0.5,
-                xref="paper",
-                yref="paper",
-                text=f"Error generating plot: {str(e)}",
+                xref='paper',
+                yref='paper',
+                text=f'Error generating plot: {str(e)}',
                 showarrow=False,
-                font=dict(size=16, color="red")
+                font=dict(size=16, color='red')
             )
 
         return fig
@@ -298,6 +298,6 @@ def create_device_monitoring_dashboard():
 if __name__ == '__main__':
     # Create the app
     app = create_device_monitoring_dashboard()
-    print("Starting Dash server...")
+    print('Starting Dash server...')
     app.run_server(debug=True, port=8050)
-    print("Dash server is running on http://127.0.0.1:8050/")
+    print('Dash server is running on http://127.0.0.1:8050/')

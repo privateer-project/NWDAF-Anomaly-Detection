@@ -45,8 +45,8 @@ train-ad = "privateer_ad.train.train:main"
 eval-ad = "privateer_ad.evaluate.evaluate:main"
 predict-ad = "privateer_ad.predict.predict:main"
 autotune-ad = "privateer_ad.train.autotune:main"
-server-app = "privateer_ad.server_app:app"
-client-app = "privateer_ad.client_app:app"
+server-app = "privateer_ad.fl.server_app:app"
+client-app = "privateer_ad.fl.client_app:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
@@ -58,24 +58,27 @@ allow-direct-references = true
 publisher = "gliv"
 
 [tool.flwr.app.components]
-serverapp = "privateer_ad.server_app:app"
-clientapp = "privateer_ad.client_app:app"
+serverapp = "privateer_ad.fl.server_app:app"
+clientapp = "privateer_ad.fl.client_app:app"
 
 [tool.flwr.app.config]  # Run Config
-num-server-rounds = 10
-epochs = 1
+num-server-rounds = 200
+epochs = 5
 fraction-fit =1.0
-n_clients=9
+n_clients=3
+run-name = "federated_learning"
 
 [tool.flwr.federations]
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 9
-options.backend.client-resources.num-cpus = 1 # Each ClientApp will get assigned n CPU core
-options.backend.client-resources.num-gpus = 0.1 # Each ClientApp will get n * 100% of each available GPU VRAM
-options.backend.init_args.num_cpus = 16 # Only expose N CPU to the simulation
+options.num-supernodes = 3
+options.backend.client-resources.num-cpus = 8 # Each ClientApp will get assigned n CPU core
+options.backend.client-resources.num-gpus = 0.33 # Each ClientApp will get n * 100% of each available GPU VRAM
+options.backend.init_args.num_cpus = 24 # Only expose N CPU to the simulation
 options.backend.init_args.num_gpus = 1 # Expose N GPUs to the simulation
+options.backend.max_restarts = 2
+options.backend.max_task_retries = 2
 
 [tool.flwr.federations.local-deployment]
 address = "localhost:9099"

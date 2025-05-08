@@ -1,7 +1,20 @@
+import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, Dict
 import yaml
-from privateer_ad.config.other_configs import PathsConf
+
+@dataclass
+class PathsConf:
+   root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
+   data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
+   config: Path = Path(__file__).parent
+   raw: Path = Path(os.environ.get('RAW_DIR', data.joinpath('raw')))
+   processed: Path = Path(os.environ.get('PROCESSED_DIR', data.joinpath('processed')))
+   scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
+   analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
+   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
+   experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))
 
 
 @dataclass
@@ -32,7 +45,7 @@ class MetaData:
 
    def __init__(self):
       super().__init__()
-      with open(PathsConf.config.joinpath('metadata.yaml')) as f:
+      with open(Path(__file__).parent.joinpath('metadata.yaml')) as f:
          data = yaml.safe_load(f)
       self.devices = {k: DeviceInfo(**v) for k, v in data['devices'].items()}
       self.attacks = {k: AttackInfo(**v) for k, v in data['attacks'].items()}
