@@ -32,6 +32,7 @@ def make_predictions(
     Tuple[np.ndarray, np.ndarray, np.ndarray]:
         - inputs: Array of shape (n_samples, seq_len, n_features) containing input data
         - losses: Array of shape (n_samples,) containing reconstruction errors
+        - predictions: Array of shape (n_samples,) containing anomaly decisions (1 = anomaly, 0 = normal)
         - labels: Array of shape (n_samples,) containing integer labels
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -136,7 +137,6 @@ def make_predictions_with_filter(
         - latents: Array containing latent representations
         - losses: Array containing reconstruction errors
         - predictions: Array containing anomaly decisions (1 = anomaly, 0 = normal)
-        - anomaly_decisions: Array containing anomaly decisions (1 = anomaly, 0 = normal)
         - filtered_decisions: Array containing filtered decisions (1 = allow alert, 0 = deny alert)
         - labels: Array containing true labels (1 = anomaly, 0 = normal)
     """
@@ -183,8 +183,7 @@ def make_predictions_with_filter(
     inputs: List[float] = []
     latents: List[float] = []
     losses: List[float] = []
-    predictions: List[int] = []  # Same as anomaly_decisions, for compatibility with make_predictions
-    anomaly_decisions: List[int] = []
+    predictions: List[int] = []
     filtered_decisions: List[int] = []
     labels: List[int] = []
     
@@ -202,15 +201,15 @@ def make_predictions_with_filter(
             # Get autoencoder outputs with latent representation
             output, latent = autoencoder(x, return_latent=True)
             
+            print(x.shape, output.shape, latent.shape)
+            
             # Calculate reconstruction error
             batch_rec_errors = criterion_fn(x, output)
             loss_per_sample = batch_rec_errors.mean(dim=(1, 2))
             
             # Determine anomaly decision
-            anomaly_decision = (loss_per_sample > threshold).float()
+            prediction = (loss_per_sample > threshold).float()
             
-            # Store the prediction (same as anomaly_decision) for compatibility with make_predictions
-            predictions.extend((loss_per_sample > threshold).cpu().tolist())
             
             # Apply alert filter if available and use_filter is True
             if alert_filter is not None and use_filter:
@@ -223,22 +222,24 @@ def make_predictions_with_filter(
                 
                 # Ensure the latent vector has the correct dimension (8)
                 # If it's larger (e.g., 16), take the first 8 elements
-                target_dim = 8  # This should match AlertFilterConfig.latent_dim
+                target_dim = 16  # This should match AlertFilterConfig.latent_dim
                 if latent_processed.shape[-1] > target_dim:
+                    print(f"Warning: Latent dimension {latent_processed.shape[-1]} is larger than target dimension {target_dim}. Truncating.")
                     latent_processed = latent_processed[:, :target_dim]
                 
-                allow_alert = alert_filter(latent_processed, anomaly_decision, loss_per_sample)
+                allow_alert = alert_filter(latent_processed, prediction, loss_per_sample)
+                
                 # Final decision: anomaly AND allow_alert
-                final_decision = anomaly_decision * (allow_alert > 0.5).float()
+                final_decision = prediction * (allow_alert > 0.5).float()
             else:
                 # If no filter, all alerts are allowed
-                allow_alert = torch.ones_like(anomaly_decision)
-                final_decision = anomaly_decision
+                allow_alert = torch.ones_like(prediction)
+                final_decision = prediction
             
             # Collect feedback if enabled
             if collect_feedback and alert_filter is not None:
-                for i in range(len(anomaly_decision)):
-                    if anomaly_decision[i] == 1:  # Only collect feedback for anomalies
+                for i in range(len(prediction)):
+                    if prediction[i] == 1:  # Only collect feedback for anomalies
                         print(f"\nAlert {i+1}:")
                         print(f"Reconstruction error: {loss_per_sample[i].item():.6f}")
                         print(f"Alert filter decision: {'Allow' if allow_alert[i].item() > 0.5 else 'Deny'}")
@@ -250,7 +251,7 @@ def make_predictions_with_filter(
                         # Add feedback to collector
                         feedback_collector.add_feedback(
                             latent=latent[i].cpu(),
-                            anomaly_decision=anomaly_decision[i].item(),
+                            prediction=prediction[i].item(),
                             reconstruction_error=loss_per_sample[i].item(),
                             user_feedback=user_feedback
                         )
@@ -259,7 +260,7 @@ def make_predictions_with_filter(
             inputs.extend(x.cpu().tolist())
             latents.extend(latent.cpu().tolist())
             losses.extend(loss_per_sample.cpu().tolist())
-            anomaly_decisions.extend(anomaly_decision.cpu().tolist())
+            predictions.extend(prediction.cpu().tolist())
             # Convert final_decision to a list of scalar values
             filtered_decisions.extend(final_decision.cpu().flatten().tolist())
 
@@ -268,27 +269,24 @@ def make_predictions_with_filter(
     latents_np = np.asarray(latents)
     losses_np = np.array(losses)
     predictions_np = np.array(predictions)
-    anomaly_decisions_np = np.array(anomaly_decisions)
+    filtered_decisions_np = np.array(filtered_decisions)
     
-    # Ensure filtered_decisions is a 1D array of scalar values
-    try:
-        filtered_decisions_np = np.array(filtered_decisions)
-    except ValueError as e:
-        logger.error(f"Error converting filtered_decisions to numpy array: {e}")
-        # Try to convert each element individually
-        filtered_decisions_np = np.array([float(x) if isinstance(x, (int, float)) else float(x[0]) for x in filtered_decisions])
-    
+    # print number of filtered decisions per value
+    unique, counts = np.unique(filtered_decisions_np, return_counts=True)
+    print(f"Filtered decisions counts: {dict(zip(unique, counts))}")
+
+   
     labels_np = np.array(labels, dtype=int)
 
     # Print classification report for both unfiltered and filtered decisions
     print("\nUnfiltered Anomaly Detection Results:")
-    print_balanced_classification_report(labels_np, anomaly_decisions_np)
+    print_balanced_classification_report(labels_np, predictions_np)
     
     if alert_filter is not None and use_filter:
         print("\nFiltered Anomaly Detection Results:")
         print_balanced_classification_report(labels_np, filtered_decisions_np)
     
-    return inputs_np, latents_np, losses_np, predictions_np, anomaly_decisions_np, filtered_decisions_np, labels_np
+    return inputs_np, latents_np, losses_np, predictions_np, filtered_decisions_np, labels_np
 
 def print_balanced_classification_report(labels_np: np.ndarray, predictions_np: np.ndarray) -> None:
     """

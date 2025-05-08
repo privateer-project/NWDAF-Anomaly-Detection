@@ -80,6 +80,7 @@ class AlertFilterTrainer:
             training_data['reconstruction_error'],
             training_data['user_feedback']
         )
+        
         dataloader = DataLoader(
             dataset, 
             batch_size=self.config.batch_size, 
@@ -89,7 +90,6 @@ class AlertFilterTrainer:
         # Set number of epochs
         epochs = epochs or self.config.epochs
 
-        print
         
         # Training loop
         self.model.train()
@@ -107,6 +107,8 @@ class AlertFilterTrainer:
                 
                 # Forward pass
                 self.optimizer.zero_grad()
+                
+                print(f"latent: {latent.shape}, decision: {decision.shape}, error: {error.shape}, feedback: {feedback.shape}")
                 output = self.model(latent, decision, error)
                 
                 # Calculate loss

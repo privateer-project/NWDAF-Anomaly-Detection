@@ -169,7 +169,7 @@ class FeedbackCollector:
             # Ensure the latent vector has the correct dimension (8)
             # If it's larger (e.g., 16), take the first 8 elements
             # If it's smaller, pad with zeros (shouldn't happen)
-            target_dim = 8  # This should match AlertFilterConfig.latent_dim
+            target_dim = 16  # This should match AlertFilterConfig.latent_dim
             if len(latent) > target_dim:
                 latent = latent[:target_dim]
             elif len(latent) < target_dim:
