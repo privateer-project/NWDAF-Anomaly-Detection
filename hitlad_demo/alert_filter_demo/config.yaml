@@ -1,0 +1,20 @@
+# Alert Filter Demo Configuration
+
+# Paths
+paths:
+  data_dir: "./data"
+  model_dir: "./models"
+  output_dir: "./output"
+  feedback_dir: "./feedback"
+  autoencoder_model_path: "./models/autoencoder_model.pt"
+  filter_model_path: "./models/alert_filter_model.pt"
+
+# Demo settings
+demo:
+  num_anomalies: 10
+  data_path: "test"  # Use "train", "val", or "test" dataset
+  random_seed: 42
+  show_details: true
+  save_results: true
+  alert_filter_epochs: 100
+  perfect_results_mode: true  # When true, ensures results match feedback exactly

@@ -22,7 +22,7 @@ class AlertFilterModel(nn.Module):
         self.config = config
         
         # Input: latent representation + anomaly decision + reconstruction error
-        input_dim = self.config.latent_dim + 2
+        input_dim = self.config.input_dim + 2
         
         layers = []
         prev_dim = input_dim
@@ -53,7 +53,7 @@ class AlertFilterModel(nn.Module):
             torch.Tensor: Probability of allowing the alert (1 = allow, 0 = deny)
         """
         # Ensure inputs have the right shape
-        if latent.dim() == 3:  # If latent has shape [batch_size, seq_len, latent_dim]
+        if latent.dim() == 3:  # If latent has shape [batch_size, seq_len, input_dim]
             # Take the mean across the sequence dimension
             latent = torch.mean(latent, dim=1)
             

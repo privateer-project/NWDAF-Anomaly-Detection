@@ -25,7 +25,7 @@ class EarlyStoppingConfig:
 
 @dataclass
 class AlertFilterConfig:
-    latent_dim: int = 16  
+    input_dim: int = 16  # Should match the latent dimension of the autoencoder
     hidden_dims: List[int] = field(default_factory=lambda: [32, 16])
     dropout: float = 0.2
     learning_rate: float = 0.001

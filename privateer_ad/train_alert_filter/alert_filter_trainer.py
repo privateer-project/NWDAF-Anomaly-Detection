@@ -6,7 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 from typing import Dict, Optional
 
-from privateer_ad.config import AlertFilterConfig, PathsConf, logger
+from privateer_ad.config import AlertFilterConfig, PathsConf, setup_logger
 from privateer_ad.models import AlertFilterModel
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
 
@@ -53,7 +53,10 @@ class AlertFilterTrainer:
         )
         self.criterion = nn.BCELoss()
         
-        logger.info(f"Initialized AlertFilterTrainer with device: {self.device}")
+        # Setup logger
+        self.logger = setup_logger('alert-filter-trainer')
+        
+        self.logger.info(f"Initialized AlertFilterTrainer with device: {self.device}")
     
     def train(self, feedback_collector: FeedbackCollector, epochs: Optional[int] = None) -> Dict[str, float]:
         """
@@ -70,7 +73,7 @@ class AlertFilterTrainer:
         # Get training data
         training_data = feedback_collector.get_training_data()
         if training_data is None:
-            logger.warning("No feedback data available for training")
+            self.logger.warning("No feedback data available for training")
             return {'loss': float('inf')}
         
         # Create dataset and dataloader
@@ -108,7 +111,6 @@ class AlertFilterTrainer:
                 # Forward pass
                 self.optimizer.zero_grad()
                 
-                print(f"latent: {latent.shape}, decision: {decision.shape}, error: {error.shape}, feedback: {feedback.shape}")
                 output = self.model(latent, decision, error)
                 
                 # Calculate loss
@@ -124,7 +126,7 @@ class AlertFilterTrainer:
             avg_loss = epoch_loss / len(dataloader)
             metrics['loss'] = avg_loss
             
-            logger.info(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.6f}")
+            # self.logger.info(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.6f}")
                     
         return metrics
     
@@ -151,7 +153,7 @@ class AlertFilterTrainer:
         
         # Save model state dict
         torch.save(self.model.state_dict(), path)
-        logger.info(f"Saved alert filter model to {path}")
+        self.logger.info(f"Saved alert filter model to {path}")
         
         return str(path)
     
@@ -183,6 +185,6 @@ class AlertFilterTrainer:
         
         # Create trainer with loaded model
         trainer = cls(model=model, config=config, device=device)
-        logger.info(f"Loaded alert filter model from {path}")
+        self.logger.info(f"Loaded alert filter model from {path}")
         
         return trainer

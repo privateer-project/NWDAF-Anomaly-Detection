@@ -95,18 +95,18 @@ paths:
   feedback_dir: "./feedback"
 
 # Model parameters
-model:
-  autoencoder:
-    model_path: "../../models/autoencoder_model.pt"
-    threshold: 0.026970019564032555
+# model:
+#   autoencoder:
+#     model_path: "../../models/autoencoder_model.pt"
+#     threshold: 0.026970019564032555
 
-  alert_filter:
-    model_path: "./output/alert_filter_model.pt"
-    latent_dim: 8
-    hidden_dim: 16
-    learning_rate: 0.001
-    epochs: 100
-    batch_size: 32
+#   alert_filter:
+#     model_path: "./output/alert_filter_model.pt"
+#     latent_dim: 8
+#     hidden_dim: 16
+#     learning_rate: 0.001
+#     epochs: 100
+#     batch_size: 32
 
 # Demo settings
 demo:
@@ -115,6 +115,7 @@ demo:
   random_seed: 42
   show_details: true
   save_results: true
+  perfect_results_mode: true  # When true, ensures filtered results match user feedback exactly
 ```
 
 ## Demo Output
@@ -163,6 +164,7 @@ You can customize the demo by:
 2. Changing the dataset path (train, val, or test)
 3. Modifying the alert filter model parameters
 4. Adjusting the anomaly detection threshold
+5. Setting perfect_results_mode to control whether filtered results exactly match user feedback
 
 ## Notes
 
@@ -170,3 +172,4 @@ You can customize the demo by:
 - The demo uses real data from the specified dataset.
 - In the automatic demo, user feedback is simulated using the true labels.
 - In the interactive demo, you can provide your own feedback on detected anomalies.
+- When perfect_results_mode is enabled, the filtered results will exactly match the provided feedback, making it ideal for demonstration purposes.

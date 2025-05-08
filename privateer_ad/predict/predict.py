@@ -6,7 +6,7 @@ from torch import nn
 from tqdm import tqdm
 from fire import Fire
 from sklearn.metrics import classification_report
-from privateer_ad.config import AttentionAutoencoderConfig, AlertFilterConfig, PathsConf, HParams, setup_logger
+from privateer_ad.config import AlertFilterConfig, PathsConf, HParams, setup_logger
 from privateer_ad.models import AttentionAutoencoder, AlertFilterModel
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
@@ -106,7 +106,7 @@ def make_predictions_with_filter(
         model_path: Union[str, Path],
         data_path: Union[str, Path],
         filter_model_path: Optional[Union[str, Path]] = None,
-        threshold: float = 0.026970019564032555,
+        threshold: float = 0.0252244,
         collect_feedback: bool = False,
         use_filter: bool = True
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -156,12 +156,21 @@ def make_predictions_with_filter(
                            seq_len=hparams.seq_len,
                            only_benign=False)
 
-    # Load autoencoder model
-    autoencoder = AttentionAutoencoder(config=AttentionAutoencoderConfig())
+    # # Load autoencoder model
+    # autoencoder = AttentionAutoencoder(config=AttentionAutoencoderConfig())
+    # state_dict = torch.load(model_path, map_location=torch.device('cpu'))
+    # state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
+    # autoencoder.load_state_dict(state_dict)
+    # autoencoder = autoencoder.to(device)
+    
+    # Load model
+    autoencoder = AttentionAutoencoder()
     state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
     autoencoder.load_state_dict(state_dict)
     autoencoder = autoencoder.to(device)
+
+
 
     # Load alert filter model if provided and use_filter is True
     alert_filter = None
@@ -200,8 +209,6 @@ def make_predictions_with_filter(
             # Get autoencoder outputs with latent representation
             output, latent = autoencoder(x, return_latent=True)
             
-            print(x.shape, output.shape, latent.shape)
-            
             # Calculate reconstruction error
             batch_rec_errors = criterion_fn(x, output)
             loss_per_sample = batch_rec_errors.mean(dim=(1, 2))
@@ -221,7 +228,7 @@ def make_predictions_with_filter(
                 
                 # Ensure the latent vector has the correct dimension (8)
                 # If it's larger (e.g., 16), take the first 8 elements
-                target_dim = 16  # This should match AlertFilterConfig.latent_dim
+                target_dim = 16  # This should match AlertFilterConfig.input_dim
                 if latent_processed.shape[-1] > target_dim:
                     print(f"Warning: Latent dimension {latent_processed.shape[-1]} is larger than target dimension {target_dim}. Truncating.")
                     latent_processed = latent_processed[:, :target_dim]

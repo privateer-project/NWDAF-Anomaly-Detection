@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Union, Optional
 from datetime import datetime
 
-from privateer_ad.config import PathsConf, logger
+from privateer_ad.config import PathsConf, setup_logger
 
 class FeedbackCollector:
     """
@@ -31,7 +31,8 @@ class FeedbackCollector:
         paths = PathsConf()
         self.storage_path = storage_path or paths.root.joinpath('feedback_data')
         self.storage_file = self.storage_path.joinpath('feedback.json')
-        
+        self.logger = setup_logger('feedback-collector')
+
         self.feedback_data = {
             'latent': [],
             'anomaly_decision': [],
@@ -61,9 +62,9 @@ class FeedbackCollector:
                     'user_feedback': np.array(data.get('user_feedback', [])).tolist()
                 }
                 
-                logger.info(f"Loaded {len(self.feedback_data['user_feedback'])} feedback entries")
+                self.logger.info(f"Loaded {len(self.feedback_data['user_feedback'])} feedback entries")
             except Exception as e:
-                logger.error(f"Error loading feedback data: {e}")
+                self.logger.error(f"Error loading feedback data: {e}")
                 # Initialize with empty data if loading fails
                 self.feedback_data = {
                     'latent': [],
@@ -86,9 +87,9 @@ class FeedbackCollector:
             with open(self.storage_file, 'w') as f:
                 json.dump(data_to_save, f)
                 
-            logger.info(f"Saved {len(self.feedback_data['user_feedback'])} feedback entries")
+            self.logger.info(f"Saved {len(self.feedback_data['user_feedback'])} feedback entries")
         except Exception as e:
-            logger.error(f"Error saving feedback data: {e}")
+            self.logger.error(f"Error saving feedback data: {e}")
     
     def add_feedback(self, 
                      latent: Union[np.ndarray, torch.Tensor], 
@@ -142,7 +143,7 @@ class FeedbackCollector:
         # Save data
         self._save_data()
         
-        logger.info(f"Added feedback: anomaly={anomaly_decision}, user_feedback={user_feedback}")
+        self.logger.info(f"Added feedback: anomaly={anomaly_decision}, user_feedback={user_feedback}")
     
     def get_training_data(self) -> Dict[str, torch.Tensor]:
         """
@@ -152,7 +153,7 @@ class FeedbackCollector:
             Dict[str, torch.Tensor]: Dictionary containing training data as torch tensors
         """
         if not self.feedback_data['user_feedback']:
-            logger.warning("No feedback data available for training")
+            self.logger.warning("No feedback data available for training")
             return None
         
         # Process latent vectors to ensure they all have the same shape
@@ -169,7 +170,7 @@ class FeedbackCollector:
             # Ensure the latent vector has the correct dimension (8)
             # If it's larger (e.g., 16), take the first 8 elements
             # If it's smaller, pad with zeros (shouldn't happen)
-            target_dim = 16  # This should match AlertFilterConfig.latent_dim
+            target_dim = 16  # This should match AlertFilterConfig.input_dim
             if len(latent) > target_dim:
                 latent = latent[:target_dim]
             elif len(latent) < target_dim:
@@ -191,10 +192,10 @@ class FeedbackCollector:
                 'user_feedback': user_feedback_tensor
             }
         except Exception as e:
-            logger.error(f"Error converting feedback data to tensors: {e}")
+            self.logger.error(f"Error converting feedback data to tensors: {e}")
             # Print debug information
             for i, latent in enumerate(processed_latents):
-                logger.info(f"Latent {i} shape: {latent.shape}")
+                self.logger.info(f"Latent {i} shape: {latent.shape}")
             raise
     
     def get_stats(self) -> Dict[str, int]:

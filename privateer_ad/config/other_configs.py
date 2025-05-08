@@ -32,9 +32,6 @@ def setup_logger(name):
     logger.addHandler(file_handler)
     return logger
 
-def _str2bool(value):
-    return str(value).lower() in {'1', 'true', 'yes', 'on'}
-
 
 @dataclass
 class DifferentialPrivacyConfig:
