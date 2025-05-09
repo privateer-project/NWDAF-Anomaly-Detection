@@ -4,9 +4,8 @@ import torch
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Union, Optional
-from datetime import datetime
 
-from privateer_ad.config import PathsConf, setup_logger
+from privateer_ad.config import AlertFilterConfig, PathsConf, setup_logger
 
 class FeedbackCollector:
     """
@@ -167,10 +166,8 @@ class FeedbackCollector:
             if latent.ndim > 1:
                 latent = np.mean(latent, axis=0)
             
-            # Ensure the latent vector has the correct dimension (8)
-            # If it's larger (e.g., 16), take the first 8 elements
-            # If it's smaller, pad with zeros (shouldn't happen)
-            target_dim = 16  # This should match AlertFilterConfig.input_dim
+            # Ensure the latent vector has the correct dimension 
+            target_dim = AlertFilterConfig.input_dim
             if len(latent) > target_dim:
                 latent = latent[:target_dim]
             elif len(latent) < target_dim:

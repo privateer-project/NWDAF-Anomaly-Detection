@@ -51,7 +51,8 @@ class AlertFilterTrainer:
             self.model.parameters(), 
             lr=self.config.learning_rate
         )
-        self.criterion = nn.BCELoss()
+        self.criterion = nn.BCEWithLogitsLoss()
+
         
         # Setup logger
         self.logger = setup_logger('alert-filter-trainer')
@@ -112,9 +113,10 @@ class AlertFilterTrainer:
                 self.optimizer.zero_grad()
                 
                 output = self.model(latent, decision, error)
+                target = feedback.float().view_as(output)       
                 
                 # Calculate loss
-                loss = self.criterion(output, feedback)
+                loss = self.criterion(output, target)
                 
                 # Backward pass
                 loss.backward()

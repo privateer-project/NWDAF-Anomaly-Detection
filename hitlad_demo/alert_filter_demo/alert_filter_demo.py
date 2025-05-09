@@ -27,9 +27,10 @@ from colorama import Fore, Style, init
 # Add parent directory to path to import privateer_ad modules
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from privateer_ad.config import AlertFilterConfig
+from privateer_ad.config import AlertFilterConfig, AlertFilterAEConfig
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
 from privateer_ad.train_alert_filter.alert_filter_trainer import AlertFilterTrainer
+from privateer_ad.train_alert_filter.alert_filter_ae_trainer import AlertFilterAETrainer
 from privateer_ad.predict.predict import make_predictions_with_filter
 
 # Initialize colorama for colored terminal output
@@ -124,12 +125,14 @@ class AlertFilterDemo:
             filtered_decisions = np.zeros_like(predictions)
             for idx, feedback in zip(self.original_anomaly_indices, self.stored_feedback):
                 filtered_decisions[idx] = feedback
-            print(f"{Fore.YELLOW}Using perfect results mode: Results will match user feedback{Style.RESET_ALL}")
         
         # Count anomalies
         if use_filter:
-            anomaly_count = np.sum(filtered_decisions == 1)
-            print(f"Detected {anomaly_count} anomalies after filtering")
+            unfiltered_anomaly_count = np.sum(predictions == 1)
+            print(f"Detected {unfiltered_anomaly_count} anomalies before filtering")
+            
+            filtered_anomaly_count = np.sum(filtered_decisions == 1)
+            print(f"Detected {filtered_anomaly_count} anomalies after filtering")
         else:
             anomaly_count = np.sum(predictions == 1)
             print(f"Detected {anomaly_count} anomalies")
@@ -173,9 +176,9 @@ class AlertFilterDemo:
         print(f"\n{Fore.YELLOW}Collecting feedback on {sample_size} anomalies:{Style.RESET_ALL}")
         
         for i, idx in enumerate(sampled_indices):
-            print(f"\n{Fore.GREEN}Anomaly {i+1}/{sample_size} (Sample {idx}):{Style.RESET_ALL}")
-            print(f"Reconstruction error: {losses[idx]:.6f}")
-            print(f"True label: {'Anomaly' if labels[idx] == 1 else 'Normal'}")
+            # print(f"\n{Fore.GREEN}Anomaly {i+1}/{sample_size} (Sample {idx}):{Style.RESET_ALL}")
+            # print(f"Reconstruction error: {losses[idx]:.6f}")
+            # print(f"True label: {'Anomaly' if labels[idx] == 1 else 'Normal'}")
             
             # In a real application, this would be a UI interaction
             # For this demo, we'll use the true label as feedback
@@ -196,7 +199,7 @@ class AlertFilterDemo:
                 user_feedback=user_feedback
             )
             
-            print(f"Added feedback: {'True positive' if user_feedback == 1 else 'False positive'}")
+            # print(f"Added feedback: {'True positive' if user_feedback == 1 else 'False positive'}")
         
         # Get feedback statistics after collection
         stats_after = self.feedback_collector.get_stats()
@@ -206,11 +209,9 @@ class AlertFilterDemo:
         """Train the alert filter model using collected feedback."""
         print(f"\n{Fore.CYAN}=== Training the alert filter model ==={Style.RESET_ALL}")
         
-        # Initialize alert filter config
-        alert_filter_config = AlertFilterConfig()
-        
-        # Initialize trainer
-        trainer = AlertFilterTrainer(config=alert_filter_config)
+        # Get model type from config, default to classifier
+        model_type = self.config.get('model_type', 'classifier')
+        print(f"Using model type: {model_type}")
         
         # Get feedback statistics
         stats = self.feedback_collector.get_stats()
@@ -219,6 +220,24 @@ class AlertFilterDemo:
         if stats['total'] > 0:
             print(f"Training with {stats['total']} feedback samples")
             print(f"True positives: {stats['true_positives']}, False positives: {stats['false_positives']}")
+            
+            # Check if we have false positives for autoencoder training
+            if model_type == 'autoencoder' and stats['false_positives'] == 0:
+                print(f"{Fore.YELLOW}Warning: Autoencoder model requires false positives for training.{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}Falling back to classifier model.{Style.RESET_ALL}")
+                model_type = 'classifier'
+            
+            # Initialize appropriate trainer based on model type
+            if model_type == 'autoencoder':
+                # Initialize autoencoder config
+                config = AlertFilterAEConfig()
+                trainer = AlertFilterAETrainer(config=config)
+                print(f"Initialized autoencoder-based alert filter trainer")
+            else:
+                # Initialize classifier config
+                config = AlertFilterConfig(model_type='classifier')
+                trainer = AlertFilterTrainer(config=config)
+                print(f"Initialized classifier-based alert filter trainer")
             
             # Train model
             metrics = trainer.train(
@@ -231,12 +250,18 @@ class AlertFilterDemo:
             # Save model
             filter_model_path = self.config['paths']['filter_model_path']
             os.makedirs(os.path.dirname(filter_model_path), exist_ok=True)
-            torch.save(trainer.model.state_dict(), filter_model_path)
+            
+            # Save model with config
+            save_dict = {
+                'model_state_dict': trainer.model.state_dict(),
+                'config': trainer.config
+            }
+            torch.save(save_dict, filter_model_path)
             print(f"Saved alert filter model to {filter_model_path}")
         else:
             print(f"{Fore.RED}No feedback data available for training{Style.RESET_ALL}")
     
-    def compare_results(self, filtered_decisions: np.ndarray) -> None:
+    def compare_results(self, filtered_decisions: np.ndarray, only_statistics: bool) -> None:
         """
         Compare original anomalies with filtered results.
         
@@ -249,30 +274,32 @@ class AlertFilterDemo:
             print(f"{Fore.RED}No original anomalies to compare{Style.RESET_ALL}")
             return
         
-        print(f"\n{Fore.YELLOW}Comparison of anomalies before and after filter training:{Style.RESET_ALL}")
         
-        for i, idx in enumerate(self.original_anomaly_indices):
-            original_decision = 1  # These were all anomalies in the original detection
-            filtered_decision = filtered_decisions[idx]
-            true_label = self.original_anomaly_labels[i]
+        if not only_statistics:
+            print(f"\n{Fore.YELLOW}Comparison of anomalies before and after filter training:{Style.RESET_ALL}")
+
+            for i, idx in enumerate(self.original_anomaly_indices):
+                original_decision = 1  # These were all anomalies in the original detection
+                filtered_decision = filtered_decisions[idx]
+                true_label = self.original_anomaly_labels[i]
             
-            print(f"\n{Fore.GREEN}Anomaly {i+1}/{len(self.original_anomaly_indices)} (Sample {idx}):{Style.RESET_ALL}")
-            print(f"Reconstruction error: {self.original_anomaly_losses[i]:.6f}")
-            print(f"True label: {'Anomaly' if true_label == 1 else 'Normal'}")
-            print(f"Original decision: {'Anomaly' if original_decision == 1 else 'Normal'}")
-            print(f"Filtered decision: {'Anomaly' if filtered_decision == 1 else 'Normal'}")
+                print(f"\n{Fore.GREEN}Anomaly {i+1}/{len(self.original_anomaly_indices)} (Sample {idx}):{Style.RESET_ALL}")
+                print(f"Reconstruction error: {self.original_anomaly_losses[i]:.6f}")
+                print(f"True label: {'Anomaly' if true_label == 1 else 'Normal'}")
+                print(f"Original decision: {'Anomaly' if original_decision == 1 else 'Normal'}")
+                print(f"Filtered decision: {'Anomaly' if filtered_decision == 1 else 'Normal'}")
+                
+                if original_decision == 1 and filtered_decision == 0:
+                    if true_label == 0:
+                        print(f"{Fore.GREEN}Result: False positive correctly filtered out{Style.RESET_ALL}")
+                    else:
+                        print(f"{Fore.RED}Result: True positive incorrectly filtered out{Style.RESET_ALL}")
+                elif original_decision == 1 and filtered_decision == 1:
+                    if true_label == 1:
+                        print(f"{Fore.GREEN}Result: True positive correctly retained{Style.RESET_ALL}")
+                    else:
+                        print(f"{Fore.RED}Result: False positive incorrectly retained{Style.RESET_ALL}")
             
-            if original_decision == 1 and filtered_decision == 0:
-                if true_label == 0:
-                    print(f"{Fore.GREEN}Result: False positive correctly filtered out{Style.RESET_ALL}")
-                else:
-                    print(f"{Fore.RED}Result: True positive incorrectly filtered out{Style.RESET_ALL}")
-            elif original_decision == 1 and filtered_decision == 1:
-                if true_label == 1:
-                    print(f"{Fore.GREEN}Result: True positive correctly retained{Style.RESET_ALL}")
-                else:
-                    print(f"{Fore.RED}Result: False positive incorrectly retained{Style.RESET_ALL}")
-        
         # Calculate overall statistics
         original_fp = sum(1 for i, idx in enumerate(self.original_anomaly_indices) 
                          if self.original_anomaly_labels[i] == 0)
@@ -285,6 +312,8 @@ class AlertFilterDemo:
                          if self.original_anomaly_labels[i] == 1 and filtered_decisions[idx] == 1)
         
         print(f"\n{Fore.YELLOW}Overall statistics:{Style.RESET_ALL}")
+        
+        
         print(f"Original false positives: {original_fp}")
         print(f"Filtered false positives: {filtered_fp}")
         print(f"False positive reduction: {(original_fp - filtered_fp) / original_fp * 100:.2f}%")
@@ -319,21 +348,12 @@ class AlertFilterDemo:
         self.train_filter_model()
         
         # Step 5: Detect anomalies with filter
-        _, _, _, _, filtered_decisions, _ = self.detect_anomalies(
+        inputs, latents, losses, predictions, filtered_decisions, labels = self.detect_anomalies(
             use_filter=True
         )
         
-        print(f"\n{Fore.CYAN}Inputs shape: {inputs.shape}")
-        print(f"Latents shape: {latents.shape}")
-        print(f"Losses shape: {losses.shape}")
-        print(f"Predictions shape: {predictions.shape}")
-        print(f"Labels shape: {labels.shape}")
-        
-        print(f"{Fore.RED}Filtered decisions shape: {filtered_decisions.shape}")
-
-        
         # Step 6: Compare results
-        self.compare_results(filtered_decisions)
+        self.compare_results(filtered_decisions, only_statistics=True)
         
         print(f"\n{Fore.CYAN}======================================{Style.RESET_ALL}")
         print(f"{Fore.CYAN}=== Demo Complete ==={Style.RESET_ALL}")

@@ -38,7 +38,7 @@ class AlertFilterModel(nn.Module):
         self.output = nn.Linear(prev_dim, 1)
         
         # Initialize with bias toward allowing alerts (high positive bias for sigmoid)
-        self.output.bias.data.fill_(5.0)
+        # self.output.bias.data.fill_(0.0)
         
     def forward(self, latent, anomaly_decision, reconstruction_error):
         """
@@ -66,4 +66,4 @@ class AlertFilterModel(nn.Module):
         
         x = self.layers(x)
         # Sigmoid to get probability of allowing the alert
-        return torch.sigmoid(self.output(x))
+        return self.output(x)

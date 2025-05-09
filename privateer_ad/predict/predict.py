@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Union
+from typing import List, Tuple, Optional, Union, Dict
 
 import numpy as np
 import torch
@@ -6,8 +6,8 @@ from torch import nn
 from tqdm import tqdm
 from fire import Fire
 from sklearn.metrics import classification_report
-from privateer_ad.config import AlertFilterConfig, PathsConf, HParams, setup_logger
-from privateer_ad.models import AttentionAutoencoder, AlertFilterModel
+from privateer_ad.config import AlertFilterConfig, AlertFilterAEConfig, PathsConf, HParams, setup_logger
+from privateer_ad.models import AttentionAutoencoder, AlertFilterModel, AlertFilterAutoencoder
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.train_alert_filter.feedback_collector import FeedbackCollector
 from pathlib import Path
@@ -156,12 +156,6 @@ def make_predictions_with_filter(
                            seq_len=hparams.seq_len,
                            only_benign=False)
 
-    # # Load autoencoder model
-    # autoencoder = AttentionAutoencoder(config=AttentionAutoencoderConfig())
-    # state_dict = torch.load(model_path, map_location=torch.device('cpu'))
-    # state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
-    # autoencoder.load_state_dict(state_dict)
-    # autoencoder = autoencoder.to(device)
     
     # Load model
     autoencoder = AttentionAutoencoder()
@@ -170,14 +164,40 @@ def make_predictions_with_filter(
     autoencoder.load_state_dict(state_dict)
     autoencoder = autoencoder.to(device)
 
-
-
     # Load alert filter model if provided and use_filter is True
     alert_filter = None
+    filter_model_type = 'classifier'  # Default model type
+    
     if filter_model_path is not None and use_filter:
         filter_model_path = Path(filter_model_path)
-        alert_filter = AlertFilterModel(config=AlertFilterConfig())
-        alert_filter.load_state_dict(torch.load(filter_model_path, map_location=device))
+        
+        # Load the saved model to determine its type
+        saved_model = torch.load(filter_model_path, map_location=device, weights_only=False)
+        
+        # Check if it's a dictionary with config (newer format)
+        if isinstance(saved_model, dict) and 'config' in saved_model:
+            config = saved_model['config']
+            filter_model_type = "autoencoder" if isinstance(config, AlertFilterAEConfig) else "classifier"
+            state_dict = saved_model.get('model_state_dict', saved_model)
+        else:
+            # Assume it's just a state dict (older format)
+            state_dict = saved_model
+            config = AlertFilterConfig()
+        
+        # Create the appropriate model based on type
+        if filter_model_type == 'autoencoder':
+            logger.info(f"Loading autoencoder-based alert filter model")
+            if not isinstance(config, AlertFilterAEConfig):
+                config = AlertFilterAEConfig()
+            alert_filter = AlertFilterAutoencoder(config=config)
+        else:  # Default to classifier
+            logger.info(f"Loading classifier-based alert filter model")
+            if not isinstance(config, AlertFilterConfig):
+                config = AlertFilterConfig()
+            alert_filter = AlertFilterModel(config=config)
+        
+        # Load state dict and move to device
+        alert_filter.load_state_dict(state_dict)
         alert_filter = alert_filter.to(device)
         logger.info(f"Loaded alert filter model from {filter_model_path}")
 
@@ -226,17 +246,29 @@ def make_predictions_with_filter(
                 else:
                     latent_processed = latent
                 
-                # Ensure the latent vector has the correct dimension (8)
-                # If it's larger (e.g., 16), take the first 8 elements
-                target_dim = 16  # This should match AlertFilterConfig.input_dim
-                if latent_processed.shape[-1] > target_dim:
-                    print(f"Warning: Latent dimension {latent_processed.shape[-1]} is larger than target dimension {target_dim}. Truncating.")
-                    latent_processed = latent_processed[:, :target_dim]
-                
-                allow_alert = alert_filter(latent_processed, prediction, loss_per_sample)
+                # Ensure the latent vector has the correct dimension
+                if filter_model_type == 'classifier':
+                    target_dim = AlertFilterConfig.input_dim
+                    if latent_processed.shape[-1] > target_dim:
+                        print(f"Warning: Latent dimension {latent_processed.shape[-1]} is larger than target dimension {target_dim}. Truncating.")
+                        latent_processed = latent_processed[:, :target_dim]
+                    
+                    # Use classifier-based filter
+                    logits = alert_filter(latent_processed, prediction, loss_per_sample)
+                    allow_alert = torch.sigmoid(logits).squeeze(-1)
+                    allow_alert = allow_alert > 0.5  # Convert to binary decision (1 = allow, 0 = deny)
+                    
+                elif filter_model_type == 'autoencoder':
+                    # Use autoencoder-based filter
+                    # For autoencoder, we only need the latent vector
+                    # is_false_positive returns True for false positives
+                    is_false_positive = alert_filter.is_false_positive(latent_processed)
+                    
+                    # allow_alert should be True for true positives (not false positives)
+                    allow_alert = ~is_false_positive
                 
                 # Final decision: anomaly AND allow_alert
-                final_decision = prediction * (allow_alert > 0.5).float()
+                final_decision = prediction * allow_alert.float()
             else:
                 # If no filter, all alerts are allowed
                 allow_alert = torch.ones_like(prediction)
@@ -279,7 +311,7 @@ def make_predictions_with_filter(
     
     # print number of filtered decisions per value
     unique, counts = np.unique(filtered_decisions_np, return_counts=True)
-    print(f"Filtered decisions counts: {dict(zip(unique, counts))}")
+    # print(f"Filtered decisions counts: {dict(zip(unique, counts))}")
 
    
     labels_np = np.array(labels, dtype=int)

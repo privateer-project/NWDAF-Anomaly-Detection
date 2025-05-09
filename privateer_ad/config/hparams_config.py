@@ -31,6 +31,18 @@ class AlertFilterConfig:
     learning_rate: float = 0.001
     batch_size: int = 32
     epochs: int = 100
+    model_type: str = 'autoencoder'  # 'classifier' or 'autoencoder'
+
+@dataclass
+class AlertFilterAEConfig:
+    input_dim: int = 16  # Should match the latent dimension of the autoencoder
+    latent_dim: int = 4  # Compress further
+    hidden_dims: List[int] = field(default_factory=lambda: [32, 16])
+    dropout: float = 0.01
+    learning_rate: float = 0.001
+    batch_size: int = 32
+    epochs: int = 100
+    reconstruction_threshold: float = None  # Set during training
 
 @dataclass
 class AutotuneParam:
