@@ -175,6 +175,12 @@ class AlertFilterDemo:
         
         print(f"\n{Fore.YELLOW}Collecting feedback on {sample_size} anomalies:{Style.RESET_ALL}")
         
+        # Initialize batch collection lists
+        batch_latents = []
+        batch_decisions = []
+        batch_errors = []
+        batch_feedbacks = []
+        
         for i, idx in enumerate(sampled_indices):
             # print(f"\n{Fore.GREEN}Anomaly {i+1}/{sample_size} (Sample {idx}):{Style.RESET_ALL}")
             # print(f"Reconstruction error: {losses[idx]:.6f}")
@@ -186,20 +192,26 @@ class AlertFilterDemo:
             user_feedback = labels[idx]  # 1 = true positive, 0 = false positive
             self.stored_feedback.append(user_feedback)  # Store feedback for perfect results mode
             
-            # Add feedback using the actual latent representation
+            # Gather the feedback data for this anomaly
             latent_vector = latents[idx]
             if isinstance(latent_vector, np.ndarray) and latent_vector.ndim > 1:
                 # Take the mean across the sequence dimension to get a vector of size input_dim
                 latent_vector = np.mean(latent_vector, axis=0)
             
-            self.feedback_collector.add_feedback(
-                latent=latent_vector,
-                anomaly_decision=predictions[idx],
-                reconstruction_error=losses[idx],
-                user_feedback=user_feedback
-            )
+            batch_latents.append(latent_vector)
+            batch_decisions.append(predictions[idx])
+            batch_errors.append(losses[idx])
+            batch_feedbacks.append(user_feedback)
             
             # print(f"Added feedback: {'True positive' if user_feedback == 1 else 'False positive'}")
+        
+        # Add all feedback in a single batch
+        self.feedback_collector.add_feedback_batch(
+            latents=batch_latents,
+            anomaly_decisions=batch_decisions,
+            reconstruction_errors=batch_errors,
+            user_feedbacks=batch_feedbacks
+        )
         
         # Get feedback statistics after collection
         stats_after = self.feedback_collector.get_stats()

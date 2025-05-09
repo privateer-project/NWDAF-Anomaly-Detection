@@ -38,9 +38,9 @@ class AlertFilterAEConfig:
     input_dim: int = 16  # Should match the latent dimension of the autoencoder
     latent_dim: int = 4  # Compress further
     hidden_dims: List[int] = field(default_factory=lambda: [32, 16])
-    dropout: float = 0.01
+    dropout: float = 0.001
     learning_rate: float = 0.001
-    batch_size: int = 32
+    batch_size: int = 256
     epochs: int = 100
     reconstruction_threshold: float = None  # Set during training
 

@@ -308,20 +308,15 @@ def make_predictions_with_filter(
     losses_np = np.array(losses)
     predictions_np = np.array(predictions)
     filtered_decisions_np = np.array(filtered_decisions)
-    
-    # print number of filtered decisions per value
-    unique, counts = np.unique(filtered_decisions_np, return_counts=True)
-    # print(f"Filtered decisions counts: {dict(zip(unique, counts))}")
-
    
     labels_np = np.array(labels, dtype=int)
 
     # Print classification report for both unfiltered and filtered decisions
-    print("\nUnfiltered Anomaly Detection Results:")
+    print("\nUnfiltered Anomaly Detection Results:", len(predictions_np), len(labels_np))
     print_balanced_classification_report(labels_np, predictions_np)
     
     if alert_filter is not None and use_filter:
-        print("\nFiltered Anomaly Detection Results:")
+        print("\nFiltered Anomaly Detection Results:", len(filtered_decisions_np), len(labels_np))
         print_balanced_classification_report(labels_np, filtered_decisions_np)
     
     return inputs_np, latents_np, losses_np, predictions_np, filtered_decisions_np, labels_np

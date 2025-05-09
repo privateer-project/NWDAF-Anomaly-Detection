@@ -165,8 +165,10 @@ class AlertFilterAETrainer:
         mean_error = np.mean(errors)
         std_error = np.std(errors)
         
+        
+       
         # Set threshold at some percentile of errors
-        threshold = np.percentile(errors, 50)
+        threshold = np.percentile(errors, 38.6)
         
         # Update model config with the calculated threshold
         self.config.reconstruction_threshold = float(threshold)

@@ -3,7 +3,7 @@ import json
 import torch
 import numpy as np
 from pathlib import Path
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Sequence
 
 from privateer_ad.config import AlertFilterConfig, PathsConf, setup_logger
 
@@ -86,25 +86,27 @@ class FeedbackCollector:
             with open(self.storage_file, 'w') as f:
                 json.dump(data_to_save, f)
                 
-            self.logger.info(f"Saved {len(self.feedback_data['user_feedback'])} feedback entries")
+            # self.logger.info(f"Saved {len(self.feedback_data['user_feedback'])} feedback entries")
         except Exception as e:
             self.logger.error(f"Error saving feedback data: {e}")
     
-    def add_feedback(self, 
-                     latent: Union[np.ndarray, torch.Tensor], 
-                     anomaly_decision: Union[bool, int, float, np.ndarray, torch.Tensor], 
-                     reconstruction_error: Union[float, np.ndarray, torch.Tensor], 
-                     user_feedback: Union[bool, int, float, np.ndarray, torch.Tensor]):
+    def _process_single_feedback(self,
+                               latent: Union[np.ndarray, torch.Tensor],
+                               anomaly_decision: Union[bool, int, float, np.ndarray, torch.Tensor],
+                               reconstruction_error: Union[float, np.ndarray, torch.Tensor],
+                               user_feedback: Union[bool, int, float, np.ndarray, torch.Tensor]) -> tuple:
         """
-        Add user feedback for an alert.
+        Process a single feedback item, converting types as needed.
         
         Args:
-            latent (Union[np.ndarray, torch.Tensor]): Latent representation from the autoencoder
-            anomaly_decision (Union[bool, int, float, np.ndarray, torch.Tensor]): Whether the autoencoder flagged an anomaly
-            reconstruction_error (Union[float, np.ndarray, torch.Tensor]): Reconstruction error from the autoencoder
-            user_feedback (Union[bool, int, float, np.ndarray, torch.Tensor]): User feedback (1 = true positive, 0 = false positive)
+            latent: Latent representation from the autoencoder
+            anomaly_decision: Whether the autoencoder flagged an anomaly
+            reconstruction_error: Reconstruction error from the autoencoder
+            user_feedback: User feedback (1 = true positive, 0 = false positive)
+            
+        Returns:
+            tuple: Processed (latent, anomaly_decision, reconstruction_error, user_feedback)
         """
-
         # Convert torch tensors to numpy arrays
         if isinstance(latent, torch.Tensor):
             latent = latent.detach().cpu().numpy()
@@ -114,14 +116,12 @@ class FeedbackCollector:
             reconstruction_error = reconstruction_error.item()
         if isinstance(user_feedback, torch.Tensor):
             user_feedback = user_feedback.item()
-    
 
         # Convert boolean to int
         if isinstance(anomaly_decision, bool):
             anomaly_decision = int(anomaly_decision)
         if isinstance(user_feedback, bool):
             user_feedback = int(user_feedback)
-            
             
         # Convert bool_ numpy arrays to int
         if isinstance(anomaly_decision, np.bool_):
@@ -132,17 +132,63 @@ class FeedbackCollector:
         # Convert numpy.int64 to int
         if isinstance(user_feedback, np.int64): 
             user_feedback = int(user_feedback.item())
+            
+        return latent, anomaly_decision, reconstruction_error, user_feedback
+
+    def add_feedback_batch(self,
+                          latents: Sequence[Union[np.ndarray, torch.Tensor]],
+                          anomaly_decisions: Sequence[Union[bool, int, float, np.ndarray, torch.Tensor]],
+                          reconstruction_errors: Sequence[Union[float, np.ndarray, torch.Tensor]],
+                          user_feedbacks: Sequence[Union[bool, int, float, np.ndarray, torch.Tensor]]) -> None:
+        """
+        Add multiple feedback items in a batch.
         
-        # Add feedback to data
-        self.feedback_data['latent'].append(latent)
-        self.feedback_data['anomaly_decision'].append(anomaly_decision)
-        self.feedback_data['reconstruction_error'].append(reconstruction_error)
-        self.feedback_data['user_feedback'].append(user_feedback)      
+        Args:
+            latents: List of latent representations from the autoencoder
+            anomaly_decisions: List of autoencoder anomaly flags
+            reconstruction_errors: List of reconstruction errors
+            user_feedbacks: List of user feedback values (1 = true positive, 0 = false positive)
+        """
+        if not (len(latents) == len(anomaly_decisions) == len(reconstruction_errors) == len(user_feedbacks)):
+            raise ValueError("All input sequences must have the same length")
+            
+        for latent, anomaly_decision, reconstruction_error, user_feedback in zip(
+            latents, anomaly_decisions, reconstruction_errors, user_feedbacks):
+            
+            processed_latent, processed_anomaly, processed_recon, processed_feedback = self._process_single_feedback(
+                latent, anomaly_decision, reconstruction_error, user_feedback
+            )
+            
+            self.feedback_data['latent'].append(processed_latent)
+            self.feedback_data['anomaly_decision'].append(processed_anomaly)
+            self.feedback_data['reconstruction_error'].append(processed_recon)
+            self.feedback_data['user_feedback'].append(processed_feedback)
         
-        # Save data
+        # Save all feedback at once
         self._save_data()
         
-        self.logger.info(f"Added feedback: anomaly={anomaly_decision}, user_feedback={user_feedback}")
+        self.logger.info(f"Added {len(latents)} feedback entries in batch")
+    
+    def add_feedback(self, 
+                    latent: Union[np.ndarray, torch.Tensor], 
+                    anomaly_decision: Union[bool, int, float, np.ndarray, torch.Tensor], 
+                    reconstruction_error: Union[float, np.ndarray, torch.Tensor], 
+                    user_feedback: Union[bool, int, float, np.ndarray, torch.Tensor]):
+        """
+        Add user feedback for an alert.
+        
+        Args:
+            latent: Latent representation from the autoencoder
+            anomaly_decision: Whether the autoencoder flagged an anomaly
+            reconstruction_error: Reconstruction error from the autoencoder
+            user_feedback: User feedback (1 = true positive, 0 = false positive)
+        """
+        self.add_feedback_batch(
+            latents=[latent],
+            anomaly_decisions=[anomaly_decision],
+            reconstruction_errors=[reconstruction_error],
+            user_feedbacks=[user_feedback]
+        )
     
     def get_training_data(self) -> Dict[str, torch.Tensor]:
         """
