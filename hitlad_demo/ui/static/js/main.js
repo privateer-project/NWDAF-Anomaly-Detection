@@ -32,8 +32,7 @@ const ANOMALY_INFO_TEMPLATE = `
 const panelsToReset = [
     'detection-results',
     'training-status',
-    'results-stats',
-    'results-viz'
+    'results-stats'
 ];
 
 // Helper functions
@@ -334,39 +333,81 @@ async function evaluateResults() {
         const data = await response.json();
         
         if (data.status === 'success') {
-            // Display statistics
+            // Display performance metrics cards
             statsDiv.innerHTML = `
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Performance Metrics</h5>
-                        <p><strong>Original Anomalies:</strong> ${data.statistics.original_anomalies}</p>
-                        <p><strong>Filtered Anomalies:</strong> ${data.statistics.filtered_anomalies}</p>
-                        <p><strong>Reduction:</strong> ${data.statistics.reduction_percentage.toFixed(2)}%</p>
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">False Positive Reduction</h5>
+                                <p class="display-4 text-success">${data.statistics.false_positive_reduction.toFixed(1)}%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">True Positive Retention</h5>
+                                <p class="display-4 text-primary">${data.statistics.true_positive_retention.toFixed(1)}%</p>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
-            `;
-            
-            // Add visualization
-            vizDiv.innerHTML = `
-                <div class="card">
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Detailed Comparison</h5>
+                    </div>
                     <div class="card-body">
-                        <div class="alert alert-info">
-                            Reduction in Anomalies
-                            <div class="progress mt-2" style="height: 25px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: ${100 - data.statistics.reduction_percentage}%">
-                                    After Filter (${data.statistics.filtered_anomalies})
-                                </div>
-                            </div>
-                            <div class="progress mt-2" style="height: 25px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: 100%">
-                                    Before Filter (${data.statistics.original_anomalies})
-                                </div>
-                            </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Sample</th>
+                                        <th>Initial Label</th>
+                                        <th>Feedback</th>
+                                        <th>Final Decision</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.reviewed_anomalies.map(anomaly => `
+                                        <tr class="${anomaly.matches_feedback ? 'table-success' : 'table-danger'}">
+                                            <td>${anomaly.index}</td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    ${anomaly.initial_label}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge ${anomaly.feedback === 'True Positive' ? 'bg-success' : 'bg-danger'}">
+                                                    ${anomaly.feedback}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge ${anomaly.final_decision === 'Anomaly' ? 'bg-warning text-dark' : 'bg-secondary'}">
+                                                    ${anomaly.final_decision}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <i class="bi ${anomaly.matches_feedback ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'}"></i>
+                                                ${anomaly.matches_feedback ? 'Matches Feedback' : 'Mismatch'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             `;
+            
+            // Clear visualization div
+            if (vizDiv) {
+                vizDiv.innerHTML = '';
+            }
 
             // Add end demo button
             statsDiv.insertAdjacentHTML('afterend', `

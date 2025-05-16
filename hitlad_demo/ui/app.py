@@ -58,7 +58,8 @@ session_data = {
     'current_anomaly_idx': 0,
     'feedback_collected': 0,
     'results': None,
-    'sampled_indices': None
+    'sampled_indices': None,
+    'feedback_mapping': {}  # Maps sample indices to feedback
 }
 
 @app.route('/')
@@ -77,7 +78,8 @@ def start_demo():
         'current_anomaly_idx': 0,
         'feedback_collected': 0,
         'results': None,
-        'sampled_indices': None
+        'sampled_indices': None,
+        'feedback_mapping': {}  # Reset feedback mapping
     }
     return jsonify({'status': 'success', 'step': 0})
 
@@ -159,6 +161,9 @@ def submit_feedback():
             user_feedback=int(is_true_positive)
         )
         
+        # Store feedback in session mapping
+        session_data['feedback_mapping'][str(anomaly_idx)] = int(is_true_positive)
+        
         # Update session
         session_data['current_anomaly_idx'] += 1
         session_data['feedback_collected'] += 1
@@ -181,30 +186,60 @@ def train_filter():
 
 @app.route('/api/evaluate_results', methods=['POST'])
 def evaluate_results():
-    """Run final evaluation with the trained filter."""
+    """Run final evaluation with the trained filter and detailed comparison."""
     try:
-        # Run detection with filter
-        _, _, _, predictions, filtered_decisions, labels = demo.detect_anomalies(use_filter=True)
+        # Get initial predictions for the whole dataset (before filtering)
+        # session_data['anomaly_data'] should contain the 'predictions' and 'labels' from the initial run
+        if not session_data.get('anomaly_data') or 'predictions' not in session_data['anomaly_data']:
+            return jsonify({'status': 'error', 'message': 'Initial anomaly detection data not found in session.'})
+
+        initial_predictions = np.array(session_data['anomaly_data']['predictions'])
+        dataset_labels = np.array(session_data['anomaly_data']['labels'])
+
+        # Run detection with filter to get filtered_decisions for the whole dataset
+        # The 'predictions' returned here are from the autoencoder (same as initial_predictions),
+        # 'filtered_decisions' are from the alert filter, and 'labels' are the true dataset labels.
+        _, _, _, _, filtered_decisions, _ = demo.detect_anomalies(use_filter=True) # This call uses the same data_path as initial
+        filtered_decisions = np.array(filtered_decisions)
+
+        # Calculate dataset-wide statistics
+        # Initial (before filter)
+        initial_tp = np.sum((initial_predictions == 1) & (dataset_labels == 1))
+        initial_fp = np.sum((initial_predictions == 1) & (dataset_labels == 0))
+
+        # Filtered (after filter)
+        filtered_tp = np.sum((filtered_decisions == 1) & (dataset_labels == 1))
+        filtered_fp = np.sum((filtered_decisions == 1) & (dataset_labels == 0))
+
+        # Calculate percentages
+        fp_reduction_percentage = ((initial_fp - filtered_fp) / initial_fp * 100) if initial_fp > 0 else 0
+        tp_retention_percentage = (filtered_tp / initial_tp * 100) if initial_tp > 0 else 0
         
-        # Store results
-        session_data['results'] = {
-            'predictions': predictions.tolist(),
-            'filtered_decisions': filtered_decisions.tolist(),
-            'labels': labels.tolist()
-        }
-        
-        # Calculate statistics
-        original_anomalies = np.sum(predictions == 1)
-        filtered_anomalies = np.sum(filtered_decisions == 1)
-        reduction = ((original_anomalies - filtered_anomalies) / original_anomalies * 100)
+        # Generate detailed comparison data for the *sampled* anomalies (as before)
+        sampled_indices = session_data.get('sampled_indices', [])
+        reviewed_anomalies = []
+        if sampled_indices.any():
+            for idx_val in sampled_indices: # Renamed idx to idx_val to avoid conflict
+                idx = int(idx_val) # Ensure idx is an integer for indexing
+                str_idx = str(idx)
+                feedback = session_data['feedback_mapping'].get(str_idx, 0) # Default to 0 if not found
+                final_decision_for_sample = int(filtered_decisions[idx])
+                
+                reviewed_anomalies.append({
+                    'index': idx,
+                    'initial_label': 'Anomaly', 
+                    'feedback': 'True Positive' if feedback == 1 else 'False Positive',
+                    'final_decision': 'Anomaly' if final_decision_for_sample == 1 else 'Normal',
+                    'matches_feedback': feedback == final_decision_for_sample
+                })
         
         return jsonify({
             'status': 'success',
             'statistics': {
-                'original_anomalies': int(original_anomalies),
-                'filtered_anomalies': int(filtered_anomalies),
-                'reduction_percentage': float(reduction)
-            }
+                'false_positive_reduction': float(fp_reduction_percentage),
+                'true_positive_retention': float(tp_retention_percentage)
+            },
+            'reviewed_anomalies': reviewed_anomalies
         })
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
