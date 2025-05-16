@@ -41,16 +41,20 @@ class AlertFilterDemo:
     Demo class for the alert filter workflow.
     """
     
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config.yaml", config_dict: Dict = None):
         """
         Initialize the demo with the given configuration.
         
         Args:
             config_path: Path to the configuration file
+            config_dict: Optional pre-loaded configuration dictionary
         """
         # Load configuration
-        with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
+        if config_dict is not None:
+            self.config = config_dict
+        else:
+            with open(config_path, 'r') as f:
+                self.config = yaml.safe_load(f)
         
         # Create output directories
         self._create_directories()

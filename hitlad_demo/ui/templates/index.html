@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HITLAD Demo Interface</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Progress Bar -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        Step 0/5
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <!-- Step Panels -->
+                <div class="step-panels">
+                    <!-- Welcome Panel -->
+                    <div class="panel active" id="step0">
+                        <h2>Welcome to HITLAD Demo</h2>
+                        <p>This demo will guide you through the process of:</p>
+                        <ol>
+                            <li>Loading and analyzing data</li>
+                            <li>Detecting initial anomalies</li>
+                            <li>Collecting feedback on detected anomalies</li>
+                            <li>Training an alert filter based on feedback</li>
+                            <li>Evaluating the results</li>
+                        </ol>
+                        <button class="btn btn-primary" onclick="startDemo()">Start Demo</button>
+                    </div>
+
+                    <!-- Step 1: Initial Detection -->
+                    <div class="panel" id="step1">
+                        <h2>Step 1: Initial Anomaly Detection</h2>
+                        <div class="card">
+                            <div class="card-body">
+                                <p>Click the button below to run initial anomaly detection using the autoencoder model.</p>
+                                <button class="btn btn-primary" onclick="detectAnomalies()">Detect Anomalies</button>
+                                <div id="detection-results" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Feedback Collection -->
+                    <div class="panel" id="step2">
+                        <h2>Step 2: Feedback Collection</h2>
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="anomaly-info">
+                                    <h4>Anomaly Details</h4>
+                                    <p>Reconstruction Error: <span id="reconstruction-error"></span></p>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 0%">
+                                            0/0 Anomalies Reviewed
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-success" onclick="submitFeedback(true)">True Positive</button>
+                                    <button class="btn btn-danger" onclick="submitFeedback(false)">False Positive</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Train Filter -->
+                    <div class="panel" id="step3">
+                        <h2>Step 3: Train Alert Filter</h2>
+                        <div class="card">
+                            <div class="card-body">
+                                <p>Now that we have collected feedback, we can train the alert filter model.</p>
+                                <button class="btn btn-primary" onclick="trainFilter()">Train Filter</button>
+                                <div id="training-status" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Results -->
+                    <div class="panel" id="step4">
+                        <h2>Step 4: Evaluation Results</h2>
+                        <div class="card">
+                            <div class="card-body">
+                                <button class="btn btn-primary" onclick="evaluateResults()">Show Results</button>
+                                <div id="results-display" class="mt-3">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h4>Statistics</h4>
+                                            <div id="results-stats"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h4>Visualization</h4>
+                                            <div id="results-viz"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="row mt-4 mb-4">
+            <div class="col-12 d-flex justify-content-between">
+                <button class="btn btn-secondary" onclick="previousStep()" id="prev-btn" style="display: none;">Previous</button>
+                <button class="btn btn-primary" onclick="nextStep()" id="next-btn" style="display: none;">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
