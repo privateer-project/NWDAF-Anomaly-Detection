@@ -57,18 +57,31 @@ function updateProgress(step) {
 }
 
 function showPanel(step) {
-    // Hide all panels
+    // First, start hiding all panels by removing active class
     document.querySelectorAll('.panel').forEach(panel => {
         panel.classList.remove('active');
     });
     
-    // Show the current panel
-    const currentPanel = document.getElementById(`step${step}`);
-    if (currentPanel) {
-        currentPanel.classList.add('active');
-    }
+    // After opacity transition, hide panels completely
+    setTimeout(() => {
+        document.querySelectorAll('.panel').forEach(panel => {
+            if (!panel.classList.contains('active')) {
+                panel.style.display = 'none';
+            }
+        });
+        
+        // Show the new panel
+        const currentPanel = document.getElementById(`step${step}`);
+        if (currentPanel) {
+            currentPanel.style.display = 'block';
+            // Use requestAnimationFrame to ensure display is set before adding active class
+            requestAnimationFrame(() => {
+                currentPanel.classList.add('active');
+            });
+        }
+    }, 500);
     
-    // Update navigation buttons
+    // Update navigation buttons immediately
     if (step === totalSteps) {
         // Final success panel - hide both buttons
         prevButton.style.display = 'none';
@@ -120,41 +133,55 @@ function previousStep() {
 
 // Demo functions
 async function startDemo() {
-    // Reset all state variables
-    currentStep = 0;
-    currentAnomalyIndex = null;
-    
-    // Reset session data
-    session_data = {
-        'current_step': 0,
-        'total_steps': 5,
-        'anomaly_data': null,
-        'current_anomaly_idx': 0,
-        'feedback_collected': 0,
-        'results': null,
-        'sampled_indices': null
-    };
-    
-    // Reset progress bar
-    updateProgress(currentStep);
-    
-    // Clear all panel contents
-    panelsToReset.forEach(panelId => {
-        const panel = document.getElementById(panelId);
-        if (panel) {
-            panel.innerHTML = '';
-        }
-    });
-
+    // This function is called when clicking "Start Over"
     try {
+        // First hide all panels with fade-out animation
+        document.querySelectorAll('.panel').forEach(panel => {
+            panel.style.display = 'none';
+            panel.classList.remove('active');
+        });
+
+        // Reset all state variables
+        currentStep = 0;
+        currentAnomalyIndex = null;
+        
+        // Reset session data
+        session_data = {
+            'current_step': 0,
+            'total_steps': 5,
+            'anomaly_data': null,
+            'current_anomaly_idx': 0,
+            'feedback_collected': 0,
+            'results': null,
+            'sampled_indices': null
+        };
+        
+        // Reset progress bar
+        updateProgress(currentStep);
+        
+        // Clear all panel contents
+        panelsToReset.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (panel) {
+                panel.innerHTML = '';
+            }
+        });
+
         const response = await fetch('/api/start_demo', {
             method: 'POST'
         });
         const data = await response.json();
         
         if (data.status === 'success') {
-            showPanel(currentStep);  // Show welcome panel first
-            nextStep();  // Then move to first step
+            // Show welcome panel with animation
+            const welcomePanel = document.getElementById('step0');
+            if (welcomePanel) {
+                welcomePanel.style.display = 'block';
+                // Allow display:block to take effect before adding active class
+                requestAnimationFrame(() => {
+                    welcomePanel.classList.add('active');
+                });
+            }
         } else {
             showError('Failed to start demo', 'step0');
         }
@@ -354,6 +381,30 @@ async function evaluateResults() {
         }
     } catch (error) {
         showError('Error evaluating results: ' + error.message, 'results-stats');
+    }
+}
+
+// Initialize and start demo
+async function initializeAndStartDemo() {
+    try {
+        // Initialize demo backend and wait for response
+        const response = await fetch('/api/start_demo', {
+            method: 'POST'
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Only show a success message and let user start when ready
+            const startButton = document.querySelector('#step0 .btn-primary');
+            if (startButton) {
+                startButton.innerHTML = 'Click to Begin Demo';
+                startButton.onclick = nextStep;
+            }
+        } else {
+            showError('Failed to initialize demo', 'step0');
+        }
+    } catch (error) {
+        showError('Failed to initialize demo: ' + error.message, 'step0');
     }
 }
 
