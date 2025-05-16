@@ -2,18 +2,58 @@
 let currentStep = 0;
 let currentAnomalyIndex = null;
 let totalSteps = 5;
+let session_data = {
+    'current_step': 0,
+    'total_steps': 5,
+    'anomaly_data': null,
+    'current_anomaly_idx': 0,
+    'feedback_collected': 0,
+    'results': null,
+    'sampled_indices': null
+};
 
 // DOM Elements
 const progressBar = document.querySelector('.progress-bar');
 const prevButton = document.getElementById('prev-btn');
 const nextButton = document.getElementById('next-btn');
 
+// HTML Templates
+const ANOMALY_INFO_TEMPLATE = `
+    <h4>Anomaly Details</h4>
+    <p>Reconstruction Error: <span id="reconstruction-error"></span></p>
+    <div class="progress mb-3">
+        <div class="progress-bar bg-info" role="progressbar" style="width: 0%">
+            0/0 Anomalies Reviewed
+        </div>
+    </div>
+`;
+
+// Panel IDs to reset on restart
+const panelsToReset = [
+    'detection-results',
+    'training-status',
+    'results-stats',
+    'results-viz'
+];
+
 // Helper functions
 function updateProgress(step) {
-    const progress = (step / totalSteps) * 100;
+    // Calculate progress percentage
+    const progress = step === totalSteps ? 100 : (step / totalSteps) * 100;
+    
+    // Update progress bar with animation
+    progressBar.style.transition = 'width 0.6s ease, background-color 0.6s ease';
     progressBar.style.width = `${progress}%`;
     progressBar.setAttribute('aria-valuenow', progress);
-    progressBar.textContent = `Step ${step}/${totalSteps}`;
+    
+    // Update text and style for completion
+    if (step === totalSteps) {
+        progressBar.textContent = 'Complete!';
+        progressBar.style.backgroundColor = '#28a745';  // Bootstrap success color
+    } else {
+        progressBar.textContent = `Step ${step}/${totalSteps}`;
+        progressBar.style.backgroundColor = '#3498db';  // Original color
+    }
 }
 
 function showPanel(step) {
@@ -29,8 +69,15 @@ function showPanel(step) {
     }
     
     // Update navigation buttons
-    prevButton.style.display = step > 0 ? 'block' : 'none';
-    nextButton.style.display = step < totalSteps - 1 ? 'block' : 'none';
+    if (step === totalSteps) {
+        // Final success panel - hide both buttons
+        prevButton.style.display = 'none';
+        nextButton.style.display = 'none';
+    } else {
+        // Normal navigation
+        prevButton.style.display = step > 0 ? 'block' : 'none';
+        nextButton.style.display = step < totalSteps - 1 ? 'block' : 'none';
+    }
 }
 
 function showError(message, elementId) {
@@ -73,6 +120,32 @@ function previousStep() {
 
 // Demo functions
 async function startDemo() {
+    // Reset all state variables
+    currentStep = 0;
+    currentAnomalyIndex = null;
+    
+    // Reset session data
+    session_data = {
+        'current_step': 0,
+        'total_steps': 5,
+        'anomaly_data': null,
+        'current_anomaly_idx': 0,
+        'feedback_collected': 0,
+        'results': null,
+        'sampled_indices': null
+    };
+    
+    // Reset progress bar
+    updateProgress(currentStep);
+    
+    // Clear all panel contents
+    panelsToReset.forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (panel) {
+            panel.innerHTML = '';
+        }
+    });
+
     try {
         const response = await fetch('/api/start_demo', {
             method: 'POST'
@@ -80,7 +153,8 @@ async function startDemo() {
         const data = await response.json();
         
         if (data.status === 'success') {
-            nextStep();
+            showPanel(currentStep);  // Show welcome panel first
+            nextStep();  // Then move to first step
         } else {
             showError('Failed to start demo', 'step0');
         }
@@ -124,13 +198,25 @@ async function getNextAnomaly() {
             currentAnomalyIndex = data.anomaly_index;
             
             // Update UI
+            const errorSpan = document.getElementById('reconstruction-error');
+            const progressBar = document.querySelector('#anomaly-info .progress-bar');
+            
+            if (!errorSpan || !progressBar) {
+                // Reset the HTML structure if elements are missing
+                const anomalyInfo = document.getElementById('anomaly-info');
+                if (anomalyInfo) {
+                    anomalyInfo.innerHTML = ANOMALY_INFO_TEMPLATE;
+                }
+            }
+            
+            // Try updating elements again after potential reset
             document.getElementById('reconstruction-error').textContent = data.reconstruction_error.toFixed(6);
             
             // Update progress bar
-            const progressBar = document.querySelector('#anomaly-info .progress-bar');
+            const updatedProgressBar = document.querySelector('#anomaly-info .progress-bar');
             const progress = (data.progress.current / data.progress.total) * 100;
-            progressBar.style.width = `${progress}%`;
-            progressBar.textContent = `${data.progress.current}/${data.progress.total} Anomalies Reviewed`;
+            updatedProgressBar.style.width = `${progress}%`;
+            updatedProgressBar.textContent = `${data.progress.current}/${data.progress.total} Anomalies Reviewed`;
             
             return true;
         } else if (data.status === 'complete') {
@@ -223,7 +309,7 @@ async function evaluateResults() {
         if (data.status === 'success') {
             // Display statistics
             statsDiv.innerHTML = `
-                <div class="card">
+                <div class="card mb-4">
                     <div class="card-body">
                         <h5 class="card-title">Performance Metrics</h5>
                         <p><strong>Original Anomalies:</strong> ${data.statistics.original_anomalies}</p>
@@ -254,12 +340,41 @@ async function evaluateResults() {
                     </div>
                 </div>
             `;
+
+            // Add end demo button
+            statsDiv.insertAdjacentHTML('afterend', `
+                <div class="text-center mt-4">
+                    <button class="btn btn-success btn-lg" onclick="endDemo()">
+                        <i class="bi bi-flag-fill me-2"></i>End Demo
+                    </button>
+                </div>
+            `);
         } else {
             showError(data.message, 'results-stats');
         }
     } catch (error) {
         showError('Error evaluating results: ' + error.message, 'results-stats');
     }
+}
+
+// Handle demo completion
+function endDemo() {
+    // Animate the end button
+    const endButton = document.querySelector('.btn-success.btn-lg');
+    if (endButton) {
+        endButton.disabled = true;
+        endButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Finishing Demo...
+        `;
+    }
+    
+    // Transition to completion state after a short delay
+    setTimeout(() => {
+        currentStep++;
+        updateProgress(currentStep);
+        showPanel(currentStep);
+    }, 800);
 }
 
 // Initialize UI
@@ -272,6 +387,11 @@ document.addEventListener('DOMContentLoaded', () => {
         mutations.forEach((mutation) => {
             if (mutation.target.classList.contains('active') && 
                 mutation.target.id === 'step2') {
+                // Initialize the anomaly info panel with template
+                const anomalyInfo = document.getElementById('anomaly-info');
+                if (anomalyInfo) {
+                    anomalyInfo.innerHTML = ANOMALY_INFO_TEMPLATE;
+                }
                 getNextAnomaly();
             }
         });

@@ -141,6 +141,53 @@ h2 {
     margin-top: 10px;
 }
 
+/* End demo button */
+.btn-success.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-success.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(40, 167, 69, 0.25);
+}
+
+.btn-success.btn-lg:disabled {
+    transform: none;
+    opacity: 0.8;
+}
+
+/* Final success panel */
+#step5 .card {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+#step5 .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+#step5 .bi-check-circle {
+    font-size: 6rem;
+    color: #28a745;
+    animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 .status-success {
     background-color: #d4edda;
     color: #155724;
