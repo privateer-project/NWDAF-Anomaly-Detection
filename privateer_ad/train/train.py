@@ -9,7 +9,7 @@ from mlflow.entities import RunStatus
 from opacus import PrivacyEngine
 from opacus.validators import ModuleValidator
 
-from privateer_ad.config import PathsConf, MLFlowConfig, HParams, DifferentialPrivacyConfig, setup_logger
+from privateer_ad.config import PathsConf, MLFlowConfig, HParams, DPConfig, setup_logger
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
 from privateer_ad.train.trainer import ModelTrainer
@@ -25,7 +25,7 @@ class TrainPipeline:
         self.mlflow_config = MLFlowConfig()
         self.paths = PathsConf()
         self.hparams = HParams()
-        self.dp_config = DifferentialPrivacyConfig()
+        self.dp_config = DPConfig()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         if run_name is None:

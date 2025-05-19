@@ -1,6 +1,6 @@
-from flwr.common import Context, ConfigsRecord
+from flwr.common import Context
 from flwr.client import ClientApp, NumPyClient
-from flwr.client.mod import secaggplus_mod, fixedclipping_mod
+from flwr.client.mod import secaggplus_mod
 from privateer_ad.fl.utils import set_weights, get_weights
 from privateer_ad.train.train import TrainPipeline
 
@@ -20,8 +20,7 @@ class SecAggFlowerClient(NumPyClient):
 
     def fit(self, parameters, config):
         """Train model on local data with secure aggregation."""
-        self.train_pln.logger.info(f'\nClient {self.partition_id}\n'
-                                   f'fit config: {config}')
+        self.train_pln.logger.info(f'\nClient {self.partition_id}')
         # Set received parameters
         set_weights(self.train_pln.model, parameters)
 
@@ -59,4 +58,4 @@ def client_fn(context: Context):
     return SecAggFlowerClient(context=context).to_client()
 
 # Create Flower ClientApp
-app = ClientApp(client_fn, mods=[secaggplus_mod, fixedclipping_mod])
+app = ClientApp(client_fn, mods=[secaggplus_mod])
