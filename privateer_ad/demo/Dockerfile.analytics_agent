@@ -1,0 +1,14 @@
+# Dockerfile for Security Analytics Agent
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir torch torchvision kafka-python numpy
+
+# Copy application code
+COPY ./Security\ Analytics\ Agent.txt /app/security_analytics_agent.py
+COPY ./MISP\ Client.txt /app/misp_client.py
+
+# Run the application
+CMD ["python", "/app/security_analytics_agent.py", "--config", "/app/config/config.json"]

@@ -1,0 +1,13 @@
+# Dockerfile for Anonymization Pipeline
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir kafka-python
+
+# Copy application code
+COPY ./Anonymization\ Pipeline.txt /app/anonymization_pipeline.py
+
+# Run the application
+CMD ["python", "/app/anonymization_pipeline.py", "--config", "/app/config/config.json"]
