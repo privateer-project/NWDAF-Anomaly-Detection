@@ -11,11 +11,10 @@ from privateer_ad.visualizations.plotter import Visualizer
 
 
 class ModelEvaluator:
-    def __init__(self, criterion, device: torch.device, run_id=None):
+    def __init__(self, criterion, device: torch.device):
         self.criterion = getattr(torch.nn, criterion)(reduction='none')
         self.device = device
         self.visualizer = Visualizer()
-        self.run_id = run_id
 
     def compute_reconstruction_errors(self, model, dataloader) -> Tuple[np.ndarray, np.ndarray]:
         losses: List[float] = []
@@ -72,9 +71,8 @@ class ModelEvaluator:
                                   prefix=prefix
                                   )
 
-        if self.run_id:
-            mlflow.log_metrics(metrics, step=step, run_id=self.run_id)
-            with mlflow.start_run(run_id=self.run_id):
-                for name, fig in self.visualizer.figures.items():
-                    mlflow.log_figure(fig, f'{name}_{step}.png')
+        if mlflow.active_run():
+            mlflow.log_metrics(metrics, step=step)
+            for name, fig in self.visualizer.figures.items():
+                mlflow.log_figure(fig, f'{name}_{step}.png')
         return metrics, self.visualizer.figures

@@ -33,30 +33,26 @@ def setup_logger(name):
     return logger
 
 def _str2bool(value):
-    return str(value).lower() in {'1', 'true', 'yes', 'on'}
-
+    return str(value).lower() in {'1', 'true', 'yes', 'y', 'on'}
 
 @dataclass
 class DifferentialPrivacyConfig:
-   target_epsilon: float = 2.0     # This value is eventually used to compute the noise_multiplier used client-side through opacus.make_private_with_epsilon(...)
-   target_delta: float = 1e-7      # This value is eventually used to compute the noise_multiplier used client-side through opacus.make_private_with_epsilon(...)
-   max_grad_norm: float = 2.0      # This value is only used client-side, but is set both to DifferentialPrivacyClientSideFixedClipping *and* opacus.make_private_with_epsilon(...)
-   noise_multiplier: float = 0.2   # This value is only used client-side and is used as input to DifferentialPrivacyClientSideFixedClipping
-   secure_mode: bool = False
+    target_epsilon: float = 5.0  # Client-side privacy budget
+    target_delta: float = 1e-6  # Privacy failure probability
+    max_grad_norm: float = 4.0  # Per-sample gradient clipping threshold
+    server_clipping_norm: float = 8.0  # Client update clipping threshold
+    noise_multiplier: float = 0.4  # Server-side noise magnitude
+    secure_mode: bool = True  # Enable secure RNG for DP
 
 @dataclass
 class MLFlowConfig:
    track: bool = _str2bool(os.environ.get('MLFLOW_ENABLE_TRACKING', True))
    server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
+   server_run_name: str = os.environ.get('MLFLOW_SERVER_RUN', 'federated_learning_lower_dp')
 
-@dataclass
-class PartitionConfig:
-    num_partitions: int = 1
-    num_classes_per_partition: int = 9
-    partition_id: int = 0
 
 @dataclass
 class SecureAggregationConfig:
-   num_shares: int = 3
-   reconstruction_threshold: int = 2
+   num_shares: float | int = 0.8
+   reconstruction_threshold: float | int = 0.8

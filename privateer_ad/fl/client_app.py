@@ -1,20 +1,8 @@
-from collections import OrderedDict
-
-import torch
-
-from flwr.common.context import Context
+from flwr.common import Context, ConfigsRecord
 from flwr.client import ClientApp, NumPyClient
 from flwr.client.mod import secaggplus_mod, fixedclipping_mod
+from privateer_ad.fl.utils import set_weights, get_weights
 from privateer_ad.train.train import TrainPipeline
-
-def set_weights(net, parameters):
-    """Set model parameters from a list of NumPy arrays."""
-    params_dict = zip(net.state_dict().keys(), parameters)
-    state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-    net.load_state_dict(state_dict, strict=True)
-
-def get_weights(net):
-    return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
 class SecAggFlowerClient(NumPyClient):
     """Flower client implementation with secure aggregation for anomaly detection."""
@@ -32,8 +20,7 @@ class SecAggFlowerClient(NumPyClient):
 
     def fit(self, parameters, config):
         """Train model on local data with secure aggregation."""
-        self.train_pln.logger.info(f'\n'
-                                   f'Client {self.partition_id}\n'
+        self.train_pln.logger.info(f'\nClient {self.partition_id}\n'
                                    f'fit config: {config}')
         # Set received parameters
         set_weights(self.train_pln.model, parameters)
@@ -45,17 +32,15 @@ class SecAggFlowerClient(NumPyClient):
         num_examples = sum(len(batch[0]['encoder_cont']) for batch in self.train_pln.train_dl)
         metrics = best_ckpt['metrics']
 
-        self.train_pln.logger.info(f'\n'
-                                   f'Client {self.partition_id}\n'
-                                   f'Training completed: {metrics}\n'
-                                   f'Number of examples: {num_examples}')
-
+        # Log
+        self.train_pln.logger.info(f'\nClient {self.partition_id}\n')
+        [self.train_pln.logger.info(f'{k}: {v}') for k, v in metrics.items()]
+        self.train_pln.logger.info(f'Number of examples: {num_examples}')
         return weights, num_examples, metrics
 
     def evaluate(self, parameters, config):
         """Evaluate model on local test data."""
-        self.train_pln.logger.info(f'\n'
-                                   f'Client {self.partition_id}\n'
+        self.train_pln.logger.info(f'Client {self.partition_id}\n'
                                    f'evaluate config: {config}')
 
         set_weights(self.train_pln.model, parameters)
