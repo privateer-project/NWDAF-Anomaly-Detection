@@ -1,0 +1,13 @@
+# Dockerfile for FPGA Acceleration Manager
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir torch torchvision
+
+# Copy application code
+COPY ./FPGA\ Acceleration\ Manager.txt /app/fpga_acceleration_manager.py
+
+# Run the application
+CMD ["python", "/app/fpga_acceleration_manager.py", "--config", "/app/config/config.json"]

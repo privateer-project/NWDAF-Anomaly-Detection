@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Kafka and supporting services
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  # InfluxDB for time series data storage
+  influxdb:
+    image: influxdb:2.6
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=privateersecret
+      - DOCKER_INFLUXDB_INIT_ORG=privateer
+      - DOCKER_INFLUXDB_INIT_BUCKET=nwdaf
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=privateersecret
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  # NWDAF Data Producer
+  nwdaf-data-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.nwdaf-producer
+    container_name: nwdaf-data-producer
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_RAW_DATA_TOPIC=nwdaf-raw-data
+      - TRAINING_DATASET_PATH=/app/data/amari_ue_data_merged_with_attack_number.csv
+      - DATA_PUBLISH_INTERVAL=0.5
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  # Anonymization Pipeline
+  anonymization-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.anonymization
+    container_name: anonymization-pipeline
+    depends_on:
+      - kafka
+      - nwdaf-data-producer
+    volumes:
+      - ./config:/app/config
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_RAW_DATA_TOPIC=nwdaf-raw-data
+      - KAFKA_ANONYMIZED_DATA_TOPIC=anonymized-data
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  # FPGA Acceleration Manager
+  fpga-acceleration-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.fpga-manager
+    container_name: fpga-acceleration-manager
+    volumes:
+      - ./models:/app/models
+      - ./config:/app/config
+    environment:
+      - FPGA_DEVICE=xczu9eg
+      - MODEL_REGISTRY_PATH=/app/models
+      - MODEL_CHECK_INTERVAL=30.0
+      - FPGA_ENABLED=true
+    restart: unless-stopped
+    networks:
+      - privateer-network
+    # For real FPGA deployment, you might need device mounts
+    # devices:
+    #   - /dev/xdma0:/dev/xdma0
+
+  # Security Analytics Agent
+  security-analytics-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.analytics-agent
+    container_name: security-analytics-agent
+    depends_on:
+      - kafka
+      - anonymization-pipeline
+      - fpga-acceleration-manager
+    volumes:
+      - ./models:/app/models
+      - ./config:/app/config
+      - ./misp_scripts:/app/misp_scripts
+      - ./temp:/app/temp
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_ANONYMIZED_DATA_TOPIC=anonymized-data
+      - KAFKA_XAI_REQUEST_TOPIC=xai-request
+      - KAFKA_XAI_RESPONSE_TOPIC=xai-response
+      - MODEL_REGISTRY_PATH=/app/models
+      - MODEL_CURRENT_VERSION=latest
+      - DETECTION_THRESHOLD=0.8
+      - SEQUENCE_LENGTH=120
+      - HIDDEN_SIZE=64
+      - NUM_LAYERS=2
+      - MISP_URL=https://cc-cracs-201.inesctec.pt
+      - MISP_API_KEY=${MISP_API_KEY:-defaultkey}
+      - MISP_SCRIPTS_PATH=/app/misp_scripts
+      - MISP_TEMP_DIR=/app/temp
+      - MISP_CLIENT_PATH=/app/misp_client.py
+      - FPGA_ENABLED=true
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+  # XAI Component
+  xai-component:
+    build:
+      context: .
+      dockerfile: Dockerfile.xai
+    container_name: xai-component
+    depends_on:
+      - kafka
+      - security-analytics-agent
+    volumes:
+      - ./models:/app/models
+      - ./config:/app/config
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_XAI_REQUEST_TOPIC=xai-request
+      - KAFKA_XAI_RESPONSE_TOPIC=xai-response
+      - MODEL_REGISTRY_PATH=/app/models
+      - MODEL_CURRENT_VERSION=latest
+      - HIDDEN_SIZE=64
+      - NUM_LAYERS=2
+    restart: unless-stopped
+    networks:
+      - privateer-network
+
+networks:
+  privateer-network:
+    driver: bridge
+
+volumes:
+  influxdb-data:
