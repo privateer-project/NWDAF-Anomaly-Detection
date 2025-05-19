@@ -5,11 +5,11 @@ import torch
 import mlflow
 from mlflow.models import infer_signature
 
-from flwr.common import ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters, Metrics, FitIns, FitRes
+from flwr.common import (ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters,
+                         Metrics, FitRes)
 from flwr.common.logger import FLOWER_LOGGER
-from flwr.server.strategy import FedAvg, DifferentialPrivacyClientSideFixedClipping
+from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
-from flwr.server.client_manager import ClientManager
 
 from privateer_ad.data_utils.transform import DataProcessor
 from privateer_ad.evaluate.evaluator import ModelEvaluator
@@ -34,17 +34,16 @@ def config_fn(server_round: int):
     # Create the configuration dictionary
     return {'server_round': server_round}
 
-class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
-    def __init__(self, noise_multiplier: float, clipping_norm: float, num_sampled_clients: int):
+class CustomStrategy(FedAvg):
+    def __init__(self):
         model_config = AttentionAutoencoderConfig()
         self.model = AttentionAutoencoder(config=model_config)
         initial_parameters = ndarrays_to_parameters([val.cpu().numpy() for _, val in self.model.state_dict().items()])
-        base_strategy = FedAvg(on_fit_config_fn=config_fn,
-                               on_evaluate_config_fn=config_fn,
-                               fit_metrics_aggregation_fn=metrics_aggregation_fn,
-                               evaluate_metrics_aggregation_fn=metrics_aggregation_fn,
-                               initial_parameters=initial_parameters)
-        super().__init__(base_strategy, noise_multiplier, clipping_norm, num_sampled_clients)
+        super().__init__(on_fit_config_fn=config_fn,
+                         on_evaluate_config_fn=config_fn,
+                         fit_metrics_aggregation_fn=metrics_aggregation_fn,
+                         evaluate_metrics_aggregation_fn=metrics_aggregation_fn,
+                         initial_parameters=initial_parameters)
 
         self.paths = PathsConf()
         self.mlflow_config = MLFlowConfig()
@@ -121,15 +120,6 @@ class CustomStrategy(DifferentialPrivacyClientSideFixedClipping):
                                                  pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
         return aggregated_parameters, aggregated_metrics
 
-    def configure_fit(self, server_round: int, parameters: Parameters, client_manager: ClientManager) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training."""
-        # Get FitIns from base class
-        client_instructions = super().configure_fit(server_round, parameters, client_manager)
-        # Add the parent run ID to the config for each client
-        # if self.mlflow_config.track:
-        #     for client_proxy, fit_ins in client_instructions:
-        #         fit_ins.config.update({'parent_run_id': self.parent_run_id})
-        return client_instructions
 
     def evaluate(self, server_round: int, parameters: Parameters) -> Optional[tuple[float, dict[str, Scalar]]]:
         """Evaluate model parameters using an evaluation function."""
