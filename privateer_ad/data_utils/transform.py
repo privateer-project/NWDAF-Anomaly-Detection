@@ -179,7 +179,7 @@ class DataProcessor:
         elif num_partitions == 3:
             num_classes_per_partition = 1
         else:
-             num_classes_per_partition = 3 // num_partitions
+             num_classes_per_partition = min(3 // num_partitions, 1)
 
         if self.partitioner is None:
             # _time,imeisv,5g_tmsi,amf_ue_id,bearer_0_apn,bearer_0_dl_total_bytes,bearer_0_ip,bearer_0_ipv6,bearer_0_pdu_session_id,bearer_0_qos_flow_id,bearer_0_sst,bearer_0_ul_total_bytes,bearer_1_apn,bearer_1_dl_total_bytes,bearer_1_ip,bearer_1_pdu_session_id,bearer_1_qos_flow_id,bearer_1_sst,bearer_1_ul_total_bytes,dl_bitrate,ran_id,ran_plmn,ran_ue_id,registered,rnti,t3512,tac,tac_plmn,ue_aggregate_max_bitrate_dl,ue_aggregate_max_bitrate_ul,ul_bitrate,bearer_1_ipv6,cell,ul_retx,ul_err,ul_mcs,ul_n_layer,ul_path_loss,ul_phr,ul_rank,dl_err,dl_mcs,dl_retx,dl_tx,cqi,epre,initial_ta,p_ue,pusch_snr,ri,turbo_decoder_avg,turbo_decoder_max,turbo_decoder_min,ul_tx,cell_id,attack,malicious,attack_number
@@ -187,16 +187,16 @@ class DataProcessor:
                 num_partitions=num_partitions,
                 num_classes_per_partition=num_classes_per_partition,
                 partition_by='cell',
-                class_assignment_mode='first-deterministic')
+                class_assignment_mode='deterministic')
             self.partitioner.dataset = Dataset.from_pandas(df)
         partitioned_df = self.partitioner.load_partition(partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
 
     def get_dataloader(self,
                        path,
-                       use_pca,
-                       batch_size,
-                       seq_len,
+                       use_pca=False,
+                       batch_size=1024,
+                       seq_len=6,
                        partition_id=0,
                        num_partitions=1,
                        only_benign=False) -> DataLoader:
@@ -209,7 +209,7 @@ class DataProcessor:
                              'prefetch_factor': 10000,
                              'persistent_workers': True}
 
-        logger.info('Loading datasets...')
+        logger.info(f'Loading {path} dataset...')
 
         df = self.preprocess_data(path,
                                   use_pca,
@@ -238,7 +238,7 @@ class DataProcessor:
                                        target_normalizer=None,
                                        allow_missing_timesteps=False
                                        ).to_dataloader(**dataloader_params)
-        logger.info('Finished loading datasets.')
+        logger.info(f'Finished loading {path} dataset.')
         return dataloader
 
 if __name__ == '__main__':
