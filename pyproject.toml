@@ -63,10 +63,9 @@ clientapp = "privateer_ad.fl.client_app:app"
 
 [tool.flwr.app.config]  # Run Config
 num-server-rounds = 200
-epochs = 5
+epochs = 1
 fraction-fit =1.0
-n_clients=3
-run-name = "federated_learning"
+n-clients=3
 
 [tool.flwr.federations]
 default = "local-simulation"
