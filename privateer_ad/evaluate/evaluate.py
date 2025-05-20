@@ -3,12 +3,11 @@ import os
 import mlflow
 import torch
 
-from privateer_ad import config, models
-from privateer_ad.data_utils.transform import DataProcessor
+from privateer_ad import config, models, logger
+from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.evaluate.evaluator import ModelEvaluator
-from privateer_ad.config import setup_logger, HParams, MLFlowConfig, PathsConf
+from privateer_ad.config import HParams, MLFlowConfig, PathsConf
 
-logger = setup_logger('evaluate')
 
 def evaluate(model_path, data_path='test', threshold=None, **kwargs):
     # Setup configs
@@ -19,7 +18,6 @@ def evaluate(model_path, data_path='test', threshold=None, **kwargs):
 
     dp = DataProcessor()
     dl = dp.get_dataloader(data_path,
-                           use_pca=hparams.use_pca,
                            batch_size=hparams.batch_size,
                            seq_len=hparams.seq_len)
     # Setup device

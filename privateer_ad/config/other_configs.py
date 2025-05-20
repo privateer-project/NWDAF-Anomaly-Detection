@@ -1,39 +1,14 @@
 import os
-import sys
-import logging
 
 from pathlib import Path
 from dotenv import load_dotenv
 from dataclasses import dataclass
 
-from privateer_ad.config.data_config import PathsConf
-
 load_dotenv(Path(__file__).parent.joinpath('.env'))
-
-DATEFORMAT = '%Y-%m-%d %H:%M:%S.%f'
-
-
-def setup_logger(name):
-    logger = logging.getLogger(name)
-    # Clear any existing handlers to prevent duplicates
-    if logger.handlers:
-        logger.handlers.clear()
-
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(formatter)
-
-    file_handler = logging.FileHandler(PathsConf.root.joinpath('logs.log'))
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
-    return logger
 
 def _str2bool(value):
     return str(value).lower() in {'1', 'true', 'yes', 'y', 'on'}
+
 
 @dataclass
 class DPConfig:
@@ -41,6 +16,7 @@ class DPConfig:
     target_delta: float = 1e-6  # Privacy failure probability
     max_grad_norm: float = 2.0  # Per-sample gradient clipping threshold
     secure_mode: bool = True  # Enable secure RNG for DP
+
 
 @dataclass
 class MLFlowConfig:
@@ -54,3 +30,16 @@ class MLFlowConfig:
 class SecureAggregationConfig:
    num_shares: float | int = 3
    reconstruction_threshold: float | int = 2
+
+
+@dataclass
+class PathsConf:
+   root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
+   data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
+   config: Path = Path(__file__).parent
+   raw: Path = Path(os.environ.get('RAW_DIR', data.joinpath('raw')))
+   processed: Path = Path(os.environ.get('PROCESSED_DIR', data.joinpath('processed')))
+   scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
+   analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
+   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
+   experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))

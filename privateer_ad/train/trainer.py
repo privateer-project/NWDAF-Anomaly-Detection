@@ -1,15 +1,13 @@
 from copy import deepcopy
 from typing import Dict, Any
 
-from tqdm import tqdm
 import mlflow
 import torch
 
-from mlflow.models import infer_signature
+from tqdm import tqdm
 
-from privateer_ad.config import HParams, EarlyStoppingConfig, setup_logger, PathsConf
-
-logger = setup_logger('trainer')
+from privateer_ad import logger
+from privateer_ad.config import HParams, EarlyStoppingConfig, PathsConf
 
 class ModelTrainer:
     """Trains a PyTorch model with early stopping capability.
@@ -45,6 +43,7 @@ class ModelTrainer:
                     hparams (HParams): Hyperparameters for training including epochs,
                                       early stopping flag, and target metric.
         """
+        logger.info('Instantiate ModelTrainer...')
         self.device = device
         self.model = model.to(self.device)
         self.optimizer = optimizer
@@ -52,7 +51,6 @@ class ModelTrainer:
         self.hparams = hparams
         self.paths = PathsConf()
         if self.hparams.early_stopping:
-            logger.info('Early stopping enabled.')
             self.es_not_improved_epochs = 0
 
             if self.hparams.direction not in ('maximize', 'minimize'):
@@ -130,7 +128,7 @@ class ModelTrainer:
 
             mlflow.pytorch.log_model(pytorch_model=self.model,
                                      artifact_path='model',
-                                     signature=infer_signature(model_input=_input.detach().numpy(),
+                                     signature=mlflow.models.infer_signature(model_input=_input.detach().numpy(),
                                                                model_output=_output),
                                      pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
 
@@ -152,8 +150,8 @@ class ModelTrainer:
         """
         self.model.train()
         loss = 0.0
-
-        for inputs in tqdm(train_dl, desc=f'Epoch {epoch}/{self.hparams.epochs} - Train:'):
+        self.model.to(self.device)
+        for inputs in tqdm(train_dl, desc=f'Epoch {epoch}/{self.hparams.epochs} - Train'):
             x = inputs[0]['encoder_cont'].to(self.device)
             self.optimizer.zero_grad()
             # Compute autoencoder loss
@@ -182,7 +180,7 @@ class ModelTrainer:
         self.model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for inputs in tqdm(val_dl, desc='Validation:'):
+            for inputs in tqdm(val_dl, desc=' ' * 9 + 'Validation'):
                 x = inputs[0]['encoder_cont'].to(self.device)
                 ae_output = self.model(x)
                 val_loss += self.loss_fn(x, ae_output).item()
@@ -197,7 +195,7 @@ class ModelTrainer:
 
         Args:
             metrics (Dict[str, float]): Dictionary of metrics to log.
-            epoch (int): Current epoch number for MLFlow logging.
+            epoch (int): Current epoch.
         """
         self.metrics.update(metrics)
         if mlflow.active_run():

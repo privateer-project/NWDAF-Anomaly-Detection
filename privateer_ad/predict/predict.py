@@ -1,17 +1,19 @@
 from typing import Tuple
 
+import fire
 import numpy as np
 import torch
+
 from torch import nn
 from tqdm import tqdm
-from fire import Fire
-from sklearn.metrics import classification_report
-from privateer_ad.config import PathsConf, HParams, setup_logger
-from privateer_ad.models import AttentionAutoencoder
-from privateer_ad.data_utils.transform import DataProcessor
 from pathlib import Path
+from sklearn.metrics import classification_report
 
-logger = setup_logger('predict')
+from privateer_ad import logger
+from privateer_ad.config import HParams, PathsConf
+from privateer_ad.models import AttentionAutoencoder
+from privateer_ad.etl.transform import DataProcessor
+
 
 def make_predictions(model_path: str,
                      data_path: str,
@@ -45,7 +47,6 @@ def make_predictions(model_path: str,
     # Load Data
     dp = DataProcessor()
     dl = dp.get_dataloader(data_path,
-                           use_pca=hparams.use_pca,
                            batch_size=hparams.batch_size,
                            seq_len=hparams.seq_len,
                            only_benign=False)
@@ -101,4 +102,4 @@ def make_predictions(model_path: str,
     return inputs, losses, predictions, labels
 
 def main():
-    Fire(make_predictions)
+    fire.Fire(make_predictions)

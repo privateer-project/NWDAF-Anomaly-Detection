@@ -1,10 +1,10 @@
 import os
+
 import mlflow
 
+from privateer_ad import logger
 from privateer_ad.train import AutotuneConfig, ModelAutoTuner
-from privateer_ad.config import MLFlowConfig, setup_logger, update_config
-
-logger = setup_logger('autotune')
+from privateer_ad.config import MLFlowConfig, update_config
 
 def autotune(**kwargs):
     logger.info('Initialize auto-tuning.')

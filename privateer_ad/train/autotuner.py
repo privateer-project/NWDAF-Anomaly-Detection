@@ -2,11 +2,11 @@ from dataclasses import dataclass
 
 import optuna
 
+from privateer_ad import logger
 from privateer_ad.config.hparams_config import AutotuneParams
 from privateer_ad.train.train import TrainPipeline
-from privateer_ad.config import setup_logger, update_config
+from privateer_ad.config import update_config
 
-logger = setup_logger('autotuner')
 
 @dataclass
 class AutotuneConfig:

@@ -3,19 +3,18 @@ from typing import List, Tuple, Union, Optional
 import numpy as np
 import torch
 import mlflow
-from mlflow.models import infer_signature
 
 from flwr.common import (ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters,
                          Metrics, FitRes)
-from flwr.common.logger import FLOWER_LOGGER
 from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
 
-from privateer_ad.data_utils.transform import DataProcessor
-from privateer_ad.evaluate.evaluator import ModelEvaluator
-from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
-from privateer_ad.config import PathsConf, MLFlowConfig, HParams
+from privateer_ad import logger
+from privateer_ad.config import MLFlowConfig, HParams, PathsConf
 from privateer_ad.fl.utils import set_weights
+from privateer_ad.etl.transform import DataProcessor
+from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
+from privateer_ad.evaluate.evaluator import ModelEvaluator
 
 def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
     weighted_sums = {}
@@ -48,10 +47,8 @@ class CustomStrategy(FedAvg):
         self.paths = PathsConf()
         self.mlflow_config = MLFlowConfig()
         hparams = HParams()
-        self.logger = FLOWER_LOGGER
         self.data_processor = DataProcessor()
         self.test_dl = self.data_processor.get_dataloader('test',
-                                                 use_pca=hparams.use_pca,
                                                  batch_size=hparams.batch_size,
                                                  seq_len=hparams.seq_len,
                                                  only_benign=False)
@@ -72,10 +69,10 @@ class CustomStrategy(FedAvg):
             if len(runs) > 0:
                 # Use existing run
                 self.run_id = runs.iloc[0].run_id
-                self.logger.info(f'Found existing run: {self.mlflow_config.server_run_name} with id: {self.run_id}')
+                logger.info(f'Found existing run: {self.mlflow_config.server_run_name} with id: {self.run_id}')
             else:
                 # Create a new run
-                self.logger.info(f'No run with name {self.mlflow_config.server_run_name} found. Creating parent run.')
+                logger.info(f'No run with name {self.mlflow_config.server_run_name} found. Creating parent run.')
                 with mlflow.start_run(run_name=self.mlflow_config.server_run_name):
                     self.run_id = mlflow.active_run().info.run_id
 
@@ -115,7 +112,7 @@ class CustomStrategy(FedAvg):
                         mlflow.pytorch.log_model(pytorch_model=self.model,
                                                  artifact_path=f'best_model_{server_round}',
                                                  registered_model_name=f'best_model_{server_round}',
-                                                 signature=infer_signature(model_input=_input.detach().numpy(),
+                                                 signature=mlflow.models.infer_signature(model_input=_input.detach().numpy(),
                                                                            model_output=_output),
                                                  pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
         return aggregated_parameters, aggregated_metrics
@@ -123,7 +120,7 @@ class CustomStrategy(FedAvg):
 
     def evaluate(self, server_round: int, parameters: Parameters) -> Optional[tuple[float, dict[str, Scalar]]]:
         """Evaluate model parameters using an evaluation function."""
-        self.logger.info('Evaluating model on Server')
+        logger.info('Evaluating model on Server')
         set_weights(self.model, parameters_to_ndarrays(parameters))
         self.model.to(self.device)
         metrics, figures = self.evaluator.evaluate(self.model, self.test_dl, prefix='eval', step=server_round)

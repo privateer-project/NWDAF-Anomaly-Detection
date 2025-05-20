@@ -6,11 +6,10 @@ import torch
 
 from torchinfo import summary
 from mlflow.entities import RunStatus
-from opacus import PrivacyEngine
-from opacus.validators import ModuleValidator
 
-from privateer_ad.config import PathsConf, MLFlowConfig, HParams, DPConfig, setup_logger
-from privateer_ad.data_utils.transform import DataProcessor
+from privateer_ad import logger
+from privateer_ad.config import MLFlowConfig, HParams, DPConfig, PathsConf
+from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
@@ -75,18 +74,15 @@ class TrainPipeline:
         self.trial_dir = self.paths.experiments_dir.joinpath(self.run_name)
         self.trial_dir.mkdir(parents=True, exist_ok=True)
 
-        self.train_dl = self.data_processor.get_dataloader(
-            'train',
-            use_pca=self.hparams.use_pca,
-            batch_size=self.hparams.batch_size,
-            partition_id=self.partition_id,
-            num_partitions=self.num_partitions,
-            seq_len=self.hparams.seq_len,
-            only_benign=True)
+        self.train_dl = self.data_processor.get_dataloader('train',
+                                                           batch_size=self.hparams.batch_size,
+                                                           seq_len=self.hparams.seq_len,
+                                                           partition_id=self.partition_id,
+                                                           num_partitions=self.num_partitions,
+                                                           only_benign=True)
 
         self.val_dl = self.data_processor.get_dataloader(
             'val',
-            use_pca=self.hparams.use_pca,
             batch_size=self.hparams.batch_size,
             partition_id=self.partition_id,
             num_partitions=self.num_partitions,
@@ -95,7 +91,6 @@ class TrainPipeline:
 
         self.test_dl = self.data_processor.get_dataloader(
             'test',
-            use_pca=self.hparams.use_pca,
             batch_size=self.hparams.batch_size,
             partition_id=self.partition_id,
             num_partitions=self.num_partitions,
@@ -110,7 +105,9 @@ class TrainPipeline:
         self.model = AttentionAutoencoder(self.model_config)
 
         if self.hparams.apply_dp:
-            self.model = ModuleValidator.fix(self.model)
+            from opacus import PrivacyEngine
+            from opacus.validators import ModuleValidator
+            logger.info('Differential Privacy enabled.')
             ModuleValidator.validate(self.model, strict=True)
 
     def train_model(self, start_epoch=0):
