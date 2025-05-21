@@ -90,7 +90,7 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
-        for epoch in range(start_epoch, start_epoch + self.hparams.epochs):
+        for epoch in range(start_epoch + 1, start_epoch + self.hparams.epochs + 1):
             local_epoch = epoch - start_epoch
             train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
             val_metrics = self._validation_loop(val_dl)

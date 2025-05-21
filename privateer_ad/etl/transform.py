@@ -56,14 +56,14 @@ class DataProcessor:
         test_dfs = []
         for device, device_info in self.metadata.devices.items():
             device_df = df.loc[df['imeisv'] == device_info.imeisv]
-            logger.debug(f'Before:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == '1'])}'
-                        f' benign samples: {len(device_df[device_df["attack"] == '0'])}')
+            logger.debug(f'Before:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == 1])}'
+                        f' benign samples: {len(device_df[device_df["attack"] == 0])}')
 
             device_in_attacks = device_df['attack_number'].isin(device_info.in_attacks)
-            device_df.loc[device_in_attacks, 'attack'] = '1'
-            device_df.loc[~device_in_attacks, 'attack'] = '0'
-            logger.debug(f'After:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == '1'])} '
-                        f'benign samples: {len(device_df[device_df["attack"] == '0'])}')
+            device_df.loc[device_in_attacks, 'attack'] = 1
+            device_df.loc[~device_in_attacks, 'attack'] = 0
+            logger.debug(f'After:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == 1])} '
+                        f'benign samples: {len(device_df[device_df["attack"] == 0])}')
             device_train_df, df_tmp = train_test_split(device_df,
                                                        train_size=train_size,
                                                        stratify=device_df['attack_number'],
@@ -79,9 +79,9 @@ class DataProcessor:
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
 
         for k, df in datasets.items():
-            logger.debug(f'Dataset {k} attack length: {len(df[df["attack"] == '1'])}'
-                        f' benign length: {len(df[df["attack"] == '0'])}'
-                        f'{k} shape: {df.shape}')
+            logger.debug(f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
+                         f'benign length: {len(df[df["attack"] == 0])} '
+                         f'{k} shape: {df.shape}')
         return datasets
 
     def clean_data(self, df):
@@ -104,11 +104,11 @@ class DataProcessor:
             logger.warning(f'partition_id ({partition_id}) is ignored when '
                            f' when num_partitions == 1')
         else:
-            if num_partitions > 1 <= partition_id:
+            if partition_id >= num_partitions:
                 raise ValueError(f'partition_id ({partition_id}) is greater than num_partitions ({num_partitions})')
             if partition_id < 0:
                 raise ValueError(f'partition_id ({partition_id}) < 0')
-            df = self.get_partition(df, partition_id=partition_id, num_partitions=num_partitions)
+        df = self.get_partition(df, partition_id=partition_id, num_partitions=num_partitions)
         df = self.clean_data(df)
         df = self.apply_scale(df)
         df = df.sort_values(by=['_time']).reset_index(drop=True)
@@ -140,7 +140,7 @@ class DataProcessor:
         Scaling and normalizing numeric values, imputing missing values, clipping outliers,
          and adjusting values that have skewed distributions.
         """
-        benign_df = df[df['attack'] == '0'].copy()
+        benign_df = df[df['attack'] == 0].copy()
         os.makedirs(os.path.dirname(self.scaler_path), exist_ok=True)
 
         self.scaler = StandardScaler()
