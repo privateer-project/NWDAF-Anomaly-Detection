@@ -13,25 +13,22 @@ app = ServerApp()
 
 @app.main()
 def main(driver: Driver, context: Context) -> None:
-    secaggr_cfg = SecureAggregationConfig()
     n_clients = context.run_config.get('n-clients')
     num_rounds = context.run_config.get('num-server-rounds')
+    logger.info(f'FL will run for {num_rounds} rounds on {n_clients} clients')
 
-    strategy = CustomStrategy()
-    if strategy.mlflow_config.track:
-        with mlflow.start_run(run_id=strategy.run_id):
-            mlflow.log_params({'num_clients': n_clients,
-                               'num_rounds': num_rounds})
+    secaggr_cfg = SecureAggregationConfig().__dict__
+
+    strategy = CustomStrategy(num_rounds=num_rounds)
+    if mlflow.active_run():
+        mlflow.log_params({'num_clients': n_clients,
+                           'num_rounds': num_rounds})
 
     # Execute workflow
-    logger.info(f'Server will run for {num_rounds} rounds')
-    logger.info(f'SecAgg+ config: num_shares: {secaggr_cfg.num_shares} reconstruction threshold: {secaggr_cfg.reconstruction_threshold}')
-
     context = LegacyContext(context=context,
                             config=ServerConfig(num_rounds=num_rounds),
                             strategy=strategy)
     logger.info(f'Main Context: {context}')
-    workflow = DefaultWorkflow(fit_workflow=SecAggPlusWorkflow(num_shares=secaggr_cfg.num_shares,
-                                                               reconstruction_threshold=secaggr_cfg.reconstruction_threshold,
-                                                               max_weight=200000))
+    workflow = DefaultWorkflow(fit_workflow=SecAggPlusWorkflow(max_weight=200000, **secaggr_cfg,
+                                                               ))
     workflow(driver, context)

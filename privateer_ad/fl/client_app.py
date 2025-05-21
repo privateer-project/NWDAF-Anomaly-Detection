@@ -3,6 +3,7 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.client.mod import secaggplus_mod
 
 from privateer_ad import logger
+from privateer_ad.config import DPConfig
 from privateer_ad.fl.utils import set_weights, get_weights
 from privateer_ad.train.train import TrainPipeline
 
@@ -13,9 +14,11 @@ class SecAggFlowerClient(NumPyClient):
         self.context = context
         self.partition_id = int(self.context.node_config['partition-id'])
         self.num_partitions = int(self.context.node_config['num-partitions'])
+        self.dp_config = DPConfig()
         self.train_pln = TrainPipeline(run_name=f'client-{self.partition_id}',
                                        partition_id=self.partition_id,
                                        num_partitions=self.num_partitions,
+                                       dp=self.dp_config.enable,
                                        nested=True)
         self.train_pln.hparams.epochs = int(self.context.run_config['epochs'])
         logger.info(f'Client - {self.partition_id} of {self.num_partitions}')
@@ -47,11 +50,12 @@ class SecAggFlowerClient(NumPyClient):
         set_weights(self.train_pln.model, parameters)
         # Evaluate the model
         metrics = self.train_pln.evaluate_model(step=config['server_round'])
-        loss = metrics.pop('eval_loss')
         # Calculate number of evaluation samples
         num_examples = sum(len(batch[0]['encoder_cont']) for batch in self.train_pln.test_dl)
 
         logger.info(f'Client {self.partition_id}: Evaluation completed with metrics: {metrics}')
+
+        loss = metrics.pop('eval_loss')
         return float(loss), num_examples, metrics
 
 def client_fn(context: Context):
