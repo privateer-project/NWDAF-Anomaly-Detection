@@ -16,27 +16,34 @@ from privateer_ad.evaluate.evaluator import ModelEvaluator
 
 
 class TrainPipeline:
-    def __init__(self, run_name=None, partition_id=0, num_partitions=1, nested=False):
+    def __init__(self, run_name=None, partition_id=0, num_partitions=1, dp=False, nested=False):
         # Setup project configs
-
+        self.run_name = run_name
         self.partition_id = partition_id
         self.num_partitions = num_partitions
         self.mlflow_config = MLFlowConfig()
         self.paths = PathsConf()
         self.hparams = HParams()
         self.dp_config = DPConfig()
+        self.dp_config.enable = dp
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Setup MLFlow
         if self.mlflow_config.track:
             logger.info('Initialize MLFlow')
-            self.parent_run_id = None
-            self.run_name = run_name
-            if not self.run_name:
-                self.run_name = datetime.now().strftime('%Y%m%d-%H%M%S')
-
             mlflow.set_tracking_uri(self.mlflow_config.server_address)
             mlflow.set_experiment(self.mlflow_config.experiment_name)
+
+            self.parent_run_id = None
+            self.run_id = None
+            if not self.run_name:
+                self.run_name = datetime.now().strftime('%Y%m%d-%H%M%S')
+            if self.dp_config.enable:
+                self.run_name += '-dp'
+
+            if mlflow.active_run():
+                logger.info(f"Found active run {mlflow.active_run().info.run_id}, ending it")
+                mlflow.end_run()
 
             if nested and self.mlflow_config.server_run_name:
                 parent_runs = mlflow.search_runs(experiment_names=[self.mlflow_config.experiment_name],
@@ -52,9 +59,8 @@ class TrainPipeline:
                                       max_results=1)
             if len(runs) > 0:
                 self.run_id = runs.iloc[0].run_id
-            else:
-                self.run_id = None
-
+                if not RunStatus.is_terminated(mlflow.get_run(self.run_id).info.status):
+                    mlflow.MlflowClient().set_terminated(run_id=self.run_id)
             mlflow.start_run(run_id=self.run_id, run_name=self.run_name, parent_run_id=self.parent_run_id)
 
             self.run_id = mlflow.active_run().info.run_id
@@ -98,9 +104,13 @@ class TrainPipeline:
         # Setup model
         self.model_config = AttentionAutoencoderConfig(seq_len=self.hparams.seq_len, input_size=self.sample.shape[-1])
         torch.serialization.add_safe_globals([AttentionAutoencoder])
+        if mlflow.active_run():
+            mlflow.log_params(self.model_config.__dict__)
+            mlflow.log_params(self.hparams.__dict__)
+
         self.model = AttentionAutoencoder(self.model_config)
 
-        if self.hparams.apply_dp:
+        if self.dp_config.enable:
             from opacus import PrivacyEngine
             from opacus.validators import ModuleValidator
             logger.info('Differential Privacy enabled.')
@@ -114,11 +124,12 @@ class TrainPipeline:
                 module=self.model,
                 optimizer=self.optimizer,
                 data_loader=self.train_dl,
-                epochs=self.hparams.epochs,
+                epochs=100, #self.hparams.epochs,
                 target_epsilon=self.dp_config.target_epsilon,
                 target_delta=self.dp_config.target_delta,
                 max_grad_norm=self.dp_config.max_grad_norm
             )
+            mlflow.log_params(self.dp_config.__dict__)
         else:
             logger.info('Differential Privacy disabled.')
             self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.hparams.learning_rate)
@@ -141,32 +152,50 @@ class TrainPipeline:
     def train_model(self, start_epoch=0):
         logger.info('Start Training...')
         self.model.train()
-
-        trainer = ModelTrainer(model=self.model,
-                               optimizer=self.optimizer,
-                               criterion=self.hparams.loss,
-                               device=self.device,
-                               hparams=self.hparams)
+        try:
+            trainer = ModelTrainer(model=self.model,
+                                   optimizer=self.optimizer,
+                                   criterion=self.hparams.loss,
+                                   device=self.device,
+                                   hparams=self.hparams)
+        except Exception as e:
+            raise ValueError(f'Error while initializing trainer: {e}')
+        try:
+            trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
+        except KeyboardInterrupt: # Break training loop when Ctrl+C pressed (Manual early stopping)
+            logger.warning('Training interrupted by user...')
+        # Set model to best so far
+        self.model.load_state_dict(deepcopy(trainer.best_checkpoint['model_state_dict']))
 
         if mlflow.active_run():
-            mlflow.log_params(self.hparams.__dict__)
-        best_checkpoint = trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
+            # log model with signature to mlflow
+            self.model.to('cpu')
+            sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
 
-        # Set model to best so far
-        self.model.load_state_dict(deepcopy(best_checkpoint['model_state_dict']))
+            _input = sample.to('cpu')
+            _output = self.model(_input)
+            if isinstance(_output, dict):
+                _output = {key: val.detach().numpy() for key, val in _output.items()}
+            else:
+                _output = _output.detach().numpy()
+
+            mlflow.pytorch.log_model(pytorch_model=self.model,
+                                     artifact_path='model',
+                                     signature=mlflow.models.infer_signature(model_input=_input.detach().numpy(),
+                                                               model_output=_output),
+                                     pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
 
         logger.info('Training Finished.')
-        if mlflow.active_run() and self.hparams.apply_dp:
-            mlflow.log_params(self.dp_config.__dict__)
+        if mlflow.active_run() and self.dp_config.enable:
             mlflow.log_metrics({'epsilon': self.privacy_engine.get_epsilon(self.dp_config.target_delta)},
                                step=start_epoch)
 
         torch.save(self.model.state_dict(), self.trial_dir.joinpath('model.pt'))
-        return best_checkpoint
+        return trainer.best_checkpoint
 
     def evaluate_model(self, step=0):
-        evaluator = ModelEvaluator(criterion=self.hparams.loss, device=self.device)
         self.model.eval()
+        evaluator = ModelEvaluator(criterion=self.hparams.loss, device=self.device)
         metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='eval', step=step)
 
         metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])

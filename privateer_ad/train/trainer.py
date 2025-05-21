@@ -90,47 +90,26 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
-        try:
-            for epoch in range(start_epoch, start_epoch + self.hparams.epochs):
-                local_epoch = epoch - start_epoch
-                train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
-                val_metrics = self._validation_loop(val_dl)
-                self.log_metrics(train_metrics | val_metrics, epoch)
-                current_value = self.metrics[self.hparams.target]
-                best_value = self.best_checkpoint['metrics'][self.hparams.target]
-                if self.hparams.direction == 'maximize':
-                    is_best = current_value >= best_value
-                else:
-                    is_best = current_value <= best_value
-                if is_best:
-                    self.best_checkpoint.update({
-                        'metrics': deepcopy(self.metrics),
-                        'epoch': epoch,
-                        'model_state_dict': self.model.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict()
-                    })
-                if self._check_early_stopping(epoch=local_epoch, is_best=is_best): # Early stopping check
-                    break
-        except KeyboardInterrupt: # Break training loop when Ctrl+C pressed (Manual early stopping)
-            logger.warning('Training interrupted by user...')
-
-        if mlflow.active_run():
-            # log model with signature to mlflow
-            self.model.to('cpu')
-            sample = next(iter(train_dl))[0]['encoder_cont'][:1].to('cpu')
-
-            _input = sample.to('cpu')
-            _output = self.model(_input)
-            if isinstance(_output, dict):
-                _output = {key: val.detach().numpy() for key, val in _output.items()}
+        for epoch in range(start_epoch, start_epoch + self.hparams.epochs):
+            local_epoch = epoch - start_epoch
+            train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
+            val_metrics = self._validation_loop(val_dl)
+            self.log_metrics(train_metrics | val_metrics, epoch)
+            current_value = self.metrics[self.hparams.target]
+            best_value = self.best_checkpoint['metrics'][self.hparams.target]
+            if self.hparams.direction == 'maximize':
+                is_best = current_value >= best_value
             else:
-                _output = _output.detach().numpy()
-
-            mlflow.pytorch.log_model(pytorch_model=self.model,
-                                     artifact_path='model',
-                                     signature=mlflow.models.infer_signature(model_input=_input.detach().numpy(),
-                                                               model_output=_output),
-                                     pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
+                is_best = current_value <= best_value
+            if is_best:
+                self.best_checkpoint.update({
+                    'metrics': deepcopy(self.metrics),
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict()
+                })
+            if self._check_early_stopping(epoch=local_epoch, is_best=is_best): # Early stopping check
+                break
 
         return self.best_checkpoint
 
