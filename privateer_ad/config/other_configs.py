@@ -12,10 +12,11 @@ def _str2bool(value):
 
 @dataclass
 class DPConfig:
-    target_epsilon: float = 5.0  # Client-side privacy budget
-    target_delta: float = 1e-6  # Privacy failure probability
-    max_grad_norm: float = 2.0  # Per-sample gradient clipping threshold
+    target_epsilon: float = 0.5  # Client-side privacy budget
+    target_delta: float = 1e-7  # Privacy failure probability
+    max_grad_norm: float = 0.5  # Per-sample gradient clipping threshold
     secure_mode: bool = True  # Enable secure RNG for DP
+    enable: bool = False  # Enable DP
 
 
 @dataclass
@@ -23,7 +24,7 @@ class MLFlowConfig:
    track: bool = _str2bool(os.environ.get('MLFLOW_ENABLE_TRACKING', True))
    server_address: str = os.environ.get('MLFLOW_SERVER_ADDRESS', 'http://localhost:5001')
    experiment_name: str = os.environ.get('MLFLOW_EXPERIMENT_NAME',  'privateer-ad')
-   server_run_name: str = os.environ.get('MLFLOW_SERVER_RUN', 'federated_learning')
+   server_run_name: str = os.environ.get('MLFLOW_SERVER_RUN', 'federated-learning')
 
 
 @dataclass

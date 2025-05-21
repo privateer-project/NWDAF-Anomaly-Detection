@@ -14,12 +14,11 @@ class HParams:
     early_stopping: bool = True
     target: str = 'val_loss'
     direction: str = 'minimize'
-    apply_dp: bool = True
 
 @dataclass
 class EarlyStoppingConfig:
     es_patience_epochs: int = 20
-    es_warmup_epochs: int = 20
+    es_warmup_epochs: int = 10
 
 
 @dataclass
