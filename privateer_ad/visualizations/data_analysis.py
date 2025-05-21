@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 
-from privateer_ad.config import PathsConf, MetaData
-from privateer_ad.data_utils.transform import DataProcessor
+from privateer_ad.config import MetaData, PathsConf
+from privateer_ad.etl.transform import DataProcessor
 
 
 # Load data

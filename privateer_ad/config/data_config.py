@@ -1,21 +1,7 @@
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Dict
 import yaml
-
-@dataclass
-class PathsConf:
-   root: Path = Path(os.environ.get('ROOT_DIR', Path(__file__).parents[2]))
-   data: Path = Path(os.environ.get('DATA_DIR', root.joinpath('data')))
-   config: Path = Path(__file__).parent
-   raw: Path = Path(os.environ.get('RAW_DIR', data.joinpath('raw')))
-   processed: Path = Path(os.environ.get('PROCESSED_DIR', data.joinpath('processed')))
-   scalers: Path = Path(os.environ.get('SCALERS_DIR', root.joinpath('scalers')))
-   analysis: Path = Path(os.environ.get('ANALYSIS_DIR', root.joinpath('analysis_results')))
-   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', raw.joinpath('amari_ue_data_merged_with_attack_number.csv')))
-   experiments_dir: Path = Path(os.environ.get('EXPERIMENTS_DIR', root.joinpath('experiments')))
-
 
 @dataclass
 class DeviceInfo:
@@ -56,3 +42,6 @@ class MetaData:
 
    def get_drop_features(self):
       return [feat for feat, info in self.features.items() if info.drop]
+
+   def get_features_dtypes(self):
+      return {feat: info.dtype for feat, info in self.features.items()}

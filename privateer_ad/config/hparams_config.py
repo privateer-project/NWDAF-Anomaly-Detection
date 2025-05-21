@@ -8,19 +8,17 @@ class HParams:
     model: str = 'AttentionAutoencoder'
     batch_size: int = 4096
     seq_len: int = 12
-    learning_rate: float = 0.0001
+    learning_rate: float = 0.001
     epochs: int = 500
     loss: str = 'L1Loss'
     early_stopping: bool = True
     target: str = 'val_loss'
     direction: str = 'minimize'
-    apply_dp: bool = True
-    use_pca: bool = False
 
 @dataclass
 class EarlyStoppingConfig:
     es_patience_epochs: int = 20
-    es_warmup_epochs: int = 20
+    es_warmup_epochs: int = 10
 
 
 @dataclass

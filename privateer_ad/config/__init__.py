@@ -1,25 +1,22 @@
 from .hparams_config import (HParams, EarlyStoppingConfig)
 from .data_config import DeviceInfo, AttackInfo, FeatureInfo, MetaData
-from .other_configs import (PathsConf,
-                            DifferentialPrivacyConfig,
+from .other_configs import (DPConfig,
                             MLFlowConfig,
-                            PartitionConfig,
-                            SecureAggregationConfig,
-                            setup_logger)
+                            SecureAggregationConfig, PathsConf,
+                            )
+
 from .utils import update_config
 
 __all__ = [
-    'setup_logger',
     'update_config',
+    'DPConfig',
+    'PathsConf',
     'HParams',
     'DeviceInfo',
     'AttackInfo',
     'FeatureInfo',
     'MetaData',
-    'PathsConf',
-    'DifferentialPrivacyConfig',
     'MLFlowConfig',
-    'PartitionConfig',
     'SecureAggregationConfig',
     'EarlyStoppingConfig'
 ]

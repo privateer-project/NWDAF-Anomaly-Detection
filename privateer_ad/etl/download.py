@@ -6,9 +6,8 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from privateer_ad.config import setup_logger, PathsConf
-
-logger = setup_logger('extract')
+from privateer_ad.config import PathsConf
+from privateer_ad import logger
 
 @dataclass
 class DownloadConfig:

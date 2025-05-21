@@ -2,9 +2,12 @@ import os
 
 from privateer_ad.config import PathsConf
 
-def get_dataset_path(dataset_name: str) -> str:
+
+def get_dataset_path(dataset_path: str) -> str:
     """Get full path for a dataset file."""
-    return str(PathsConf.processed.joinpath(f"{dataset_name}.csv"))
+    if dataset_path in ['train', 'val', 'test']:
+        return str(PathsConf.processed.joinpath(f"{dataset_path}.csv"))
+    return dataset_path
 
 def check_existing_datasets():
     for mode in ['train', 'val', 'test']:

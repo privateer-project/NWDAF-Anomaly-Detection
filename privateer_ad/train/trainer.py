@@ -1,15 +1,13 @@
 from copy import deepcopy
 from typing import Dict, Any
 
-from tqdm import tqdm
 import mlflow
 import torch
 
-from mlflow.models import infer_signature
+from tqdm import tqdm
 
-from privateer_ad.config import HParams, EarlyStoppingConfig, setup_logger, PathsConf
-
-logger = setup_logger('trainer')
+from privateer_ad import logger
+from privateer_ad.config import HParams, EarlyStoppingConfig, PathsConf
 
 class ModelTrainer:
     """Trains a PyTorch model with early stopping capability.
@@ -45,6 +43,7 @@ class ModelTrainer:
                     hparams (HParams): Hyperparameters for training including epochs,
                                       early stopping flag, and target metric.
         """
+        logger.info('Instantiate ModelTrainer...')
         self.device = device
         self.model = model.to(self.device)
         self.optimizer = optimizer
@@ -52,7 +51,6 @@ class ModelTrainer:
         self.hparams = hparams
         self.paths = PathsConf()
         if self.hparams.early_stopping:
-            logger.info('Early stopping enabled.')
             self.es_not_improved_epochs = 0
 
             if self.hparams.direction not in ('maximize', 'minimize'):
@@ -92,47 +90,26 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
-        try:
-            for epoch in range(start_epoch, start_epoch + self.hparams.epochs):
-                local_epoch = epoch - start_epoch
-                train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
-                val_metrics = self._validation_loop(val_dl)
-                self.log_metrics(train_metrics | val_metrics, epoch)
-                current_value = self.metrics[self.hparams.target]
-                best_value = self.best_checkpoint['metrics'][self.hparams.target]
-                if self.hparams.direction == 'maximize':
-                    is_best = current_value >= best_value
-                else:
-                    is_best = current_value <= best_value
-                if is_best:
-                    self.best_checkpoint.update({
-                        'metrics': deepcopy(self.metrics),
-                        'epoch': epoch,
-                        'model_state_dict': self.model.state_dict(),
-                        'optimizer_state_dict': self.optimizer.state_dict()
-                    })
-                if self._check_early_stopping(epoch=local_epoch, is_best=is_best): # Early stopping check
-                    break
-        except KeyboardInterrupt: # Break training loop when Ctrl+C pressed (Manual early stopping)
-            logger.warning('Training interrupted by user...')
-
-        if mlflow.active_run():
-            # log model with signature to mlflow
-            self.model.to('cpu')
-            sample = next(iter(train_dl))[0]['encoder_cont'][:1].to('cpu')
-
-            _input = sample.to('cpu')
-            _output = self.model(_input)
-            if isinstance(_output, dict):
-                _output = {key: val.detach().numpy() for key, val in _output.items()}
+        for epoch in range(start_epoch, start_epoch + self.hparams.epochs):
+            local_epoch = epoch - start_epoch
+            train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
+            val_metrics = self._validation_loop(val_dl)
+            self.log_metrics(train_metrics | val_metrics, epoch)
+            current_value = self.metrics[self.hparams.target]
+            best_value = self.best_checkpoint['metrics'][self.hparams.target]
+            if self.hparams.direction == 'maximize':
+                is_best = current_value >= best_value
             else:
-                _output = _output.detach().numpy()
-
-            mlflow.pytorch.log_model(pytorch_model=self.model,
-                                     artifact_path='model',
-                                     signature=infer_signature(model_input=_input.detach().numpy(),
-                                                               model_output=_output),
-                                     pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
+                is_best = current_value <= best_value
+            if is_best:
+                self.best_checkpoint.update({
+                    'metrics': deepcopy(self.metrics),
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict()
+                })
+            if self._check_early_stopping(epoch=local_epoch, is_best=is_best): # Early stopping check
+                break
 
         return self.best_checkpoint
 
@@ -152,8 +129,8 @@ class ModelTrainer:
         """
         self.model.train()
         loss = 0.0
-
-        for inputs in tqdm(train_dl, desc=f'Epoch {epoch}/{self.hparams.epochs} - Train:'):
+        self.model.to(self.device)
+        for inputs in tqdm(train_dl, desc=f'Epoch {epoch}/{self.hparams.epochs} - Train'):
             x = inputs[0]['encoder_cont'].to(self.device)
             self.optimizer.zero_grad()
             # Compute autoencoder loss
@@ -182,7 +159,7 @@ class ModelTrainer:
         self.model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for inputs in tqdm(val_dl, desc='Validation:'):
+            for inputs in tqdm(val_dl, desc=' ' * 9 + 'Validation'):
                 x = inputs[0]['encoder_cont'].to(self.device)
                 ae_output = self.model(x)
                 val_loss += self.loss_fn(x, ae_output).item()
@@ -197,7 +174,7 @@ class ModelTrainer:
 
         Args:
             metrics (Dict[str, float]): Dictionary of metrics to log.
-            epoch (int): Current epoch number for MLFlow logging.
+            epoch (int): Current epoch.
         """
         self.metrics.update(metrics)
         if mlflow.active_run():
