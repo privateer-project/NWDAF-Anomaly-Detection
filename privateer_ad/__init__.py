@@ -1,7 +1,7 @@
 # In privateer_ad/__init__.py
 import logging
 
-logger = logging.getLogger('privateer_ad')  # Use a fixed name instead of __name__
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 if logger.handlers:
