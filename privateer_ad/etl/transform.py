@@ -24,7 +24,6 @@ class DataProcessor:
         self.metadata = MetaData()
         self.paths = PathsConf()
         self.scaler_path = os.path.join(self.paths.scalers, 'scaler.pkl')
-        self.pca_path = os.path.join(self.paths.scalers, 'pca.pkl')
         self.pca = None
         self.scaler = None
         self.input_features = self.metadata.get_input_features()
@@ -47,6 +46,7 @@ class DataProcessor:
         for k, df in datasets.items():
             save_path = get_dataset_path(k)
             processed_df = self.preprocess_data(df)
+            logger.warning(f'Save size {k}: {len(processed_df)}')
             processed_df.to_csv(save_path, index=False)
             logger.info(f'{k} saved at {save_path}')
 
@@ -56,14 +56,15 @@ class DataProcessor:
         test_dfs = []
         for device, device_info in self.metadata.devices.items():
             device_df = df.loc[df['imeisv'] == device_info.imeisv]
-            logger.debug(f'Before:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == 1])}'
-                        f' benign samples: {len(device_df[device_df["attack"] == 0])}')
+            logger.debug(f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
+                        f' benign samples - {len(device_df[device_df["attack"] == 0])}')
 
             device_in_attacks = device_df['attack_number'].isin(device_info.in_attacks)
+            logger.debug(f'Sum  - {sum(device_in_attacks)} Len - {len(device_in_attacks)}')
             device_df.loc[device_in_attacks, 'attack'] = 1
             device_df.loc[~device_in_attacks, 'attack'] = 0
-            logger.debug(f'After:\nDevice: {device}, attack samples: {len(device_df[device_df["attack"] == 1])} '
-                        f'benign samples: {len(device_df[device_df["attack"] == 0])}')
+            logger.debug(f'After: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])} '
+                        f'benign samples - {len(device_df[device_df["attack"] == 0])}')
             device_train_df, df_tmp = train_test_split(device_df,
                                                        train_size=train_size,
                                                        stratify=device_df['attack_number'],
@@ -75,7 +76,9 @@ class DataProcessor:
             train_dfs.append(device_train_df)
             val_dfs.append(device_val_df)
             test_dfs.append(device_test_df)
-        df_train, df_val, df_test = pd.concat(train_dfs), pd.concat(val_dfs), pd.concat(test_dfs)
+        df_train = pd.concat(train_dfs)
+        df_val = pd.concat(val_dfs)
+        df_test = pd.concat(test_dfs)
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
 
         for k, df in datasets.items():
@@ -86,7 +89,6 @@ class DataProcessor:
 
     def clean_data(self, df):
         if '_time' in df.columns:
-            _l = len(df)
             df = df[df['_time'] != '<NA>']
         df = df.drop(columns=self.drop_features, errors='ignore')
         df = df.drop_duplicates()
@@ -98,16 +100,6 @@ class DataProcessor:
                         df,
                         partition_id=0,
                         num_partitions=1) -> DataFrame:
-        if num_partitions < 1:
-            raise ValueError(f'num_partitions ({num_partitions}) < 1')
-        elif num_partitions == 1:
-            logger.warning(f'partition_id ({partition_id}) is ignored when '
-                           f' when num_partitions == 1')
-        else:
-            if partition_id >= num_partitions:
-                raise ValueError(f'partition_id ({partition_id}) is greater than num_partitions ({num_partitions})')
-            if partition_id < 0:
-                raise ValueError(f'partition_id ({partition_id}) < 0')
         df = self.get_partition(df, partition_id=partition_id, num_partitions=num_partitions)
         df = self.clean_data(df)
         df = self.apply_scale(df)
@@ -117,13 +109,24 @@ class DataProcessor:
     def get_partition(self, df: DataFrame, partition_id=0, num_partitions=1) -> DataFrame:
         """Partition data based on provided configuration."""
         logger.info(f'partition: {partition_id}/{num_partitions}')
-        #  if name != 'support'
-        if num_partitions == 1:
-            num_classes_per_partition = 3
-        elif num_partitions == 3:
-            num_classes_per_partition = 1
+        if num_partitions < 1:
+            raise ValueError(f'num_partitions ({num_partitions}) < 1')
+        elif num_partitions == 1:
+            logger.warning(f'partition_id ({partition_id}) is ignored when '
+                           f' when num_partitions == 1')
+            return df
         else:
-            num_classes_per_partition = min(3 // num_partitions, 1)
+            if partition_id < 0:
+                raise ValueError(f'partition_id ({partition_id}) < 0')
+            elif partition_id >= num_partitions:
+                raise ValueError(f'partition_id ({partition_id}) is greater than num_partitions ({num_partitions})')
+            else:
+                if num_partitions == 1:
+                    num_classes_per_partition = 3
+                elif num_partitions == 3:
+                    num_classes_per_partition = 1
+                else:
+                    num_classes_per_partition = min(3 // num_partitions, 1)
 
         if self.partitioner is None:
             self.partitioner = PathologicalPartitioner(
@@ -143,10 +146,9 @@ class DataProcessor:
         benign_df = df[df['attack'] == 0].copy()
         os.makedirs(os.path.dirname(self.scaler_path), exist_ok=True)
 
-        self.scaler = StandardScaler()
-        self.scaler.fit(benign_df[self.input_features])
-        joblib.dump(self.scaler, self.scaler_path)
-        return self.scaler
+        scaler = StandardScaler()
+        scaler.fit(benign_df[self.input_features])
+        joblib.dump(scaler, self.scaler_path)
 
     def load_scaler(self):
         if self.scaler is None:
@@ -189,11 +191,9 @@ class DataProcessor:
                              'persistent_workers': True}
 
         logger.info(f'Loading {path} dataset...')
-        df = self._read_csv(path)
-        if path not in ['train', 'val', 'test']:
-            df = self.preprocess_data(df=self._read_csv(path),
-                                      partition_id=partition_id,
-                                      num_partitions=num_partitions)
+        df = self.preprocess_data(df=self._read_csv(path),
+                                  partition_id=partition_id,
+                                  num_partitions=num_partitions)
         df = df.astype({'attack': int})
 
         if only_benign:
