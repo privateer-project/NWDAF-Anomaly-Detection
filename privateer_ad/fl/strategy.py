@@ -123,7 +123,7 @@ class CustomStrategy(FedAvg):
             if mlflow.active_run():
                 mlflow.log_metrics(metrics, step=server_round)
                 for name, fig in figures.items():
-                    mlflow.log_figure(fig, f'best_{name}.png')
+                    mlflow.log_figure(fig, f'{name}.png')
 
                 self.model.to('cpu')
                 _input = self.sample.to('cpu')
