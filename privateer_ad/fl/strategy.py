@@ -116,12 +116,6 @@ class CustomStrategy(FedAvg):
                                                                          failures=failures)
         if mlflow.active_run():
             mlflow.log_metrics(metrics_aggregated, step=server_round)
-        return loss_aggregated, metrics_aggregated
-
-    def evaluate(self, server_round: int, parameters: Parameters) -> Optional[tuple[float, dict[str, Scalar]]]:
-        """Evaluate model parameters using an evaluation function."""
-        logger.info('Evaluating model on Server')
-        logger.info(f'Server round: {server_round}/{self.num_rounds}')
 
         if server_round == self.num_rounds:
             self.model.to(self.device)
@@ -129,7 +123,7 @@ class CustomStrategy(FedAvg):
             if mlflow.active_run():
                 mlflow.log_metrics(metrics, step=server_round)
                 for name, fig in figures.items():
-                    mlflow.log_figure(fig, f'best_{name}.png')
+                    mlflow.log_figure(fig, f'{name}.png')
 
                 self.model.to('cpu')
                 _input = self.sample.to('cpu')
@@ -145,5 +139,4 @@ class CustomStrategy(FedAvg):
                                              signature=mlflow.models.infer_signature(model_input=_input.detach().numpy(),
                                                                                      model_output=_output),
                                              pip_requirements=self.paths.root.joinpath('requirements.txt').as_posix())
-            return None
-        return None
+        return loss_aggregated, metrics_aggregated

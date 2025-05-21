@@ -12,6 +12,7 @@ class SecAggFlowerClient(NumPyClient):
 
     def __init__(self, context):
         self.context = context
+        logger.info(f'Client Config: {self.context.node_config}')
         self.partition_id = int(self.context.node_config['partition-id'])
         self.num_partitions = int(self.context.node_config['num-partitions'])
         self.dp_config = DPConfig()

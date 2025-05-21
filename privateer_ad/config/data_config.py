@@ -9,7 +9,7 @@ class DeviceInfo:
    ip: str
    type: str
    malicious: bool
-   in_attacks: List[str]
+   in_attacks: List[int]
 
 @dataclass
 class AttackInfo:
@@ -26,7 +26,7 @@ class FeatureInfo:
 @dataclass
 class MetaData:
    devices: Dict[str, DeviceInfo]
-   attacks: Dict[str, AttackInfo]
+   attacks: Dict[int, AttackInfo]
    features: Dict[str, FeatureInfo]
 
    def __init__(self):
