@@ -105,6 +105,7 @@ def main():
 
 if __name__ == '__main__':
     paths = PathsConf()
+    data_path = paths.raw_dataset
     make_predictions(model_path='20250313-114045/model.pt',
-                     data_path='test',
+                     data_path=paths.raw_dataset,
                      threshold=0.028)
