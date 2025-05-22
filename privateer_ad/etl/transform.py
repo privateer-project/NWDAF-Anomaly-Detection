@@ -20,7 +20,7 @@ from privateer_ad.etl.utils import check_existing_datasets, get_dataset_path
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
 
-    def __init__(self):
+    def __init__(self, partition=False):
         self.metadata = MetaData()
         self.paths = PathsConf()
         self.scaler_path = os.path.join(self.paths.scalers, 'scaler.pkl')
@@ -28,7 +28,7 @@ class DataProcessor:
         self.scaler = None
         self.input_features = self.metadata.get_input_features()
         self.drop_features = self.metadata.get_drop_features()
-        self.partitioner = None
+        self.partition = partition
 
     def prepare_datasets(self, raw_dataset_path, train_size: float = 0.8) -> None:
         """Prepare complete datasets from raw data."""
@@ -96,46 +96,30 @@ class DataProcessor:
         df.reset_index(drop=True, inplace=True)
         return df
 
-    def preprocess_data(self,
-                        df,
-                        partition_id=0,
-                        num_partitions=1) -> DataFrame:
-        df = self.get_partition(df, partition_id=partition_id, num_partitions=num_partitions)
+    def preprocess_data(self, df, partition_id=0) -> DataFrame:
+        if self.partition:
+            df = self.get_partition(df, partition_id=partition_id)
         df = self.clean_data(df)
         df = self.apply_scale(df)
         df = df.sort_values(by=['_time']).reset_index(drop=True)
         return df
 
-    def get_partition(self, df: DataFrame, partition_id=0, num_partitions=1) -> DataFrame:
+    def get_partition(self, df: DataFrame, partition_id=0) -> DataFrame:
         """Partition data based on provided configuration."""
-        logger.info(f'partition: {partition_id}/{num_partitions}')
-        if num_partitions < 1:
-            raise ValueError(f'num_partitions ({num_partitions}) < 1')
-        elif num_partitions == 1:
-            logger.warning(f'partition_id ({partition_id}) is ignored when '
-                           f' when num_partitions == 1')
-            return df
-        else:
-            if partition_id < 0:
-                raise ValueError(f'partition_id ({partition_id}) < 0')
-            elif partition_id >= num_partitions:
-                raise ValueError(f'partition_id ({partition_id}) is greater than num_partitions ({num_partitions})')
-            else:
-                if num_partitions == 1:
-                    num_classes_per_partition = 3
-                elif num_partitions == 3:
-                    num_classes_per_partition = 1
-                else:
-                    num_classes_per_partition = min(3 // num_partitions, 1)
+        num_partitions = df['cell'].unique().shape[0]
+        logger.info(f'Get partition: {partition_id + 1}/{num_partitions}')
 
-        if self.partitioner is None:
-            self.partitioner = PathologicalPartitioner(
-                num_partitions=num_partitions,
-                num_classes_per_partition=num_classes_per_partition,
-                partition_by='cell',
-                class_assignment_mode='deterministic')
-            self.partitioner.dataset = Dataset.from_pandas(df)
-        partitioned_df = self.partitioner.load_partition(partition_id).to_pandas(batched=False)
+        if partition_id < 0:
+            raise ValueError(f'partition_id ({partition_id}) < 0')
+        elif partition_id >= num_partitions:
+            raise ValueError(f'partition_id ({partition_id}) is greater than num_partitions ({num_partitions})')
+        partitioner = PathologicalPartitioner(
+            num_partitions=num_partitions,
+            num_classes_per_partition=1,
+            partition_by='cell',
+            class_assignment_mode='deterministic')
+        partitioner.dataset = Dataset.from_pandas(df)
+        partitioned_df = partitioner.load_partition(partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
 
     def setup_scaler(self, df):
@@ -179,7 +163,6 @@ class DataProcessor:
                        batch_size=1024,
                        seq_len=6,
                        partition_id=0,
-                       num_partitions=1,
                        only_benign=False) -> DataLoader:
 
         """Get train, validation and test dataloaders."""
@@ -192,8 +175,7 @@ class DataProcessor:
 
         logger.info(f'Loading {path} dataset...')
         df = self.preprocess_data(df=self._read_csv(path),
-                                  partition_id=partition_id,
-                                  num_partitions=num_partitions)
+                                  partition_id=partition_id)
         df = df.astype({'attack': int})
 
         if only_benign:

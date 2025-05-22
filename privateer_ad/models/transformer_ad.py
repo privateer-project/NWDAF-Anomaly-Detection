@@ -6,21 +6,21 @@ from opacus.layers import DPMultiheadAttention
 from privateer_ad.models.custom_layers import PositionalEncoding
 
 @dataclass
-class AttentionAutoencoderConfig:
+class TransformerADConfig:
     input_size: int = 8
     seq_len: int = 12
-    num_layers: int = 2
-    hidden_dim: int = 64
+    num_layers: int = 1
+    hidden_dim: int = 32
     latent_dim: int = 16
     num_heads: int = 1
     dropout: float = 0.2
 
-class AttentionAutoencoder(nn.Module):
-    """Attention-based autoencoder for anomaly detection."""
+class TransformerAD(nn.Module):
+    """Attention-based model for anomaly detection."""
 
-    def __init__(self, config: AttentionAutoencoderConfig=None):
-        super(AttentionAutoencoder, self).__init__()
-        self.config = AttentionAutoencoderConfig() if not config else config
+    def __init__(self, config: TransformerADConfig=None):
+        super(TransformerAD, self).__init__()
+        self.config = TransformerADConfig() if not config else config
         self.input_size = self.config.input_size
         self.hidden_dim = self.config.hidden_dim
         self.latent_dim = self.config.latent_dim

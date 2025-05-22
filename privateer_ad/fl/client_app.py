@@ -10,19 +10,17 @@ from privateer_ad.train.train import TrainPipeline
 class SecAggFlowerClient(NumPyClient):
     """Flower client implementation with secure aggregation for anomaly detection."""
 
-    def __init__(self, context):
-        self.context = context
-        logger.info(f'Client Config: {self.context.node_config}')
-        self.partition_id = int(self.context.node_config['partition-id'])
-        self.num_partitions = int(self.context.node_config['num-partitions'])
+    def __init__(self, epochs, partition_id, partition=False, dp=False):
         self.dp_config = DPConfig()
-        self.train_pln = TrainPipeline(run_name=f'client-{self.partition_id}',
+        self.partition_id = partition_id
+        self.epochs = epochs
+        self.train_pln = TrainPipeline(run_name=f'client-{partition_id}',
                                        partition_id=self.partition_id,
-                                       num_partitions=self.num_partitions,
-                                       dp=self.dp_config.enable,
+                                       partition=partition,
+                                       dp=dp,
                                        nested=True)
-        self.train_pln.hparams.epochs = int(self.context.run_config['epochs'])
-        logger.info(f'Client - {self.partition_id} of {self.num_partitions}')
+        self.train_pln.hparams.epochs = self.epochs
+        logger.info(f'Client - {self.partition_id}')
 
     def fit(self, parameters, config):
         """Train model on local data with secure aggregation."""
@@ -31,7 +29,7 @@ class SecAggFlowerClient(NumPyClient):
         set_weights(self.train_pln.model, parameters)
 
         # Perform training
-        best_ckpt = self.train_pln.train_model(start_epoch=(config['server_round'] - 1) * self.context.run_config['epochs'])
+        best_ckpt = self.train_pln.train_model(start_epoch=(config['server_round'] - 1) * self.epochs)
 
         weights = get_weights(self.train_pln.model)
         num_examples = sum(len(batch[0]['encoder_cont']) for batch in self.train_pln.train_dl)
@@ -62,7 +60,14 @@ class SecAggFlowerClient(NumPyClient):
 def client_fn(context: Context):
     """Create and return a Flower client."""
     # Initialize SecAgg client
-    return SecAggFlowerClient(context=context).to_client()
+    try:
+        partition_id = int(context.node_config['partition-id'])
+    except KeyError:
+        partition_id = 0
+    return SecAggFlowerClient(epochs=int(context.run_config['epochs']),
+                              partition_id=partition_id,
+                              partition =context.run_config['partition'],
+                              dp =DPConfig().enable).to_client()
 
 # Create Flower ClientApp
 app = ClientApp(client_fn, mods=[secaggplus_mod])

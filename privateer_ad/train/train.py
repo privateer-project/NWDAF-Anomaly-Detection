@@ -10,17 +10,17 @@ from mlflow.entities import RunStatus
 from privateer_ad import logger
 from privateer_ad.config import MLFlowConfig, HParams, DPConfig, PathsConf
 from privateer_ad.etl.transform import DataProcessor
-from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
+from privateer_ad.models import TransformerAD, TransformerADConfig
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
 
 
 class TrainPipeline:
-    def __init__(self, run_name=None, partition_id=0, num_partitions=1, dp=False, nested=False):
+    def __init__(self, run_name=None, partition_id=0, partition=False, dp=False, nested=False):
         # Setup project configs
         self.run_name = run_name
         self.partition_id = partition_id
-        self.num_partitions = num_partitions
+        self.partition = partition
         self.mlflow_config = MLFlowConfig()
         self.paths = PathsConf()
         self.hparams = HParams()
@@ -38,8 +38,10 @@ class TrainPipeline:
             self.run_id = None
             if not self.run_name:
                 self.run_name = datetime.now().strftime('%Y%m%d-%H%M%S')
+
             if self.dp_config.enable:
                 self.run_name += '-dp'
+                self.mlflow_config.server_run_name += '-dp'  #todo check if exists
 
             if mlflow.active_run():
                 logger.info(f"Found active run {mlflow.active_run().info.run_id}, ending it")
@@ -70,24 +72,26 @@ class TrainPipeline:
         logger.info(f'Using device: {self.device}')
 
         logger.info('Setup dataloaders.')
-        self.data_processor = DataProcessor()
+        self.data_processor = DataProcessor(partition=partition)
 
         # Setup trial dir
-        self.trial_dir = self.paths.experiments_dir.joinpath(self.run_name)
+        if nested and self.mlflow_config.server_run_name:
+            self.trial_dir = self.paths.experiments_dir.joinpath(self.mlflow_config.server_run_name, self.run_name)
+        else:
+            self.trial_dir = self.paths.experiments_dir.joinpath(self.run_name)
+
         self.trial_dir.mkdir(parents=True, exist_ok=True)
 
         self.train_dl = self.data_processor.get_dataloader('train',
                                                            batch_size=self.hparams.batch_size,
                                                            seq_len=self.hparams.seq_len,
                                                            partition_id=self.partition_id,
-                                                           num_partitions=self.num_partitions,
                                                            only_benign=True)
 
         self.val_dl = self.data_processor.get_dataloader(
             'val',
             batch_size=self.hparams.batch_size,
             partition_id=self.partition_id,
-            num_partitions=self.num_partitions,
             seq_len=self.hparams.seq_len,
             only_benign=True)
 
@@ -95,20 +99,19 @@ class TrainPipeline:
             'test',
             batch_size=self.hparams.batch_size,
             partition_id=self.partition_id,
-            num_partitions=self.num_partitions,
             seq_len=self.hparams.seq_len,
             only_benign=False)
 
         self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
 
         # Setup model
-        self.model_config = AttentionAutoencoderConfig(seq_len=self.hparams.seq_len, input_size=self.sample.shape[-1])
-        torch.serialization.add_safe_globals([AttentionAutoencoder])
+        self.model_config = TransformerADConfig(seq_len=self.hparams.seq_len, input_size=self.sample.shape[-1])
+        torch.serialization.add_safe_globals([TransformerAD])
         if mlflow.active_run():
             mlflow.log_params(self.model_config.__dict__)
             mlflow.log_params(self.hparams.__dict__)
 
-        self.model = AttentionAutoencoder(self.model_config)
+        self.model = TransformerAD(self.model_config)
 
         if self.dp_config.enable:
             from opacus import PrivacyEngine
