@@ -1,6 +1,6 @@
-from .attention_ae import AttentionAutoencoder, AttentionAutoencoderConfig
+from .transformer_ad import TransformerAD, TransformerADConfig
 
 __all__ = [
-    'AttentionAutoencoder',
-    'AttentionAutoencoderConfig'
+    'TransformerAD',
+    'TransformerADConfig'
 ]

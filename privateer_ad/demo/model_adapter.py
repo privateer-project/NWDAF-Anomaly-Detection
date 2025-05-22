@@ -27,7 +27,7 @@ class ModelAdapter:
 
     def __init__(self, model_dir: str = "/app/models"):
         self.model_dir = Path(model_dir)
-        self.attention_ae_path = self.model_dir / "attention_ae.py"
+        self.attention_ae_path = self.model_dir.joinpath("attention_ae.py")
         self.model_path = self.model_dir / "latest.pt"
 
     def load_model(self, config: Dict[str, Any]):
@@ -36,15 +36,15 @@ class ModelAdapter:
         """
         # Check if we have attention_ae.py
         if self.attention_ae_path.exists():
-            logger.info(f"Loading Attention Autoencoder from {self.attention_ae_path}")
-            return self._load_attention_autoencoder(config)
+            logger.info(f"Loading model from {self.attention_ae_path}")
+            return self._load_transformer_ad(config)
         else:
             logger.warning(f"attention_ae.py not found at {self.attention_ae_path}. Using fallback model.")
             return self._load_fallback_model(config)
 
-    def _load_attention_autoencoder(self, config: Dict[str, Any]):
+    def _load_transformer_ad(self, config: Dict[str, Any]):
         """
-        Dynamically import and load the Attention Autoencoder model
+        Dynamically import and load the TransformerAD model
         """
         try:
             # Dynamically import the attention_ae module

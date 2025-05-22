@@ -123,18 +123,21 @@ class Visualizer:
             'Category': np.where(y_true == 0, 'Benign', 'Malicious')
         })
 
-        # Plot distributions using seaborn for better statistics
-        sns.kdeplot(
+        # Plot histograms using seaborn for better statistics
+        sns.histplot(
             data=df,
             x='Score',
             hue='Category',
-            fill=True,
             alpha=0.5,
             palette={
                 'Benign': self.colors['benign'],
                 'Malicious': self.colors['malicious']
             },
-            common_norm=False  # Normalize each distribution separately
+            bins=100,  # Adjust number of bins as needed
+            stat='density',  # Use density to normalize distributions
+            common_norm=False,  # Normalize each distribution separately
+            kde=True,  # Explicitly disable KDE overlay
+            kde_kws= {'bw_adjust': 1.6}
         )
 
         # Add threshold line with annotation
@@ -142,24 +145,28 @@ class Visualizer:
             x=threshold,
             color='black',
             linestyle='--',
-            label=f'threshold ({threshold:.3f})'
+            linewidth=2,
+            label=f'Threshold ({threshold:.3f})'
         )
 
+        # Get current axis limits for background regions
+        x_min, x_max = plt.xlim()
+        y_min, y_max = plt.ylim()
 
-
+        # Fill background regions
         plt.fill_between(
-            [plt.xlim()[0], threshold],
-            y2=plt.ylim()[1],
-            y1=plt.ylim()[0],
+            [x_min, threshold],
+            y2=y_max,
+            y1=y_min,
             color='green',
             alpha=0.1,
             label='Benign Region'
         )
 
         plt.fill_between(
-            [threshold, plt.xlim()[1]],
-            y2=plt.ylim()[1],
-            y1=plt.ylim()[0],
+            [threshold, x_max],
+            y2=y_max,
+            y1=y_min,
             color='red',
             alpha=0.1,
             label='Anomaly Region'

@@ -62,9 +62,10 @@ serverapp = "privateer_ad.fl.server_app:app"
 clientapp = "privateer_ad.fl.client_app:app"
 
 [tool.flwr.app.config]  # Run Config
-num-server-rounds = 20
-epochs = 5
+num-server-rounds = 100
+epochs = 1
 fraction-fit =1.0
+partition = true
 n-clients=3
 
 [tool.flwr.federations]

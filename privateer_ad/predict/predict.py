@@ -6,12 +6,11 @@ import torch
 
 from torch import nn
 from tqdm import tqdm
-from pathlib import Path
 from sklearn.metrics import classification_report
 
 from privateer_ad import logger
 from privateer_ad.config import HParams, PathsConf
-from privateer_ad.models import AttentionAutoencoder
+from privateer_ad.models import TransformerAD
 from privateer_ad.etl.transform import DataProcessor
 
 
@@ -40,19 +39,19 @@ def make_predictions(model_path: str,
     paths = PathsConf()
     hparams = HParams()
 
-    model_path = Path(model_path)
     if paths.experiments_dir.joinpath(model_path).exists():
         model_path = paths.experiments_dir.joinpath(model_path)
 
     # Load Data
-    dp = DataProcessor()
+    dp = DataProcessor(partition=False)
     dl = dp.get_dataloader(data_path,
                            batch_size=hparams.batch_size,
                            seq_len=hparams.seq_len,
                            only_benign=False)
 
     # Load model
-    model = AttentionAutoencoder()
+    model = TransformerAD()
+
     state_dict = torch.load(model_path, map_location=torch.device('cpu'))
     state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
     model.load_state_dict(state_dict)
@@ -84,7 +83,7 @@ def make_predictions(model_path: str,
     inputs = np.asarray(inputs)
     losses = np.array(losses)
     predictions = np.asarray(predictions)
-    labels = np.array(labels, dtype=int)
+    labels = np.array(labels)
 
     ben_labels = labels[labels == 0]
     mal_labels = labels[labels == 1]
@@ -98,8 +97,14 @@ def make_predictions(model_path: str,
     mal_predictions = mal_predictions[:_len]
     labels = np.concatenate([ben_labels[:_len], mal_labels[:_len]])
     predictions = np.concatenate([ben_predictions[:_len], mal_predictions[:_len]])
-    logger.info(classification_report(int(labels), int(predictions)))
+    logger.info(classification_report(y_true=labels, y_pred=predictions))
     return inputs, losses, predictions, labels
 
 def main():
     fire.Fire(make_predictions)
+
+if __name__ == '__main__':
+    paths = PathsConf()
+    make_predictions(model_path='20250313-114045/model.pt',
+                     data_path='test',
+                     threshold=0.028)

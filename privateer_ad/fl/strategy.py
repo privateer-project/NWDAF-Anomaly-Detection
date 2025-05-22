@@ -14,7 +14,7 @@ from privateer_ad import logger
 from privateer_ad.config import MLFlowConfig, HParams, PathsConf, DPConfig
 from privateer_ad.fl.utils import set_weights
 from privateer_ad.etl.transform import DataProcessor
-from privateer_ad.models import AttentionAutoencoder, AttentionAutoencoderConfig
+from privateer_ad.models import TransformerAD, TransformerADConfig
 from privateer_ad.evaluate.evaluator import ModelEvaluator
 
 def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
@@ -36,8 +36,8 @@ def config_fn(server_round: int):
 
 class CustomStrategy(FedAvg):
     def __init__(self, num_rounds):
-        model_config = AttentionAutoencoderConfig()
-        self.model = AttentionAutoencoder(config=model_config)
+        model_config = TransformerADConfig()
+        self.model = TransformerAD(config=model_config)
         initial_parameters = ndarrays_to_parameters([val.cpu().numpy() for _, val in self.model.state_dict().items()])
         super().__init__(on_fit_config_fn=config_fn,
                          on_evaluate_config_fn=config_fn,
@@ -49,7 +49,7 @@ class CustomStrategy(FedAvg):
         self.mlflow_config = MLFlowConfig()
         hparams = HParams()
         dp_config = DPConfig()
-        self.data_processor = DataProcessor()
+        self.data_processor = DataProcessor(partition=False)
         self.test_dl = self.data_processor.get_dataloader('test',
                                                  batch_size=hparams.batch_size,
                                                  seq_len=hparams.seq_len,
