@@ -1,7 +1,6 @@
-from .autotuner import AutotuneConfig, ModelAutoTuner
+from .autotuner import ModelAutoTuner
 from .trainer import ModelTrainer
 
 
-__all__ = ['AutotuneConfig',
-           'ModelAutoTuner',
+__all__ = ['ModelAutoTuner',
            'ModelTrainer']

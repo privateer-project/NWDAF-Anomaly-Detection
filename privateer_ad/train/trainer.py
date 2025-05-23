@@ -3,85 +3,101 @@ from typing import Dict, Any
 
 import mlflow
 import torch
-
 from tqdm import tqdm
 
 from privateer_ad import logger
-from privateer_ad.config import HParams, EarlyStoppingConfig, PathsConf
+from privateer_ad.config import TrainingConfig, get_paths
+
 
 class ModelTrainer:
-    """Trains a PyTorch model with early stopping capability.
+    """
+    Trains a PyTorch model with early stopping capability.
 
-     This class handles the training workflow for autoencoder models, including
-     training loop, validation, metrics tracking, and early stopping functionality.
-     It also provides integration with MLFlow for experiment tracking.
+    This class handles the training workflow for models, including
+    training loop, validation, metrics tracking, and early stopping functionality.
+    It integrates with MLFlow for experiment tracking and uses proper configuration
+    dependency injection.
+    """
 
-     Attributes:
-         model: The PyTorch model to be trained.
-         optimizer: The optimizer used for training.
-         loss_fn: The loss function used for training.
-         device: The device (CPU/GPU) where training will be performed.
-         hparams (HParams): Hyperparameters for training.
-         metrics (Dict[str, float]): Dictionary to track training metrics.
-         best_checkpoint (Dict[str, Any]): Dictionary to store the best model checkpoint.
-     """
-    es_conf = EarlyStoppingConfig()
+    def __init__(
+            self,
+            model: torch.nn.Module,
+            optimizer: torch.optim.Optimizer,
+            criterion: str,
+            device: torch.device,
+            training_config: TrainingConfig
+    ):
+        """
+        Initialize the ModelTrainer.
 
-    def __init__(self,
-                 model,
-                 optimizer,
-                 criterion,
-                 device,
-                 hparams: HParams):
-        """Initializes the ModelTrainer with model, optimizer, and training configuration.
-
-                Args:
-                    model: The PyTorch model to be trained.
-                    optimizer: The optimizer used for training.
-                    criterion: The name of the loss function as defined in torch.nn.
-                    device: The device (CPU/GPU) where training will be performed.
-                    hparams (HParams): Hyperparameters for training including epochs,
-                                      early stopping flag, and target metric.
+        Args:
+            model: The PyTorch model to be trained
+            optimizer: The optimizer used for training
+            criterion: The name of the loss function as defined in torch.nn
+            device: The device (CPU/GPU) where training will be performed
+            training_config: Training configuration object with all parameters
         """
         logger.info('Instantiate ModelTrainer...')
+
+        # Inject dependencies
         self.device = device
         self.model = model.to(self.device)
         self.optimizer = optimizer
+        self.training_config = training_config
+        self.paths_config = get_paths()
+
+        # Setup loss function
         self.loss_fn = getattr(torch.nn, criterion)(reduction='mean')
-        self.hparams = hparams
-        self.paths = PathsConf()
-        if self.hparams.early_stopping:
+
+        # Initialize early stopping tracking
+        if self.training_config.early_stopping_enabled:
             self.es_not_improved_epochs = 0
+            self._validate_optimization_direction()
 
-            if self.hparams.direction not in ('maximize', 'minimize'):
-                raise ValueError(f'direction must be `maximize` or `minimize`. Current value: {self.hparams.direction}')
             if mlflow.active_run():
-                mlflow.log_params(self.es_conf.__dict__)
+                mlflow.log_params({
+                    'early_stopping_patience': self.training_config.early_stopping_patience,
+                    'early_stopping_warmup': self.training_config.early_stopping_warmup,
+                    'target_metric': self.training_config.target_metric,
+                    'optimization_direction': self.training_config.optimization_direction
+                })
 
-        # Initialize metrics dict and best_checkpoint dict
-        metrics = {'loss': float('inf'), 'val_loss': float('inf')}
-        self.metrics = metrics.copy()
-        self.best_checkpoint: Dict[str, Any] = {'epoch': 0,
-                                                'model_state_dict': self.model.state_dict(),
-                                                'optimizer_state_dict': self.optimizer.state_dict(),
-                                                'metrics': {k: v for k, v in metrics.copy().items()}
-                                                }
+        # Initialize metrics and best checkpoint
+        self._initialize_tracking()
 
-    def training(self, train_dl, val_dl, start_epoch=0):
-        """Executes the full training process with validation and early stopping.
+    def _validate_optimization_direction(self):
+        """Validate the optimization direction setting."""
+        valid_directions = ('maximize', 'minimize')
+        if self.training_config.optimization_direction not in valid_directions:
+            raise ValueError(
+                f'optimization_direction must be one of {valid_directions}. '
+                f'Current value: {self.training_config.optimization_direction}'
+            )
+
+    def _initialize_tracking(self):
+        """Initialize metrics tracking and best checkpoint storage."""
+        initial_metrics = {'loss': float('inf'), 'val_loss': float('inf')}
+        self.metrics = deepcopy(initial_metrics)
+
+        self.best_checkpoint: Dict[str, Any] = {
+            'epoch': 0,
+            'model_state_dict': deepcopy(self.model.state_dict()),
+            'optimizer_state_dict': deepcopy(self.optimizer.state_dict()),
+            'metrics': deepcopy(initial_metrics)
+        }
+
+    def training(self, train_dl, val_dl, start_epoch: int = 0) -> Dict[str, Any]:
+        """
+        Execute the full training process with validation and early stopping.
 
         Trains the model for the specified number of epochs or until early stopping
         criteria are met. For each epoch, runs a training loop followed by a validation
-        loop, logs metrics, and tracks the best model state. Supports both maximization
-        and minimization objectives based on the direction specified in hyperparameters.
-
-        The training can be manually interrupted with Ctrl+C, in which case the best
-        model state until interruption is preserved for evaluation.
+        loop, logs metrics, and tracks the best model state.
 
         Args:
-            train_dl: DataLoader for training data.
-            val_dl: DataLoader for validation data.
-            start_epoch:
+            train_dl: DataLoader for training data
+            val_dl: DataLoader for validation data
+            start_epoch: Starting epoch number
 
         Returns:
             Dict[str, Any]: The best checkpoint dictionary containing:
@@ -90,124 +106,213 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
-        for epoch in range(start_epoch + 1, start_epoch + self.hparams.epochs + 1):
+
+        for epoch in range(start_epoch + 1, start_epoch + 1 + self.training_config.epochs):
             local_epoch = epoch - start_epoch
+
+            # Training phase
             train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
+
+            # Validation phase
             val_metrics = self._validation_loop(val_dl)
+
+            # Log metrics
             self.log_metrics(train_metrics | val_metrics, epoch)
-            current_value = self.metrics[self.hparams.target]
-            best_value = self.best_checkpoint['metrics'][self.hparams.target]
-            if self.hparams.direction == 'maximize':
-                is_best = current_value >= best_value
-            else:
-                is_best = current_value <= best_value
+
+            # Check if this is the best model so far
+            is_best = self._is_best_checkpoint()
+
             if is_best:
-                self.best_checkpoint.update({
-                    'metrics': deepcopy(self.metrics),
-                    'epoch': epoch,
-                    'model_state_dict': self.model.state_dict(),
-                    'optimizer_state_dict': self.optimizer.state_dict()
-                })
-            if self._check_early_stopping(epoch=local_epoch, is_best=is_best): # Early stopping check
+                self._update_best_checkpoint(epoch)
+
+            # Early stopping check
+            if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
                 break
 
         return self.best_checkpoint
 
     def _training_loop(self, epoch: int, train_dl) -> Dict[str, float]:
-        """Executes one training epoch.
-
-        Puts the model in training mode and processes all batches in the training
-        dataloader. For each batch, performs forward pass, loss calculation,
-        backward pass, and optimizer step.
+        """
+        Execute one training epoch.
 
         Args:
-            epoch (int): Current epoch number.
-            train_dl: DataLoader for training data.
+            epoch: Current epoch number
+            train_dl: DataLoader for training data
 
         Returns:
-            Dict[str, float]: Dictionary containing training metrics (loss).
+            Dict[str, float]: Dictionary containing training metrics (loss)
         """
         self.model.train()
-        loss = 0.0
+        total_loss = 0.0
         self.model.to(self.device)
-        for inputs in tqdm(train_dl, desc=f'Epoch {epoch}/{self.hparams.epochs} - Train'):
+
+        progress_bar = tqdm(
+            train_dl,
+            desc=f'Epoch {epoch}/{self.training_config.epochs} - Train'
+        )
+
+        for inputs in progress_bar:
             x = inputs[0]['encoder_cont'].to(self.device)
+
+            # Zero gradients
             self.optimizer.zero_grad()
-            # Compute autoencoder loss
-            ae_output = self.model(x)
-            batch_loss = self.loss_fn(x, ae_output)
+
+            # Forward pass
+            output = self.model(x)
+
+            # Compute loss
+            batch_loss = self.loss_fn(x, output)
+
+            # Backward pass
             batch_loss.backward()
             self.optimizer.step()
 
-            loss += batch_loss.item()
-        loss /= len(train_dl)
-        return {'loss': loss}
+            total_loss += batch_loss.item()
+
+            # Update progress bar
+            progress_bar.set_postfix({'loss': batch_loss.item()})
+
+        avg_loss = total_loss / len(train_dl)
+        return {'loss': avg_loss}
 
     def _validation_loop(self, val_dl) -> Dict[str, float]:
-        """Executes validation after a training epoch.
-
-        Puts the model in evaluation mode and processes all batches in the
-        validation dataloader without computing gradients. Calculates the
-        validation loss.
+        """
+        Execute validation after a training epoch.
 
         Args:
-            val_dl: DataLoader for validation data.
+            val_dl: DataLoader for validation data
 
         Returns:
-            Dict[str, float]: Dictionary containing validation metrics (val_loss).
+            Dict[str, float]: Dictionary containing validation metrics (val_loss)
         """
         self.model.eval()
-        val_loss = 0.0
+        total_val_loss = 0.0
+
         with torch.no_grad():
-            for inputs in tqdm(val_dl, desc=' ' * 9 + 'Validation'):
+            progress_bar = tqdm(val_dl, desc=' ' * 9 + 'Validation')
+
+            for inputs in progress_bar:
                 x = inputs[0]['encoder_cont'].to(self.device)
                 ae_output = self.model(x)
-                val_loss += self.loss_fn(x, ae_output).item()
-            val_loss /= len(val_dl)
-        return {'val_loss': val_loss}
+                val_loss = self.loss_fn(x, ae_output).item()
+                total_val_loss += val_loss
 
-    def log_metrics(self, metrics, epoch: int):
-        """Updates and logs metrics.
+                # Update progress bar
+                progress_bar.set_postfix({'val_loss': val_loss})
 
-        Updates the internal metrics dictionary with new values, logs them to MLFlow
-        if an active run exists, and prints them to console.
+        avg_val_loss = total_val_loss / len(val_dl)
+        return {'val_loss': avg_val_loss}
 
-        Args:
-            metrics (Dict[str, float]): Dictionary of metrics to log.
-            epoch (int): Current epoch.
+    def _is_best_checkpoint(self) -> bool:
         """
-        self.metrics.update(metrics)
-        if mlflow.active_run():
-            mlflow.log_metrics(self.metrics, step=epoch)
-        _prnt = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
-        logger.info(f'Metrics: {" ".join(_prnt)}')
-
-    def _check_early_stopping(self, epoch, is_best) -> bool:
-        """Checks if early stopping criteria are met based on current performance.
-
-        Evaluates whether training should be stopped early by tracking improvement
-        in the target metric. If no improvement is seen for a number of epochs
-        exceeding the patience threshold, early stopping is triggered.
-
-        Args:
-            epoch (int): Current training epoch number.
-            is_best (bool): Whether the current checkpoint is the best so far
-                according to the target metric.
+        Determine if the current metrics represent the best checkpoint so far.
 
         Returns:
-            bool: True if training should be stopped, False otherwise.
+            bool: True if current checkpoint is the best
         """
-        if self.hparams.early_stopping and epoch > self.es_conf.es_warmup_epochs:  # Early stopping check
-            if is_best:
-                self.es_not_improved_epochs = 0
-                return False
-            else:
-                self.es_not_improved_epochs += 1
-                logger.warning(f'{self.hparams.target} have not increased for {self.es_not_improved_epochs} epochs.')
-                logger.warning(f'{self.hparams.target}: '
-                               f'best= {self.best_checkpoint["metrics"][self.hparams.target]:.5f} - '
-                               f'current= {self.metrics[self.hparams.target]:.5f}\n')
-            if self.es_not_improved_epochs >= self.es_conf.es_patience_epochs:
-                logger.warning(f'Early stopping. No improvement for {self.es_not_improved_epochs} epochs.')
-                return True
+        current_value = self.metrics[self.training_config.target_metric]
+        best_value = self.best_checkpoint['metrics'][self.training_config.target_metric]
+
+        if self.training_config.optimization_direction == 'maximize':
+            return current_value > best_value
+        else:  # minimize
+            return current_value < best_value
+
+    def _update_best_checkpoint(self, epoch: int):
+        """
+        Update the best checkpoint with current model state.
+
+        Args:
+            epoch: Current epoch number
+        """
+        self.best_checkpoint.update({
+            'metrics': deepcopy(self.metrics),
+            'epoch': epoch,
+            'model_state_dict': deepcopy(self.model.state_dict()),
+            'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
+        })
+
+    def log_metrics(self, metrics: Dict[str, float], epoch: int):
+        """
+        Update and log metrics to various tracking systems.
+
+        Args:
+            metrics: Dictionary of metrics to log
+            epoch: Current epoch number
+        """
+        # Update internal metrics
+        self.metrics.update(metrics)
+
+        # Log to MLFlow if available
+        if mlflow.active_run():
+            mlflow.log_metrics(self.metrics, step=epoch)
+
+        # Format and log to console
+        formatted_metrics = [
+            f'{key}: {str(round(value, 5))}'
+            for key, value in self.metrics.items()
+        ]
+        logger.info(f'Metrics: {" ".join(formatted_metrics)}')
+
+    def _check_early_stopping(self, epoch: int, is_best: bool) -> bool:
+        """
+        Check if early stopping criteria are met.
+
+        Args:
+            epoch: Current training epoch number
+            is_best: Whether the current checkpoint is the best so far
+
+        Returns:
+            bool: True if training should be stopped, False otherwise
+        """
+        if not self.training_config.early_stopping_enabled:
+            return False
+
+        # Skip early stopping during warmup period
+        if epoch <= self.training_config.early_stopping_warmup:
+            return False
+
+        if is_best:
+            self.es_not_improved_epochs = 0
+            return False
+        else:
+            self.es_not_improved_epochs += 1
+
+            # Log early stopping status
+            logger.warning(
+                f'{self.training_config.target_metric} has not improved for '
+                f'{self.es_not_improved_epochs} epochs.'
+            )
+            logger.warning(
+                f'{self.training_config.target_metric}: '
+                f'best={self.best_checkpoint['metrics'][self.training_config.target_metric]:.5f}'
+                f' - current={self.metrics[self.training_config.target_metric]:.5f}\n'
+            )
+
+        # Check if patience limit reached
+        if self.es_not_improved_epochs >= self.training_config.early_stopping_patience:
+            logger.warning(
+                f'Early stopping triggered. No improvement for '
+                f'{self.es_not_improved_epochs} epochs.'
+            )
+            return True
+
         return False
+
+    def get_training_summary(self) -> Dict[str, Any]:
+        """
+        Get a summary of the training process.
+
+        Returns:
+            Dict containing training summary information
+        """
+        return {
+            'best_epoch': self.best_checkpoint['epoch'],
+            'best_metrics': self.best_checkpoint['metrics'],
+            'total_epochs_trained': self.best_checkpoint['epoch'],
+            'early_stopping_triggered': (
+                    self.training_config.early_stopping_enabled and
+                    self.es_not_improved_epochs >= self.training_config.early_stopping_patience
+            ),
+            'configuration': self.training_config.model_dump()
+        }
