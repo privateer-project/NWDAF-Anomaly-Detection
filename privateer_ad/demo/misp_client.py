@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 MISP Client - Sends anomaly reports to MISP threat sharing platform
 Part of the PRIVATEER Security Analytics framework

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 NWDAF Data Producer - Reads training dataset and publishes to Kafka
 Part of the PRIVATEER Security Analytics framework
