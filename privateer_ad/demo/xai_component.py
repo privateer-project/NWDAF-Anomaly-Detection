@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 XAI Component - Provides explainable insights for anomaly detection models
 Part of the PRIVATEER Security Analytics framework

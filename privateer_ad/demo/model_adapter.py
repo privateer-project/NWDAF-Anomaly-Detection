@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Model Adapter - Loads and interfaces with Attention Autoencoder models
 Part of the PRIVATEER Security Analytics framework

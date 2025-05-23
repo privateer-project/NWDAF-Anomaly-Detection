@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Security Analytics Agent - Anomaly detection using ML models
 Part of the PRIVATEER Security Analytics framework

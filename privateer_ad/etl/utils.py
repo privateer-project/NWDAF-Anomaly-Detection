@@ -1,12 +1,12 @@
 import os
 
-from privateer_ad.config import PathsConf
+from privateer_ad.config import get_paths
 
 
 def get_dataset_path(dataset_path: str) -> str:
     """Get full path for a dataset file."""
     if dataset_path in ['train', 'val', 'test']:
-        return str(PathsConf.processed.joinpath(f"{dataset_path}.csv"))
+        return str(get_paths().processed_dir.joinpath(f"{dataset_path}.csv"))
     return dataset_path
 
 def check_existing_datasets():
@@ -17,4 +17,4 @@ def check_existing_datasets():
 
 def get_scaler_path(scaler_name: str) -> str:
     """Get full path for a scaler file."""
-    return str(PathsConf.scalers.joinpath(f'{scaler_name}.scaler'))
+    return str(get_paths().scalers_dir.joinpath(f'{scaler_name}.scaler'))

@@ -26,13 +26,8 @@ class ModelEvaluator:
             for inputs in tqdm(dataloader, desc='Computing reconstruction errors'):
                 x = inputs[0]['encoder_cont'].to(self.device)
                 targets = np.squeeze(inputs[1][0])
-                if model._get_name() == 'TransformerAD':
-                    output = model(x)
-                    batch_rec_errors = self.criterion(output['transformer_output'], output['ae_output'])
-                else:
-                    output = model(x)
-                    batch_rec_errors = self.criterion(x, output)
-
+                output = model(x)
+                batch_rec_errors = self.criterion(x, output)
                 loss_per_sample = batch_rec_errors.mean(dim=(1, 2))
                 losses.extend(loss_per_sample.cpu().tolist())
                 labels.extend(targets.tolist())

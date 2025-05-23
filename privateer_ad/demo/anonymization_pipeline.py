@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 """
 Anonymization Pipeline - Processes raw data and adds privacy-preserving features
-Part of the PRIVATEER Security Analytics framework
 """
 
 import os

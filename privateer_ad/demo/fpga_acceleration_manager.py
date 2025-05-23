@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 FPGA Acceleration Manager - Optimizes models for hardware acceleration
 Part of the PRIVATEER Security Analytics framework
