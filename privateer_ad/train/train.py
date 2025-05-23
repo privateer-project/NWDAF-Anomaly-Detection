@@ -141,8 +141,10 @@ class TrainPipeline:
             mlflow.end_run()
 
         if self.nested and self.mlflow_config.server_run_name:
-            if self.privacy_config.dp_enabled:
-                self.mlflow_config.server_run_name += '-dp'
+            # Use a local copy instead of modifying the shared configuration
+            self.local_server_run_name = self.mlflow_config.server_run_name
+            if self.privacy_config.dp_enabled and not self.local_server_run_name.endswith('-dp'):
+                self.local_server_run_name += '-dp'
             self._setup_nested_run()
         self._start_mlflow_run()
 
@@ -151,7 +153,7 @@ class TrainPipeline:
 
         parent_runs = mlflow.search_runs(
             experiment_names=[self.mlflow_config.experiment_name],
-            filter_string=f'tags.mlflow.runName = \'{self.mlflow_config.server_run_name}\'',
+            filter_string=f'tags.mlflow.runName = \'{self.local_server_run_name}\'',
             max_results=1
         )
 
