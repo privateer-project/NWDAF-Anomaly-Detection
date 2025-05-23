@@ -325,14 +325,14 @@ class MetadataConfig:
 
     def __init__(self, metadata_path: Optional[Path] = None):
         if metadata_path is None:
-            metadata_path = Path(__file__).parent / 'metadata.yaml'
+            metadata_path = Path(__file__).parent.joinpath('metadata.yaml')
 
         self.metadata_path = metadata_path
         self._load_metadata()
 
     def _load_metadata(self):
         """Load metadata from YAML file"""
-        with open(self.metadata_path) as f:
+        with self.metadata_path.open() as f:
             data = yaml.safe_load(f)
 
         self.devices = {

@@ -183,10 +183,10 @@ class TrainPipeline:
 
     def _setup_directories(self):
         """Setup experiment directories."""
-        if self.nested and self.mlflow_config.server_run_name:
-            self.trial_dir = self.paths_config.experiments_dir / self.mlflow_config.server_run_name / self.run_name
+        if self.nested and self.local_server_run_name:
+            self.trial_dir = self.paths_config.experiments_dir.joinpath(self.local_server_run_name, self.run_name)
         else:
-            self.trial_dir = self.paths_config.experiments_dir / self.run_name
+            self.trial_dir = self.paths_config.experiments_dir.joinpath(self.run_name)
 
         self.trial_dir.mkdir(parents=True, exist_ok=True)
 
@@ -303,7 +303,7 @@ class TrainPipeline:
             mlflow.log_text(str(model_summary), 'model_summary.txt')
 
         # Save locally
-        with (self.trial_dir / 'model_summary.txt').open('w') as f:
+        with self.trial_dir.joinpath('model_summary.txt').open('w') as f:
             f.write(str(model_summary))
 
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
@@ -357,7 +357,7 @@ class TrainPipeline:
                 )
 
         # Save model locally
-        torch.save(self.model.state_dict(), self.trial_dir / 'model.pt')
+        torch.save(self.model.state_dict(), self.trial_dir.joinpath('model.pt'))
         return trainer.best_checkpoint
 
     def _log_model_to_mlflow(self):
@@ -380,7 +380,7 @@ class TrainPipeline:
                 model_input=_input.detach().numpy(),
                 model_output=_output
             ),
-            pip_requirements=str(self.paths_config.root_dir / 'requirements.txt')
+            pip_requirements=str(self.paths_config.root_dir.joinpath('requirements.txt'))
         )
 
     def evaluate_model(self, step: int = 0) -> Dict[str, float]:
@@ -411,7 +411,7 @@ class TrainPipeline:
 
         # Save figures locally
         for name, fig in figures.items():
-            fig.savefig(self.trial_dir / f'{name}.png')
+            fig.savefig(self.trial_dir.joinpath(f'{name}.png'))
 
         return metrics
 
