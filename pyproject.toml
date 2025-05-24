@@ -69,7 +69,7 @@ partition = true
 dp-enabled = true
 
 [tool.flwr.federations]
-default = "local-deployment"
+default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
 options.num-supernodes = 3
