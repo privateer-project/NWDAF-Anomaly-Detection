@@ -33,9 +33,6 @@ from .settings import (
     PrivacyConfig,
     MLFlowConfig,
     MetadataConfig,
-    DeviceInfo,
-    AttackInfo,
-    FeatureInfo,
     get_paths,
     get_model_config,
     get_training_config,
@@ -43,8 +40,8 @@ from .settings import (
     get_fl_config,
     get_privacy_config,
     get_mlflow_config,
-    get_metadata,
-    get_autotuning_config
+    get_autotuning_config,
+    get_metadata
 )
 
 __all__ = [
@@ -57,11 +54,6 @@ __all__ = [
     'MLFlowConfig',
     'MetadataConfig',
     'AutotuningConfig',
-
-    'DeviceInfo',
-    'AttackInfo',
-    'FeatureInfo',
-
     'get_paths',
     'get_model_config',
     'get_training_config',

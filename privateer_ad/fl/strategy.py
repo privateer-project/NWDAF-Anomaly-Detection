@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import mlflow
 
-from mlflow.entities import RunStatus
 from flwr.common import (ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters,
                          Metrics, EvaluateRes, FitRes)
 from flwr.server.strategy import FedAvg
@@ -117,17 +116,8 @@ class CustomStrategy(FedAvg):
         if not self.mlflow_config.enabled:
             return
 
-        server_run_name = self.mlflow_config.server_run_name
-        server_run_id = None
-
         mlflow.set_tracking_uri(self.mlflow_config.server_address)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
-
-        if not server_run_name:
-            server_run_name = 'federated_learning'
-
-        if self.dp_enabled:
-            server_run_name += '-dp'
 
         if mlflow.active_run():
             logger.info(
@@ -136,24 +126,12 @@ class CustomStrategy(FedAvg):
             )
             mlflow.end_run()
 
-        # Search for existing run
-        runs = mlflow.search_runs(
-            experiment_names=[self.mlflow_config.experiment_name],
-            filter_string=f'tags.mlflow.runName = \'{server_run_name}\'',
-            max_results=1
-        )
-
-        if len(runs) > 0:
-            server_run_id = runs.iloc[0].run_id
-            logger.info(f'Found existing run: {server_run_name} - {server_run_id}')
-            if not RunStatus.is_terminated(mlflow.get_run(server_run_id).info.status):
-                mlflow.MlflowClient().set_terminated(run_id=server_run_id)
-
-        mlflow.start_run(run_id=server_run_id, run_name=server_run_name)
-        server_run_name = mlflow.active_run().info.run_name
+        mlflow.start_run()
+        self.server_run_name = mlflow.active_run().info.run_name
+        self.server_run_id = mlflow.active_run().info.run_id
 
         # Setup trial directory
-        self.trial_path = self.paths_config.experiments_dir.joinpath(server_run_name)
+        self.trial_path = self.paths_config.experiments_dir.joinpath(self.server_run_name)
         self.trial_path.mkdir(exist_ok=True, parents=True)
 
     def aggregate_fit(
