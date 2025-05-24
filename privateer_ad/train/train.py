@@ -34,6 +34,7 @@ class TrainPipeline:
             partition: bool = False,
             dp_enabled: Optional[bool] = None,
             run_id: Optional[str] = None,
+            parent_run_id: Optional[str] = None,
             config_overrides: Optional[Dict[str, Any]] = None
     ):
         """
@@ -44,13 +45,13 @@ class TrainPipeline:
             partition: Whether to enable data partitioning
             dp_enabled: Override for differential privacy setting
             run_id: MLFlow run ID
+            parent_run_id: MLFlow parent run ID
             config_overrides: Dictionary of configuration overrides for testing
         """
 
         # Initialize instance variables
         self.partition_id = partition_id
         self.partition = partition
-        self.run_id = run_id
         self.config_overrides = config_overrides or {}
 
         # Inject configurations
@@ -60,7 +61,12 @@ class TrainPipeline:
         self._setup_device()
 
         # Setup MLFlow
-        self._setup_mlflow(run_id=run_id)
+        self.run_name, self.run_id = self._setup_mlflow(run_id=run_id, parent_run_id=parent_run_id)
+        mlflow.log_params({
+            'client_id': self.partition_id,
+            'partition_enabled': self.partition,
+            'dp_enabled': self.privacy_config.dp_enabled if hasattr(self, 'privacy_config') else False
+        })
 
         # Setup data processing
         self._setup_data_processing()
@@ -107,22 +113,17 @@ class TrainPipeline:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f'Using device: {self.device}')
 
-    def _setup_mlflow(self, run_id=None):
+    def _setup_mlflow(self,run_id=None, parent_run_id=None):
         """Setup MLFlow tracking"""
         mlflow.set_tracking_uri(self.mlflow_config.server_address)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
         if mlflow.active_run():
             mlflow.end_run()
-        mlflow.start_run(run_id=run_id)
-
-        logger.info(f'Started MLFlow run: {mlflow.active_run().info.run_name}'
-                    f' (ID: {mlflow.active_run().info.run_id})')
-
-        mlflow.log_params({
-            'client_id': self.partition_id,
-            'partition_enabled': self.partition,
-            'dp_enabled': self.privacy_config.dp_enabled if hasattr(self, 'privacy_config') else False
-        })
+        mlflow.start_run(run_id=run_id, parent_run_id=parent_run_id)
+        run_name = mlflow.active_run().info.run_name
+        run_id = mlflow.active_run().info.run_id
+        logger.info(f'Started MLFlow run: {run_name} (ID: {parent_run_id})')
+        return run_name, run_id
 
     def _setup_data_processing(self):
         """Setup data processing components."""
@@ -329,6 +330,9 @@ class TrainPipeline:
 
         metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
         logger.info(f'Test metrics:\n{metrics_logs}')
+        # End parent run
+        if mlflow.active_run():
+            mlflow.end_run()
         return metrics
 
     def train_eval(self, start_epoch: int = 0) -> Dict[str, float]:

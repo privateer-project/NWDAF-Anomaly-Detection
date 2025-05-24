@@ -27,19 +27,18 @@ def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
     return weighted_metrics
 
 
-def config_fn(server_round: int):
-    """Generate evaluation configuration for each round."""
-    return {'server_round': server_round}
-
-
 class CustomStrategy(FedAvg):
     """Custom federated learning strategy."""
 
-    def __init__(self, input_size):
+    def __init__(self, input_size, server_run_id=None):
         """
         Initialize the custom strategy.
         """
         logger.info("Initializing custom strategy...")
+
+        # Store server run ID
+        self.server_run_id = server_run_id
+
         # Create model with proper configuration
         self.model_config = TransformerADConfig(input_size=input_size)
         self.model = TransformerAD(config=self.model_config)
@@ -47,16 +46,40 @@ class CustomStrategy(FedAvg):
             val.cpu().numpy() for _, val in self.model.state_dict().items()
         ])
 
-        # Initialize parent strategy
+        # Initialize parent strategy with custom config functions
         super().__init__(
-            on_fit_config_fn=config_fn,
-            on_evaluate_config_fn=config_fn,
+            on_fit_config_fn=self._fit_config_fn,
+            on_evaluate_config_fn=self._evaluate_config_fn,
             fit_metrics_aggregation_fn=metrics_aggregation_fn,
             evaluate_metrics_aggregation_fn=metrics_aggregation_fn,
             initial_parameters=initial_parameters
         )
         # Best model tracking
         self.best_loss = np.Inf
+
+    def _fit_config_fn(self, server_round: int):
+        """Generate fit configuration for each round."""
+        config = {
+            'server_round': server_round,
+        }
+
+        # Add server run ID if available
+        if self.server_run_id:
+            config['server_run_id'] = self.server_run_id
+
+        return config
+
+    def _evaluate_config_fn(self, server_round: int):
+        """Generate evaluation configuration for each round."""
+        config = {
+            'server_round': server_round,
+        }
+
+        # Add server run ID if available
+        if self.server_run_id:
+            config['server_run_id'] = self.server_run_id
+
+        return config
 
     def aggregate_fit(
             self,

@@ -63,7 +63,7 @@ clientapp = "privateer_ad.fl.client:app"
 
 [tool.flwr.app.config]  # Run Config
 n-clients=3
-num-server-rounds = 3
+num-server-rounds = 200
 epochs = 1
 partition = true
 dp-enabled = true
