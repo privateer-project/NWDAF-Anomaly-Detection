@@ -6,15 +6,16 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from privateer_ad.config import PathsConf
+from privateer_ad.config import get_paths
 from privateer_ad import logger
 
 @dataclass
 class DownloadConfig:
-   zip_name: str = 'nwdaf-data.zip'
-   url: str = os.environ.get('DATA_URL', 'https://zenodo.org/api/records/13900057/files-archive')
-   extraction_dir: Path = Path(os.environ.get('RAW_DIR', PathsConf.raw))
-   raw_dataset: Path = Path(os.environ.get('RAW_DATASET', PathsConf.raw_dataset))
+    paths = get_paths()
+    zip_name: str = 'nwdaf-data.zip'
+    url: str = paths.data_url
+    extraction_dir: Path = paths.raw_dir
+    raw_dataset: Path = paths.raw_dataset
 
 class Downloader:
     def __init__(self, config: DownloadConfig):

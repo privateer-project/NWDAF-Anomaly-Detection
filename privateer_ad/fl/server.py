@@ -5,8 +5,8 @@ from flwr.server import Driver, LegacyContext, ServerApp, ServerConfig
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
 from privateer_ad import logger
-from privateer_ad.config import get_fl_config, get_mlflow_config, validate_config
-from privateer_ad.fl.strategy import CustomStrategy
+from privateer_ad.config import get_fl_config, get_mlflow_config
+from .strategy import CustomStrategy
 
 # Flower ServerApp
 app = ServerApp()
@@ -20,9 +20,6 @@ def main(driver: Driver, context: Context) -> None:
         driver: Flower driver instance
         context: Flower context containing run configuration
     """
-    # Validate configuration before starting
-    validate_config()
-
     fl_config = get_fl_config()
     mlflow_config = get_mlflow_config()
 
@@ -107,31 +104,3 @@ def main(driver: Driver, context: Context) -> None:
         if mlflow.active_run() and mlflow_config.enabled:
             logger.info('Ending MLFlow run')
             mlflow.end_run()
-
-
-def setup_server_environment():
-    """Setup server environment and validate configuration."""
-    try:
-        # Validate configuration
-        validate_config()
-
-        # Log configuration summary
-        from privateer_ad.config import get_config
-        config = get_config()
-        logger.info("Server configuration validated successfully")
-        logger.info(f"Configuration summary:\n{config.summary()}")
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Server environment setup failed: {e}")
-        return False
-
-
-if __name__ == '__main__':
-    """Entry point for standalone server execution."""
-    if setup_server_environment():
-        logger.info("Server environment setup complete")
-    else:
-        logger.error("Server environment setup failed")
-        exit(1)

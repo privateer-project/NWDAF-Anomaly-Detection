@@ -1,6 +1,6 @@
+from .train import TrainPipeline
 from .autotuner import ModelAutoTuner
-from .trainer import ModelTrainer
-
-
-__all__ = ['ModelAutoTuner',
-           'ModelTrainer']
+__all__ = [
+    'TrainPipeline',
+    'ModelAutoTuner'
+]

@@ -9,17 +9,16 @@ from torchinfo import summary
 from mlflow.entities import RunStatus
 
 from privateer_ad import logger
-from privateer_ad.config import (
-    get_paths,
-    get_model_config,
-    get_training_config,
-    get_data_config,
-    get_privacy_config,
-    get_mlflow_config,
-    validate_config
-)
+from privateer_ad.config import (get_paths,
+                                 get_model_config,
+                                 get_training_config,
+                                 get_data_config,
+                                 get_privacy_config,
+                                 get_mlflow_config
+                                 )
+
 from privateer_ad.etl.transform import DataProcessor
-from privateer_ad.models import TransformerAD, TransformerADConfig
+from privateer_ad.architectures import TransformerAD, TransformerADConfig
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
 
@@ -51,8 +50,6 @@ class TrainPipeline:
             nested: Whether this is a nested run (e.g., in federated learning)
             config_overrides: Dictionary of configuration overrides for testing
         """
-        # Validate configuration before starting
-        validate_config()
 
         # Initialize instance variables
         self.run_name = run_name
@@ -325,7 +322,8 @@ class TrainPipeline:
                 optimizer=self.optimizer,
                 criterion=self.training_config.loss_function,
                 device=self.device,
-                training_config=self.training_config  # Pass the entire config
+                training_config=self.training_config,  # Pass the entire config,
+                privacy_engine = self.privacy_engine if hasattr(self, 'privacy_engine') else None
             )
         except Exception as e:
             raise ValueError(f'Error while initializing trainer: {e}')
@@ -347,14 +345,6 @@ class TrainPipeline:
             self._log_model_to_mlflow()
 
         logger.info('Training Finished.')
-
-        # Log privacy metrics if DP is enabled
-        if self.privacy_config.dp_enabled and hasattr(self, 'privacy_engine'):
-            if mlflow.active_run():
-                mlflow.log_metrics(
-                    {'epsilon': self.privacy_engine.get_epsilon(self.privacy_config.target_delta)},
-                    step=start_epoch
-                )
 
         # Save model locally
         torch.save(self.model.state_dict(), self.trial_dir.joinpath('model.pt'))

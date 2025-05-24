@@ -1,12 +1,13 @@
 from copy import deepcopy
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
-import mlflow
 import torch
+import mlflow
 from tqdm import tqdm
+from opacus.privacy_engine import PrivacyEngine
 
 from privateer_ad import logger
-from privateer_ad.config import TrainingConfig, get_paths
+from privateer_ad.config import TrainingConfig, get_paths, get_privacy_config
 
 
 class ModelTrainer:
@@ -25,7 +26,8 @@ class ModelTrainer:
             optimizer: torch.optim.Optimizer,
             criterion: str,
             device: torch.device,
-            training_config: TrainingConfig
+            training_config: TrainingConfig,
+            privacy_engine: Optional[PrivacyEngine] = None,
     ):
         """
         Initialize the ModelTrainer.
@@ -45,7 +47,8 @@ class ModelTrainer:
         self.optimizer = optimizer
         self.training_config = training_config
         self.paths_config = get_paths()
-
+        self.privacy_engine = privacy_engine
+        self.privacy_config = get_privacy_config()
         # Setup loss function
         self.loss_fn = getattr(torch.nn, criterion)(reduction='mean')
 
@@ -246,6 +249,13 @@ class ModelTrainer:
         # Log to MLFlow if available
         if mlflow.active_run():
             mlflow.log_metrics(self.metrics, step=epoch)
+            # Log privacy metrics if DP is enabled
+            if self.privacy_engine:
+                if mlflow.active_run():
+                    mlflow.log_metrics(
+                        {'epsilon': self.privacy_engine.get_epsilon(self.privacy_config.target_delta)},
+                        step=epoch
+                    )
 
         # Format and log to console
         formatted_metrics = [

@@ -4,17 +4,14 @@ import mlflow
 import torch
 
 from privateer_ad import logger
-from privateer_ad.config import (
-    get_model_config,
-    get_training_config,
-    get_mlflow_config,
-    get_paths,
-    validate_config
-)
-from privateer_ad.models import TransformerAD, TransformerADConfig
-from privateer_ad.etl.transform import DataProcessor
-from privateer_ad.evaluate.evaluator import ModelEvaluator
-
+from privateer_ad.config import (get_model_config,
+                                 get_training_config,
+                                 get_mlflow_config,
+                                 get_paths
+                                 )
+from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from privateer_ad.etl import DataProcessor
+from .evaluator import ModelEvaluator
 
 def evaluate(
         model_path: str,
@@ -42,9 +39,6 @@ def evaluate(
     Returns:
         Tuple of (metrics_dict, figures_dict)
     """
-    # Validate configuration
-    validate_config()
-
     # Inject configurations
     model_config = get_model_config()
     training_config = get_training_config()

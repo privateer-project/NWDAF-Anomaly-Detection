@@ -13,7 +13,8 @@ from flwr_datasets.partitioner import PathologicalPartitioner
 from torch.utils.data import DataLoader
 
 from privateer_ad import logger
-from privateer_ad.etl.utils import check_existing_datasets, get_dataset_path
+from privateer_ad.config import get_data_config, get_paths, get_metadata
+from .utils import get_dataset_path, check_existing_datasets
 
 
 class DataProcessor:
@@ -29,7 +30,6 @@ class DataProcessor:
             paths_config: Optional paths configuration override
             metadata_config: Optional metadata configuration override
         """
-        from privateer_ad.config import get_data_config, get_paths, get_metadata
 
         self.data_config = data_config or get_data_config()
         self.paths_config = paths_config or get_paths()

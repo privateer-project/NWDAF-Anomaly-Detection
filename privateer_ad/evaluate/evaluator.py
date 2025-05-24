@@ -7,7 +7,7 @@ import torch
 
 from sklearn.metrics import roc_curve, roc_auc_score, classification_report
 
-from privateer_ad.visualizations.plotter import Visualizer
+from privateer_ad.visualizations import Visualizer
 
 
 class ModelEvaluator:
