@@ -30,7 +30,7 @@ class DataProcessor:
             paths_config: Optional paths configuration override
             metadata_config: Optional metadata configuration override
         """
-
+        logger.info('Initializing DataProcessor...')
         self.data_config = data_config or get_data_config()
         self.paths_config = paths_config or get_paths()
         self.metadata_config = metadata_config or get_metadata()
@@ -42,7 +42,6 @@ class DataProcessor:
 
         # Initialize processing components
         self.scaler = None
-        self.pca = None
 
         # Extract feature configurations
         self.input_features = self.metadata_config.get_input_features()
@@ -182,6 +181,11 @@ class DataProcessor:
                        seq_len=None,
                        partition_id=0,
                        only_benign=None) -> DataLoader:
+        logger.info(f'Get {path} dataloader with '
+                    f'batch_size={batch_size}, '
+                    f'seq_len={seq_len}, '
+                    f'partition_id={partition_id},'
+                    f' only_benign={only_benign}')
         # Use configuration defaults if not provided
         if batch_size is None:
             batch_size = self.data_config.batch_size if hasattr(self.data_config, 'batch_size') else 1024

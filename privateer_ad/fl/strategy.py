@@ -1,7 +1,6 @@
 from typing import List, Tuple, Union, Optional
 
 import numpy as np
-import torch
 import mlflow
 
 from flwr.common import (ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters,
@@ -10,16 +9,9 @@ from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
 
 from privateer_ad import logger
-from privateer_ad.config import (get_mlflow_config,
-                                 get_paths,
-                                 get_privacy_config,
-                                 get_model_config,
-                                 get_training_config,
-                                 get_data_config)
-from privateer_ad.etl import DataProcessor
 from privateer_ad.architectures import TransformerAD, TransformerADConfig
-from privateer_ad.evaluate import ModelEvaluator
 from .utils import set_weights
+
 
 def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
     """Aggregate metrics across clients."""
@@ -34,43 +26,23 @@ def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
     weighted_metrics = {name: (value / total_num_examples) for name, value in weighted_sums.items()}
     return weighted_metrics
 
+
 def config_fn(server_round: int):
     """Generate evaluation configuration for each round."""
     return {'server_round': server_round}
 
+
 class CustomStrategy(FedAvg):
     """Custom federated learning strategy."""
 
-    def __init__(self, num_rounds: int, dp_enabled: bool | None):
+    def __init__(self, input_size):
         """
         Initialize the custom strategy.
-
-        Args:
-            num_rounds: Number of federated learning rounds
         """
-        # Inject configurations
-        self.paths_config = get_paths()
-        self.mlflow_config = get_mlflow_config()
-        self.privacy_config = get_privacy_config()
-        self.dp_enabled = dp_enabled or self.privacy_config.dp_enabled
-        self.model_config = get_model_config()
-        self.training_config = get_training_config()
-        self.data_config = get_data_config()
-
-        self.num_rounds = num_rounds
-
+        logger.info("Initializing custom strategy...")
         # Create model with proper configuration
-        model_config = TransformerADConfig(
-            seq_len=self.model_config.seq_len,
-            input_size=self.model_config.input_size,
-            num_layers=self.model_config.num_layers,
-            hidden_dim=self.model_config.hidden_dim,
-            latent_dim=self.model_config.latent_dim,
-            num_heads=self.model_config.num_heads,
-            dropout=self.model_config.dropout
-        )
-
-        self.model = TransformerAD(config=model_config)
+        self.model_config = TransformerADConfig(input_size=input_size)
+        self.model = TransformerAD(config=self.model_config)
         initial_parameters = ndarrays_to_parameters([
             val.cpu().numpy() for _, val in self.model.state_dict().items()
         ])
@@ -83,56 +55,8 @@ class CustomStrategy(FedAvg):
             evaluate_metrics_aggregation_fn=metrics_aggregation_fn,
             initial_parameters=initial_parameters
         )
-
-        # Setup data processing and evaluation
-        self._setup_data_processing()
-        self._setup_evaluation()
-        self._setup_mlflow()
         # Best model tracking
         self.best_loss = np.Inf
-
-    def _setup_data_processing(self):
-        """Setup data processing components."""
-        self.data_processor = DataProcessor(partition=False)
-        self.test_dl = self.data_processor.get_dataloader(
-            'test',
-            batch_size=self.training_config.batch_size,
-            seq_len=self.model_config.seq_len,
-            only_benign=False
-        )
-        self.sample = next(iter(self.test_dl))[0]['encoder_cont'][:1].to('cpu')
-
-    def _setup_evaluation(self):
-        """Setup evaluation components."""
-        # Setup device
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.evaluator = ModelEvaluator(
-            criterion=self.training_config.loss_function,
-            device=self.device
-        )
-
-    def _setup_mlflow(self):
-        """Setup MLFlow tracking if enabled."""
-        if not self.mlflow_config.enabled:
-            return
-
-        mlflow.set_tracking_uri(self.mlflow_config.server_address)
-        mlflow.set_experiment(self.mlflow_config.experiment_name)
-
-        if mlflow.active_run():
-            logger.info(
-                f"Found active run: {mlflow.active_run().info.run_name} - "
-                f"{mlflow.active_run().info.run_id}, ending it"
-            )
-            mlflow.end_run()
-
-        mlflow.start_run()
-        self.server_run_name = mlflow.active_run().info.run_name
-        self.server_run_id = mlflow.active_run().info.run_id
-
-        # Setup trial directory
-        self.trial_path = self.paths_config.experiments_dir.joinpath(self.server_run_name)
-        self.trial_path.mkdir(exist_ok=True, parents=True)
 
     def aggregate_fit(
             self,
@@ -170,84 +94,8 @@ class CustomStrategy(FedAvg):
             results=results,
             failures=failures
         )
-
         # Log metrics to MLFlow
         if mlflow.active_run() and metrics_aggregated:
             mlflow.log_metrics(metrics_aggregated, step=server_round)
             mlflow.log_metric('eval_loss', loss_aggregated, step=server_round)
-
-        # Final evaluation on server round completion
-        if server_round == self.num_rounds:
-            self._final_evaluation(server_round)
-
         return loss_aggregated, metrics_aggregated
-
-    def _final_evaluation(self, server_round: int):
-        """Perform final evaluation on the best model."""
-        logger.info("Performing final evaluation on the global test set...")
-
-        self.model.to(self.device)
-        metrics, figures = self.evaluator.evaluate(
-            self.model,
-            self.test_dl,
-            prefix='final_global',
-            step=server_round
-        )
-
-        logger.info(f"Final global evaluation metrics: {metrics}")
-
-        if mlflow.active_run():
-            # Log final metrics
-            mlflow.log_metrics(metrics, step=server_round)
-
-            # Log figures
-            for name, fig in figures.items():
-                mlflow.log_figure(fig, f'{name}_final.png')
-
-            # Save figures locally
-            if hasattr(self, 'trial_path'):
-                for name, fig in figures.items():
-                    fig.savefig(self.trial_path.joinpath(f'{name}_final.png'))
-
-            # Log the final model
-            self._log_final_model()
-
-    def _log_final_model(self):
-        """Log the final model to MLFlow."""
-        try:
-            self.model.to('cpu')
-            _input = self.sample.to('cpu')
-            _output = self.model(_input)
-
-            if isinstance(_output, dict):
-                _output = {key: val.detach().numpy() for key, val in _output.items()}
-            else:
-                _output = _output.detach().numpy()
-
-            mlflow.pytorch.log_model(
-                pytorch_model=self.model,
-                artifact_path='final_global_model',
-                registered_model_name='privateer_global_model',
-                signature=mlflow.models.infer_signature(
-                    model_input=_input.detach().numpy(),
-                    model_output=_output
-                ),
-                pip_requirements=str(self.paths_config.root_dir.joinpath('requirements.txt'))
-            )
-
-            logger.info("Final model logged to MLFlow successfully")
-
-        except Exception as e:
-            logger.error(f"Failed to log final model to MLFlow: {e}")
-
-    def get_strategy_summary(self) -> dict:
-        """Get a summary of the strategy configuration."""
-        return {
-            'strategy_type': 'CustomStrategy',
-            'num_rounds': self.num_rounds,
-            'best_loss': self.best_loss,
-            'model_config': self.model_config.model_dump(),
-            'training_config': self.training_config.model_dump(),
-            'privacy_enabled': self.privacy_config.dp_enabled,
-            'mlflow_enabled': self.mlflow_config.enabled
-        }

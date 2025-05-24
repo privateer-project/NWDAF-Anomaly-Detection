@@ -251,11 +251,10 @@ class ModelTrainer:
             mlflow.log_metrics(self.metrics, step=epoch)
             # Log privacy metrics if DP is enabled
             if self.privacy_engine:
-                if mlflow.active_run():
-                    mlflow.log_metrics(
-                        {'epsilon': self.privacy_engine.get_epsilon(self.privacy_config.target_delta)},
-                        step=epoch
-                    )
+                mlflow.log_metrics(
+                    {'epsilon': self.privacy_engine.get_epsilon(self.privacy_config.target_delta)},
+                    step=epoch
+                )
 
         # Format and log to console
         formatted_metrics = [
