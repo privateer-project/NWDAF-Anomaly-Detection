@@ -1,12 +1,10 @@
 from copy import deepcopy
-from datetime import datetime
 from typing import Optional, Dict, Any
 from pathlib import Path
 
 import mlflow
 import torch
 from torchinfo import summary
-from mlflow.entities import RunStatus
 
 from privateer_ad import logger
 from privateer_ad.config import (get_paths,
@@ -32,30 +30,27 @@ class TrainPipeline:
 
     def __init__(
             self,
-            run_name: Optional[str] = None,
             partition_id: int = 0,
             partition: bool = False,
             dp_enabled: Optional[bool] = None,
-            nested: bool = False,
+            run_id: Optional[str] = None,
             config_overrides: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize the training pipeline.
 
         Args:
-            run_name: Optional custom run name for this training session
             partition_id: ID for data partitioning in federated learning
             partition: Whether to enable data partitioning
             dp_enabled: Override for differential privacy setting
-            nested: Whether this is a nested run (e.g., in federated learning)
+            run_id: MLFlow run ID
             config_overrides: Dictionary of configuration overrides for testing
         """
 
         # Initialize instance variables
-        self.run_name = run_name
         self.partition_id = partition_id
         self.partition = partition
-        self.nested = nested
+        self.run_id = run_id
         self.config_overrides = config_overrides or {}
 
         # Inject configurations
@@ -64,11 +59,8 @@ class TrainPipeline:
         # Setup device
         self._setup_device()
 
-        # Setup MLFlow if enabled
-        self._setup_mlflow()
-
-        # Setup directories
-        self._setup_directories()
+        # Setup MLFlow
+        self._setup_mlflow(run_id=run_id)
 
         # Setup data processing
         self._setup_data_processing()
@@ -115,50 +107,22 @@ class TrainPipeline:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f'Using device: {self.device}')
 
-    def _setup_mlflow(self):
-        """Setup MLFlow tracking if enabled."""
-        if not self.mlflow_config.enabled:
-            return
-
-        logger.info('Initialize MLFlow')
+    def _setup_mlflow(self, run_id=None):
+        """Setup MLFlow tracking"""
         mlflow.set_tracking_uri(self.mlflow_config.server_address)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
-
-        self.parent_run_id = None
-
         if mlflow.active_run():
-            logger.info(f"Found active run {mlflow.active_run().info.run_id}, ending it")
             mlflow.end_run()
+        mlflow.start_run(run_id=run_id)
 
-        if self.nested and self.mlflow_config.server_run_name:
-            # Use a local copy instead of modifying the shared configuration
-            self.local_server_run_name = self.mlflow_config.server_run_name
-            self._setup_nested_run()
-        self._start_mlflow_run()
+        logger.info(f'Started MLFlow run: {mlflow.active_run().info.run_name}'
+                    f' (ID: {mlflow.active_run().info.run_id})')
 
-    def _setup_nested_run(self):
-        """Setup nested MLFlow run for federated learning scenarios."""
-        try:
-            if RunStatus.is_terminated(mlflow.get_run(self.parent_run_id).info.status):
-                mlflow.start_run(run_id=self.parent_run_id)
-        except:
-            mlflow.start_run()
-            self.parent_run_id = mlflow.active_run().info.run_id
-
-    def _start_mlflow_run(self):
-        """Start or resume MLFlow run."""
-        mlflow.start_run(run_name=self.run_name, parent_run_id=self.parent_run_id)
-        self.run_name = mlflow.active_run().info.run_name
-        logger.info(f'Run with name {self.run_name} started.')
-
-    def _setup_directories(self):
-        """Setup experiment directories."""
-        if self.nested and self.local_server_run_name:
-            self.trial_dir = self.paths_config.experiments_dir.joinpath(self.local_server_run_name, self.run_name)
-        else:
-            self.trial_dir = self.paths_config.experiments_dir.joinpath(self.run_name)
-
-        self.trial_dir.mkdir(parents=True, exist_ok=True)
+        mlflow.log_params({
+            'client_id': self.partition_id,
+            'partition_enabled': self.partition,
+            'dp_enabled': self.privacy_config.dp_enabled if hasattr(self, 'privacy_config') else False
+        })
 
     def _setup_data_processing(self):
         """Setup data processing components."""
@@ -272,10 +236,6 @@ class TrainPipeline:
             mlflow.log_params({'device': str(self.device)})
             mlflow.log_text(str(model_summary), 'model_summary.txt')
 
-        # Save locally
-        with self.trial_dir.joinpath('model_summary.txt').open('w') as f:
-            f.write(str(model_summary))
-
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
         Train the model with current configuration.
@@ -319,8 +279,6 @@ class TrainPipeline:
 
         logger.info('Training Finished.')
 
-        # Save model locally
-        torch.save(self.model.state_dict(), self.trial_dir.joinpath('model.pt'))
         return trainer.best_checkpoint
 
     def _log_model_to_mlflow(self):
@@ -371,11 +329,6 @@ class TrainPipeline:
 
         metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
         logger.info(f'Test metrics:\n{metrics_logs}')
-
-        # Save figures locally
-        for name, fig in figures.items():
-            fig.savefig(self.trial_dir.joinpath(f'{name}.png'))
-
         return metrics
 
     def train_eval(self, start_epoch: int = 0) -> Dict[str, float]:
@@ -390,7 +343,6 @@ class TrainPipeline:
         """
         self.train_model(start_epoch=start_epoch)
         return self.evaluate_model(step=start_epoch)
-
 
 def create_train_pipeline_from_config(
         config_file: Optional[Path] = None,

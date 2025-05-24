@@ -156,7 +156,7 @@ class FederatedLearningConfig(BaseModel):
 
     server_address: str = Field(default="[::]:8081")
     num_rounds: int = Field(default=100, gt=0)
-    min_clients: int = Field(default=2, gt=0)
+    n_clients: int = Field(default=2, gt=0)
     fraction_fit: float = Field(default=1.0, gt=0.0, le=1.0)
     fraction_evaluate: float = Field(default=1.0, gt=0.0, le=1.0)
 
