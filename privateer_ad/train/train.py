@@ -330,6 +330,9 @@ class TrainPipeline:
 
         metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
         logger.info(f'Test metrics:\n{metrics_logs}')
+        # End parent run
+        if mlflow.active_run():
+            mlflow.end_run()
         return metrics
 
     def train_eval(self, start_epoch: int = 0) -> Dict[str, float]:
