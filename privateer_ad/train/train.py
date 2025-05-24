@@ -125,13 +125,6 @@ class TrainPipeline:
         mlflow.set_experiment(self.mlflow_config.experiment_name)
 
         self.parent_run_id = None
-        self.run_id = None
-
-        if not self.run_name:
-            self.run_name = datetime.now().strftime('%Y%m%d-%H%M%S')
-
-        if self.privacy_config.dp_enabled:
-            self.run_name += '-dp'
 
         if mlflow.active_run():
             logger.info(f"Found active run {mlflow.active_run().info.run_id}, ending it")
@@ -140,41 +133,21 @@ class TrainPipeline:
         if self.nested and self.mlflow_config.server_run_name:
             # Use a local copy instead of modifying the shared configuration
             self.local_server_run_name = self.mlflow_config.server_run_name
-            if self.privacy_config.dp_enabled and not self.local_server_run_name.endswith('-dp'):
-                self.local_server_run_name += '-dp'
             self._setup_nested_run()
         self._start_mlflow_run()
 
     def _setup_nested_run(self):
         """Setup nested MLFlow run for federated learning scenarios."""
-
-        parent_runs = mlflow.search_runs(
-            experiment_names=[self.mlflow_config.experiment_name],
-            filter_string=f'tags.mlflow.runName = \'{self.local_server_run_name}\'',
-            max_results=1
-        )
-
-        if len(parent_runs) > 0:
-            self.parent_run_id = parent_runs.iloc[0].run_id
+        try:
             if RunStatus.is_terminated(mlflow.get_run(self.parent_run_id).info.status):
                 mlflow.start_run(run_id=self.parent_run_id)
+        except:
+            mlflow.start_run()
+            self.parent_run_id = mlflow.active_run().info.run_id
 
     def _start_mlflow_run(self):
         """Start or resume MLFlow run."""
-        runs = mlflow.search_runs(
-            experiment_names=[self.mlflow_config.experiment_name],
-            filter_string=f'tags.mlflow.runName = \'{self.run_name}\'',
-            max_results=1
-        )
-
-        if len(runs) > 0:
-            self.run_id = runs.iloc[0].run_id
-            if not RunStatus.is_terminated(mlflow.get_run(self.run_id).info.status):
-                mlflow.MlflowClient().set_terminated(run_id=self.run_id)
-
-        mlflow.start_run(run_id=self.run_id, run_name=self.run_name, parent_run_id=self.parent_run_id)
-
-        self.run_id = mlflow.active_run().info.run_id
+        mlflow.start_run(run_name=self.run_name, parent_run_id=self.parent_run_id)
         self.run_name = mlflow.active_run().info.run_name
         logger.info(f'Run with name {self.run_name} started.')
 

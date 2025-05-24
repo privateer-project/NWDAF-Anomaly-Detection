@@ -4,12 +4,11 @@ Configuration files
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Literal, Any
-from dataclasses import dataclass
+from typing import Optional, Literal
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings
-import yaml
 
+from .metadata import MetadataConfig
 logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -206,100 +205,6 @@ class MLFlowConfig(BaseSettings):
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
-
-
-
-# =============================================================================
-# METADATA CONFIGURATION
-# =============================================================================
-
-@dataclass
-class DeviceInfo:
-    """Device information"""
-    imeisv: str
-    ip: str
-    type: str
-    malicious: bool
-    in_attacks: List[int]
-
-
-@dataclass
-class AttackInfo:
-    """Attack information"""
-    start: str
-    stop: str
-
-
-@dataclass
-class FeatureInfo:
-    """Feature configuration"""
-    dtype: str = 'str'
-    drop: bool = False
-    is_input: bool = False
-    process: List[str] = None
-
-    def __post_init__(self):
-        if self.process is None:
-            self.process = []
-
-
-class MetadataConfig:
-    """Configuration loaded from metadata.yaml"""
-
-    def __init__(self, metadata_path: Optional[Path] = None):
-        data = self._load_metadata(metadata_path)
-        self._parse_metadata(data)
-
-    def _load_metadata(self, metadata_path: Optional[Path]) -> dict:
-        """Load metadata from file or package resources"""
-
-        if metadata_path is not None:
-            with metadata_path.open() as f:
-                return yaml.safe_load(f)
-
-        import importlib.resources as resources
-        try:
-            # Try to find metadata.yaml in the config package
-            config_package = resources.files('privateer_ad.config')
-            metadata_file = config_package.joinpath('metadata.yaml')
-
-            logger.info(f'Looking for metadata at: {metadata_file}')
-
-            if metadata_file.is_file():
-                content = metadata_file.read_text(encoding='utf-8')
-                logger.info('Loaded metadata.yaml from package resources')
-                return yaml.safe_load(content)
-            else:
-                # Fallback: try to find it in the project root
-                root_package = resources.files('privateer_ad')
-                with resources.as_file(root_package) as pkg_path:
-                    metadata_file_alt = pkg_path.joinpath('privateer_ad', 'config', 'metadata.yaml')
-
-                    if metadata_file_alt.exists():
-                        with metadata_file_alt.open('r', encoding='utf-8') as f:
-                            logger.info('Loaded metadata.yaml from project directory')
-                            return yaml.safe_load(f)
-                    else:
-                        raise FileNotFoundError("metadata.yaml not found, using default configuration")
-        except Exception as e:
-            logger.error(f"Could not load metadata.yaml from package: {e}, using defaults")
-            raise e
-
-    def _parse_metadata(self, data: dict):
-        """Parse loaded data into structured objects"""
-        self.devices = {k: DeviceInfo(**v) for k, v in data['devices'].items()}
-        self.attacks = {k: AttackInfo(**v) for k, v in data['attacks'].items()}
-        self.features = {k: FeatureInfo(**v) for k, v in data['features'].items()}
-
-    def get_input_features(self) -> List[str]:
-        return [feat for feat, info in self.features.items() if info.is_input]
-
-    def get_drop_features(self) -> List[str]:
-        return [feat for feat, info in self.features.items() if info.drop]
-
-    def get_features_dtypes(self) -> Dict[str, str]:
-        return {feat: info.dtype for feat, info in self.features.items()}
-
 
 # =============================================================================
 # SIMPLE CONFIGURATION ACCESS
