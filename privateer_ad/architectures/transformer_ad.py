@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from torch import nn
 from opacus.layers import DPMultiheadAttention
 
-from privateer_ad.models.custom_layers import PositionalEncoding
+from privateer_ad.architectures.layers import PositionalEncoding
 
 @dataclass
 class TransformerADConfig:

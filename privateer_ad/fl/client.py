@@ -3,13 +3,11 @@ from flwr.client import ClientApp, NumPyClient
 from flwr.client.mod import secaggplus_mod
 
 from privateer_ad import logger
-from privateer_ad.config import (
-    get_privacy_config,
-    get_fl_config,
-    validate_config
-)
+from privateer_ad.config import (get_privacy_config,
+                                 get_fl_config
+                                 )
 from privateer_ad.fl.utils import set_weights, get_weights
-from privateer_ad.train.train import TrainPipeline
+from privateer_ad.train import TrainPipeline
 
 
 class SecAggFlowerClient(NumPyClient):
@@ -25,8 +23,6 @@ class SecAggFlowerClient(NumPyClient):
             partition: Whether to use data partitioning
             dp_enabled: Whether to enable differential privacy
         """
-        # Validate configuration
-        validate_config()
 
         self.privacy_config = get_privacy_config()
         self.fl_config = get_fl_config()
@@ -193,28 +189,6 @@ def client_fn(context: Context):
 
     return client.to_client()
 
-
-def setup_client_environment():
-    """Setup client environment and validate configuration."""
-    try:
-        # Validate configuration
-        validate_config()
-        logger.info("Client configuration validated successfully")
-
-        return True
-
-    except Exception as e:
-        logger.error(f"Client environment setup failed: {e}")
-        return False
-
-
 # Create Flower ClientApp with SecAgg+ modification
 app = ClientApp(client_fn, mods=[secaggplus_mod])
 
-if __name__ == '__main__':
-    """Entry point for standalone client testing."""
-    if setup_client_environment():
-        logger.info("Client environment setup complete")
-    else:
-        logger.error("Client environment setup failed")
-        exit(1)

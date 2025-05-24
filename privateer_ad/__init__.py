@@ -1,4 +1,3 @@
-# In privateer_ad/__init__.py
 import logging
 
 logger = logging.getLogger()

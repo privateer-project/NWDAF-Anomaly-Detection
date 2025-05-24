@@ -11,19 +11,16 @@ from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
 
 from privateer_ad import logger
-from privateer_ad.config import (
-    get_mlflow_config,
-    get_paths,
-    get_privacy_config,
-    get_model_config,
-    get_training_config,
-    get_data_config,
-)
-from privateer_ad.fl.utils import set_weights
-from privateer_ad.etl.transform import DataProcessor
-from privateer_ad.models import TransformerAD, TransformerADConfig
-from privateer_ad.evaluate.evaluator import ModelEvaluator
-
+from privateer_ad.config import (get_mlflow_config,
+                                 get_paths,
+                                 get_privacy_config,
+                                 get_model_config,
+                                 get_training_config,
+                                 get_data_config)
+from privateer_ad.etl import DataProcessor
+from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from privateer_ad.evaluate import ModelEvaluator
+from .utils import set_weights
 
 def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
     """Aggregate metrics across clients."""

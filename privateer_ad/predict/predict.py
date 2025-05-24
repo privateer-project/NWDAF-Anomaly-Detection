@@ -8,14 +8,12 @@ from sklearn.metrics import classification_report
 from pathlib import Path
 
 from privateer_ad import logger
-from privateer_ad.config import (
-    get_paths,
-    get_model_config,
-    get_training_config,
-    validate_config
-)
-from privateer_ad.models import TransformerAD, TransformerADConfig
-from privateer_ad.etl.transform import DataProcessor
+from privateer_ad.config import (get_paths,
+                                 get_model_config,
+                                 get_training_config
+                                 )
+from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from privateer_ad.etl import DataProcessor
 
 
 def make_predictions(
@@ -52,8 +50,6 @@ def make_predictions(
         - predictions: Array of shape (n_samples,) containing binary predictions
         - labels: Array of shape (n_samples,) containing integer labels
     """
-    # Validate configuration
-    validate_config()
 
     # Inject configurations
     paths_config = get_paths()
