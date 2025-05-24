@@ -3,13 +3,14 @@ import os
 import mlflow
 
 from privateer_ad import logger
-from privateer_ad.train import AutotuneConfig, ModelAutoTuner
-from privateer_ad.config import MLFlowConfig, update_config
+from privateer_ad.config import get_autotuning_config, get_mlflow_config
+from privateer_ad.train import ModelAutoTuner
+
 
 def autotune(**kwargs):
     logger.info('Initialize auto-tuning.')
-    mlflow_config = update_config(MLFlowConfig, kwargs)
-    autotune_config = update_config(AutotuneConfig, kwargs)
+    mlflow_config = get_mlflow_config()
+    autotune_config = get_autotuning_config()
 
     if mlflow_config.track:
         mlflow.set_tracking_uri(mlflow_config.server_address)

@@ -55,7 +55,7 @@ packages = ["."]
 allow-direct-references = true
 
 [tool.flwr.app]
-publisher = "gliv"
+publisher = "WP3"
 
 [tool.flwr.app.components]
 serverapp = "privateer_ad.fl.server:app"
