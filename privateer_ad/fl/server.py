@@ -24,18 +24,18 @@ def main(driver: Driver, context: Context) -> None:
         driver: Flower driver instance
         context: Flower context containing run configuration
     """
-    server_run_name, server_run_id = _setup_mlflow()
+    _, server_run_id = _setup_mlflow()
     fl_config = get_fl_config()
     # Get run parameters from context
     fl_config.n_clients = context.run_config.get('n-clients', fl_config.n_clients)
     fl_config.num_rounds = context.run_config.get('num-server-rounds', fl_config.num_rounds)
     dp_enabled = context.run_config.get('dp-enabled', None)
+    context.run_config['server_run_id'] =  server_run_id
 
     logger.info(f'Federated Learning will run for {fl_config.num_rounds} rounds on {fl_config.n_clients} clients')
     logger.info(f'Secure aggregation: {fl_config.secure_aggregation_enabled}')
+    logger.info(f'Server MLflow run ID: {server_run_id}')
 
-    # Give parent run ID to clients
-    context.run_config['server_run_id'] = server_run_id
     # Log federated learning parameters to parent run
     mlflow.log_params(fl_config.__dict__)
     logger.info({
@@ -55,8 +55,11 @@ def main(driver: Driver, context: Context) -> None:
                                             )
     sample = next(iter(test_dl))[0]['encoder_cont'][:1].to('cpu')
 
-    # Create strategy
-    strategy = CustomStrategy(input_size=sample.shape[-1])
+    strategy = CustomStrategy(
+        input_size=sample.shape[-1],
+        server_run_id=server_run_id
+    )
+
     # Setup and run FL
     server_context = LegacyContext(
         context=context,
@@ -85,10 +88,9 @@ def main(driver: Driver, context: Context) -> None:
         # End parent run
         if mlflow.active_run():
             mlflow.end_run()
-            logger.info('Parent MLFlow run ended')
+
 
 def _setup_mlflow():
-
     """Setup MLFlow tracking if enabled."""
     try:
         mlflow_config = get_mlflow_config()
@@ -104,11 +106,11 @@ def _setup_mlflow():
         mlflow.start_run()
         server_run_name = mlflow.active_run().info.run_name
         server_run_id = mlflow.active_run().info.run_id
-        logger.error(f"MLFlow run started: name: {server_run_name} (ID: {server_run_id})")
+        logger.info(f"MLFlow run started: name: {server_run_name} (ID: {server_run_id})")
         return server_run_name, server_run_id
     except Exception as e:
         logger.error(f"Failed to setup MLFlow: {e}")
-        return None
+        return None, None
 
 def _final_evaluation(model, dataloader, server_round: int):
     """Perform final evaluation on the best model."""
@@ -126,17 +128,10 @@ def _final_evaluation(model, dataloader, server_round: int):
     metrics, figures = evaluator.evaluate(model, dataloader, prefix='final_global', step=server_round)
     logger.info(f"Final global evaluation metrics: {metrics}")
 
-    # Log final metrics
-    mlflow.log_metrics(metrics, step=server_round)
-
-    # Log figures
-    for name, fig in figures.items():
-        mlflow.log_figure(fig, f'{name}_final.png')
-
     sample_tensor = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')
 
     model.to('cpu')
-    _output = model(sample_tensor)  # Tensor input
+    _output = model(sample_tensor)
 
     # Convert to numpy AFTER model call
     _input_np = sample_tensor.detach().numpy()
@@ -144,11 +139,10 @@ def _final_evaluation(model, dataloader, server_round: int):
                                                                                  _output.items()}
     pip_requirements = str(get_paths().root_dir.joinpath('requirements.txt'))
 
-    mlflow.pytorch.log_model(
-        pytorch_model=model,
-        artifact_path='final_global_model',
-        registered_model_name='privateer_global_model',
-        signature=mlflow.models.infer_signature(_input_np, _output_np),
-        pip_requirements=pip_requirements
-    )
+    mlflow.pytorch.log_model(pytorch_model=model,
+                             artifact_path='final_global_model',
+                             registered_model_name='privateer_global_model',
+                             signature=mlflow.models.infer_signature(_input_np, _output_np),
+                             pip_requirements=pip_requirements
+                             )
     logger.info("Final model logged to MLFlow successfully")
