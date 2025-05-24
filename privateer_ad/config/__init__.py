@@ -24,22 +24,18 @@ Usage Examples:
 """
 
 from .settings import (
-    # Configuration classes
     PathConfig,
     ModelConfig,
     TrainingConfig,
+    AutotuningConfig,
     DataConfig,
     FederatedLearningConfig,
     PrivacyConfig,
     MLFlowConfig,
     MetadataConfig,
-
-    # Data classes
     DeviceInfo,
     AttackInfo,
     FeatureInfo,
-
-    # Convenience functions for specific configs
     get_paths,
     get_model_config,
     get_training_config,
@@ -48,10 +44,10 @@ from .settings import (
     get_privacy_config,
     get_mlflow_config,
     get_metadata,
+    get_autotuning_config
 )
 
 __all__ = [
-    # Configuration classes
     'PathConfig',
     'ModelConfig',
     'TrainingConfig',
@@ -60,16 +56,16 @@ __all__ = [
     'PrivacyConfig',
     'MLFlowConfig',
     'MetadataConfig',
+    'AutotuningConfig',
 
-    # Data classes
     'DeviceInfo',
     'AttackInfo',
     'FeatureInfo',
 
-    # Convenience getters
     'get_paths',
     'get_model_config',
     'get_training_config',
+    'get_autotuning_config',
     'get_data_config',
     'get_fl_config',
     'get_privacy_config',

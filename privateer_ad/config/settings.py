@@ -2,12 +2,15 @@
 Configuration files
 """
 
+import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Any
 from dataclasses import dataclass
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings
 import yaml
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # CONFIGURATION CLASSES
@@ -123,6 +126,32 @@ class DataConfig(BaseModel):
         return self
 
 
+class AutotuningConfig(BaseModel):
+    """Hyperparameter optimization configuration"""
+
+    study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
+    n_trials: int = Field(default=50, gt=0, description="Number of optimization trials")
+    timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
+
+    target_metric: str = Field(default="eval_test_f1-score", description="Metric to optimize")
+    direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
+
+    storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
+
+    enable_pruning: bool = Field(default=True, description="Enable trial pruning")
+    pruning_warmup_steps: int = Field(default=5, gt=0, description="Steps before pruning can start")
+
+    # Sampler configuration
+    sampler_type: Literal["tpe", "random", "cmaes"] = Field(default="tpe", description="Type of sampler to use")
+
+    model_config = {
+        'env_prefix': 'AUTOTUNE_',
+        'env_file': '.env',
+        'extra': 'ignore',
+        'case_sensitive': False
+    }
+
+
 class FederatedLearningConfig(BaseModel):
     """Federated learning settings"""
 
@@ -223,28 +252,38 @@ class MetadataConfig:
 
     def _load_metadata(self, metadata_path: Optional[Path]) -> dict:
         """Load metadata from file or package resources"""
+
         if metadata_path is not None:
             with metadata_path.open() as f:
                 return yaml.safe_load(f)
 
-        # Load from package resources
         import importlib.resources as resources
         try:
-            config_files = resources.files('privateer_ad.config')
-            print('config_files.files', config_files)
-            # config_files.files /home/sse/.flwr/apps/gliv.privateer_ad.0.1.0.16cc7491/privateer_ad/config
-            config_files = resources.contents('privateer_ad.config')
-            print('config_files.contents', config_files)
-            # config_files.contents ['settings.py', '__init__.py', '__pycache__']
-            config_files = resources.is_resource('privateer_ad.config', 'metadata.yaml')
-            print('config_files.is_resource', config_files)
-            # config_files.is_resource False
-            exit()
-            content = (config_files / 'metadata.yaml').read_text()
-            print('content', content)
-            return yaml.safe_load(content)
+            # Try to find metadata.yaml in the config package
+            config_package = resources.files('privateer_ad.config')
+            metadata_file = config_package.joinpath('metadata.yaml')
+
+            logger.info(f'Looking for metadata at: {metadata_file}')
+
+            if metadata_file.is_file():
+                content = metadata_file.read_text(encoding='utf-8')
+                logger.info('Loaded metadata.yaml from package resources')
+                return yaml.safe_load(content)
+            else:
+                # Fallback: try to find it in the project root
+                root_package = resources.files('privateer_ad')
+                with resources.as_file(root_package) as pkg_path:
+                    metadata_file_alt = pkg_path.joinpath('privateer_ad', 'config', 'metadata.yaml')
+
+                    if metadata_file_alt.exists():
+                        with metadata_file_alt.open('r', encoding='utf-8') as f:
+                            logger.info('Loaded metadata.yaml from project directory')
+                            return yaml.safe_load(f)
+                    else:
+                        raise FileNotFoundError("metadata.yaml not found, using default configuration")
         except Exception as e:
-            raise FileNotFoundError(f"Could not load metadata.yaml from package: {e}")
+            logger.error(f"Could not load metadata.yaml from package: {e}, using defaults")
+            raise e
 
     def _parse_metadata(self, data: dict):
         """Parse loaded data into structured objects"""
@@ -279,6 +318,10 @@ def get_training_config() -> TrainingConfig:
     """Get training configuration"""
     return TrainingConfig()
 
+def get_autotuning_config() -> AutotuningConfig:
+    """Get autotuning configuration"""
+    return AutotuningConfig()
+
 def get_data_config() -> DataConfig:
     """Get data configuration"""
     return DataConfig()
@@ -303,38 +346,27 @@ def get_metadata() -> MetadataConfig:
 # =============================================================================
 # CONFIGURATION VALIDATION
 # =============================================================================
-#
-# def validate_config():
-#     """Validate the entire configuration for consistency"""
-#     errors = []
-#
-#     # Basic validation - individual configs handle their own validation
-#     try:
-#         fl_cfg = get_fl_config()
-#         if fl_cfg.reconstruction_threshold > fl_cfg.num_shares:
-#             errors.append(
-#                 f"Reconstruction threshold ({fl_cfg.reconstruction_threshold}) "
-#                 f"cannot be greater than num_shares ({fl_cfg.num_shares})"
-#             )
-#     except Exception as e:
-#         errors.append(f"FL config validation failed: {e}")
-#
-#     if errors:
-#         raise ValueError("Configuration validation errors:\n" + "\n".join(f"- {error}" for error in errors))
-#
-#     return True
+
+def validate_config():
+    """Validate the entire configuration for consistency"""
+    errors = []
+
+    # Basic validation - individual configs handle their own validation
+    try:
+        fl_cfg = get_fl_config()
+        if fl_cfg.reconstruction_threshold > fl_cfg.num_shares:
+            errors.append(
+                f"Reconstruction threshold ({fl_cfg.reconstruction_threshold}) "
+                f"cannot be greater than num_shares ({fl_cfg.num_shares})"
+            )
+    except Exception as e:
+        errors.append(f"FL config validation failed: {e}")
+
+    if errors:
+        raise ValueError("Configuration validation errors:\n" + "\n".join(f"- {error}" for error in errors))
+
+    return True
+
 
 if __name__ == '__main__':
-
-    paths = PathConfig()
-    print(paths.root_dir)
-    print(paths.data_dir)
-    print(paths.raw_dir)
-    print(paths.processed_dir)
-    print(paths.experiments_dir)
-    print(paths.scalers_dir)
-    print(paths.models_dir)
-    print(paths.analysis_dir)
-    print(paths.raw_dataset)
-
-    print(MLFlowConfig())
+    print(MetadataConfig().features)
