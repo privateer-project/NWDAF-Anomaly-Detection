@@ -125,7 +125,7 @@ def _final_evaluation(model, dataloader, server_round: int):
 
     model.to('cpu')
 
-    metrics, figures = evaluator.evaluate(model, dataloader, prefix='final_global', step=server_round)
+    metrics, figures = evaluator.evaluate(model, dataloader, prefix='global_test', step=server_round)
     logger.info(f"Final global evaluation metrics: {metrics}")
 
     sample_tensor = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')

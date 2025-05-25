@@ -67,7 +67,12 @@ class ModelEvaluator:
                                   )
 
         if mlflow.active_run():
+            mlflow.log_text(classification_report(y_true=y_true,
+                                                  y_pred=y_pred,
+                                                  labels=labels,
+                                                  target_names=target_names),
+                            f'{str(step).zfill(3)}_{prefix}_classification_report.txt')
             mlflow.log_metrics(metrics, step=step)
             for name, fig in self.visualizer.figures.items():
-                mlflow.log_figure(fig, f'{name}_{step}.png')
+                mlflow.log_figure(fig, f'{str(step).zfill(3)}_{name}.png')
         return metrics, self.visualizer.figures

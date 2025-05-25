@@ -5,7 +5,7 @@ Configuration files
 import logging
 from pathlib import Path
 from typing import Optional, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 from .metadata import MetadataConfig
@@ -68,7 +68,7 @@ class PathConfig(BaseSettings):
         return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
 
 
-class ModelConfig(BaseModel):
+class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
 
     model_type: str = Field(default='TransformerAD')
@@ -81,7 +81,7 @@ class ModelConfig(BaseModel):
     dropout: float = Field(default=0.2, ge=0.0, le=1.0)
 
 
-class TrainingConfig(BaseModel):
+class TrainingConfig(BaseSettings):
     """Training process configuration"""
 
     batch_size: int = Field(default=1024, gt=0)
@@ -103,7 +103,7 @@ class TrainingConfig(BaseModel):
                     'extra': 'ignore',
                     'case_sensitive': False}
 
-class DataConfig(BaseModel):
+class DataConfig(BaseSettings):
     """Data processing and loading configuration"""
 
     train_size: float = Field(default=0.8, gt=0.0, lt=1.0)
@@ -125,14 +125,13 @@ class DataConfig(BaseModel):
         return self
 
 
-class AutotuningConfig(BaseModel):
+class AutotuningConfig(BaseSettings):
     """Hyperparameter optimization configuration"""
 
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
-    n_trials: int = Field(default=10, gt=0, description="Number of optimization trials")
+    n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
-
-    target_metric: str = Field(default="val_f1-score", description="Metric to optimize")
+    target_metric: str = Field(default="test_f1-score", description="Metric to optimize")
     direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
     storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
@@ -151,7 +150,7 @@ class AutotuningConfig(BaseModel):
     }
 
 
-class FederatedLearningConfig(BaseModel):
+class FederatedLearningConfig(BaseSettings):
     """Federated learning settings"""
 
     server_address: str = Field(default="[::]:8081")
@@ -175,10 +174,10 @@ class FederatedLearningConfig(BaseModel):
                     'case_sensitive': False}
 
 
-class PrivacyConfig(BaseModel):
+class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
-    dp_enabled: bool = Field(default=False)
+    enabled: bool = Field(default=False)
     target_epsilon: float = Field(default=0.5, gt=0.0)
     target_delta: float = Field(default=1e-7, gt=0.0)
     max_grad_norm: float = Field(default=0.5, gt=0.0)

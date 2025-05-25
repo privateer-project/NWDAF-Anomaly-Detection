@@ -65,7 +65,7 @@ class TrainPipeline:
         mlflow.log_params({
             'client_id': self.partition_id,
             'partition_enabled': self.partition,
-            'dp_enabled': self.privacy_config.dp_enabled if hasattr(self, 'privacy_config') else False
+            'dp_enabled': self.privacy_config.enabled if hasattr(self, 'privacy_config') else False
         })
 
         # Setup data processing
@@ -99,7 +99,7 @@ class TrainPipeline:
 
         # Override DP setting if explicitly provided
         if dp_enabled is not None:
-            self.privacy_config.dp_enabled = dp_enabled
+            self.privacy_config.enabled = dp_enabled
 
     def _apply_config_overrides(self):
         """Apply configuration overrides for testing or special scenarios."""
@@ -176,7 +176,7 @@ class TrainPipeline:
 
         # Create model instance
         self.model = TransformerAD(model_config)
-        if self.privacy_config.dp_enabled:
+        if self.privacy_config.enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
             self.model = ModuleValidator.fix(self.model)
@@ -194,7 +194,7 @@ class TrainPipeline:
 
     def _setup_privacy(self):
         """Setup differential privacy if enabled."""
-        if not self.privacy_config.dp_enabled:
+        if not self.privacy_config.enabled:
             logger.info('Differential Privacy disabled.')
             return
 
@@ -323,7 +323,7 @@ class TrainPipeline:
         metrics, figures = evaluator.evaluate(
             self.model,
             self.test_dl,
-            prefix='eval',
+            prefix='test',
             step=step
         )
 
