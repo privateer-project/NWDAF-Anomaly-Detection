@@ -144,7 +144,7 @@ class TrainPipeline:
             batch_size=self.training_config.batch_size,
             partition_id=self.partition_id,
             seq_len=self.model_config.seq_len,
-            only_benign=self.data_config.only_benign_for_training
+            only_benign=False
         )
 
         self.test_dl = self.data_processor.get_dataloader(
@@ -254,7 +254,6 @@ class TrainPipeline:
             trainer = ModelTrainer(
                 model=self.model,
                 optimizer=self.optimizer,
-                criterion=self.training_config.loss_function,
                 device=self.device,
                 training_config=self.training_config,  # Pass the entire config,
                 privacy_engine = self.privacy_engine if hasattr(self, 'privacy_engine') else None
