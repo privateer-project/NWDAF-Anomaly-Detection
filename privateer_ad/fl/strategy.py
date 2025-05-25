@@ -45,7 +45,7 @@ class CustomStrategy(FedAvg):
         initial_parameters = ndarrays_to_parameters([
             val.cpu().numpy() for _, val in self.model.state_dict().items()
         ])
-
+        self.best_model = self.model
         # Initialize parent strategy with custom config functions
         super().__init__(
             on_fit_config_fn=self._fit_config_fn,
@@ -55,7 +55,7 @@ class CustomStrategy(FedAvg):
             initial_parameters=initial_parameters
         )
         # Best model tracking
-        self.best_loss = np.Inf
+        self.best_metric = np.Inf
 
     def _fit_config_fn(self, server_round: int):
         """Generate fit configuration for each round."""
@@ -93,11 +93,11 @@ class CustomStrategy(FedAvg):
         )
 
         # Update best model if validation loss improved
-        if metrics_aggregated and 'val_loss' in metrics_aggregated:
-            if metrics_aggregated['val_loss'] < self.best_loss:
-                self.best_loss = metrics_aggregated['val_loss']
+        if metrics_aggregated and 'val_f1-score' in metrics_aggregated:
+            if metrics_aggregated['val_f1-score'] > self.best_metric:
+                self.best_metric = metrics_aggregated['val_f1-score']
                 set_weights(self.model, parameters_to_ndarrays(parameters_aggregated))
-                logger.info(f"New best model at round {server_round} with val_loss: {self.best_loss:.5f}")
+                logger.info(f"New best model at round {server_round} with val_f1-score: {self.best_metric:.5f}")
 
         # Log metrics to MLFlow
         if mlflow.active_run() and metrics_aggregated:
