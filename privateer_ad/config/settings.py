@@ -84,9 +84,9 @@ class ModelConfig(BaseModel):
 class TrainingConfig(BaseModel):
     """Training process configuration"""
 
-    batch_size: int = Field(default=4096, gt=0)
-    learning_rate: float = Field(default=0.001, gt=0.0)
-    epochs: int = Field(default=500, gt=0)
+    batch_size: int = Field(default=1024, gt=0)
+    learning_rate: float = Field(default=0.0007, gt=0.0)
+    epochs: int = Field(default=120, gt=0)
     loss_function: str = Field(default='L1Loss')
 
     # Early stopping
@@ -95,8 +95,8 @@ class TrainingConfig(BaseModel):
     early_stopping_warmup: int = Field(default=10, gt=0)
 
     # Optimization
-    target_metric: str = Field(default='val_loss')
-    optimization_direction: Literal['minimize', 'maximize'] = Field(default='minimize')
+    target_metric: str = Field(default='val_f1-score')
+    optimization_direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
     model_config = {'env_prefix': 'PRIVATEER_',
                     'env_file': '.env',
@@ -129,10 +129,10 @@ class AutotuningConfig(BaseModel):
     """Hyperparameter optimization configuration"""
 
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
-    n_trials: int = Field(default=50, gt=0, description="Number of optimization trials")
+    n_trials: int = Field(default=10, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
 
-    target_metric: str = Field(default="eval_test_f1-score", description="Metric to optimize")
+    target_metric: str = Field(default="val_f1-score", description="Metric to optimize")
     direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
     storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
