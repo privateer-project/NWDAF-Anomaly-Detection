@@ -1,11 +1,12 @@
 from copy import deepcopy
 from typing import Dict, Any, Optional
 
+import numpy as np
 import torch
 import mlflow
 from tqdm import tqdm
 from opacus.privacy_engine import PrivacyEngine
-
+from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 from privateer_ad import logger
 from privateer_ad.config import TrainingConfig, get_paths, get_privacy_config
 
@@ -24,7 +25,6 @@ class ModelTrainer:
             self,
             model: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
-            criterion: str,
             device: torch.device,
             training_config: TrainingConfig,
             privacy_engine: Optional[PrivacyEngine] = None,
@@ -35,7 +35,6 @@ class ModelTrainer:
         Args:
             model: The PyTorch model to be trained
             optimizer: The optimizer used for training
-            criterion: The name of the loss function as defined in torch.nn
             device: The device (CPU/GPU) where training will be performed
             training_config: Training configuration object with all parameters
         """
@@ -43,14 +42,13 @@ class ModelTrainer:
 
         # Inject dependencies
         self.device = device
+        self.privacy_config = get_privacy_config()
+        self.paths_config = get_paths()
+        self.training_config = training_config
+
         self.model = model.to(self.device)
         self.optimizer = optimizer
-        self.training_config = training_config
-        self.paths_config = get_paths()
         self.privacy_engine = privacy_engine
-        self.privacy_config = get_privacy_config()
-        # Setup loss function
-        self.loss_fn = getattr(torch.nn, criterion)(reduction='mean')
 
         # Initialize early stopping tracking
         if self.training_config.early_stopping_enabled:
@@ -79,14 +77,12 @@ class ModelTrainer:
 
     def _initialize_tracking(self):
         """Initialize metrics tracking and best checkpoint storage."""
-        initial_metrics = {'loss': float('inf'), 'val_loss': float('inf')}
-        self.metrics = deepcopy(initial_metrics)
-
+        self.metrics = {}
         self.best_checkpoint: Dict[str, Any] = {
             'epoch': 0,
             'model_state_dict': deepcopy(self.model.state_dict()),
             'optimizer_state_dict': deepcopy(self.optimizer.state_dict()),
-            'metrics': deepcopy(initial_metrics)
+            'metrics': {}
         }
 
     def training(self, train_dl, val_dl, start_epoch: int = 0) -> Dict[str, Any]:
@@ -114,7 +110,7 @@ class ModelTrainer:
             local_epoch = epoch - start_epoch
 
             # Training phase
-            train_metrics = self._training_loop(epoch=local_epoch, train_dl=train_dl)
+            train_metrics = self._training_loop(epoch=epoch, train_dl=train_dl)
 
             # Validation phase
             val_metrics = self._validation_loop(val_dl)
@@ -126,7 +122,12 @@ class ModelTrainer:
             is_best = self._is_best_checkpoint()
 
             if is_best:
-                self._update_best_checkpoint(epoch)
+                self.best_checkpoint.update({
+                    'metrics': deepcopy(self.metrics),
+                    'epoch': epoch,
+                    'model_state_dict': deepcopy(self.model.state_dict()),
+                    'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
+                })
 
             # Early stopping check
             if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
@@ -148,12 +149,11 @@ class ModelTrainer:
         self.model.train()
         total_loss = 0.0
         self.model.to(self.device)
-
         progress_bar = tqdm(
             train_dl,
-            desc=f'Epoch {epoch}/{self.training_config.epochs} - Train'
+            desc=f'Epoch {epoch} - Train'
         )
-
+        loss_fn = getattr(torch.nn, self.training_config.loss_function)(reduction='mean')
         for inputs in progress_bar:
             x = inputs[0]['encoder_cont'].to(self.device)
 
@@ -164,19 +164,18 @@ class ModelTrainer:
             output = self.model(x)
 
             # Compute loss
-            batch_loss = self.loss_fn(x, output)
+            batch_loss = loss_fn(x, output)
 
             # Backward pass
             batch_loss.backward()
             self.optimizer.step()
-
             total_loss += batch_loss.item()
 
             # Update progress bar
             progress_bar.set_postfix({'loss': batch_loss.item()})
-
         avg_loss = total_loss / len(train_dl)
-        return {'loss': avg_loss}
+        return {'loss': avg_loss
+                }
 
     def _validation_loop(self, val_dl) -> Dict[str, float]:
         """
@@ -189,22 +188,68 @@ class ModelTrainer:
             Dict[str, float]: Dictionary containing validation metrics (val_loss)
         """
         self.model.eval()
-        total_val_loss = 0.0
+        total_loss = 0.0
+        metrics_results = {}
 
         with torch.no_grad():
             progress_bar = tqdm(val_dl, desc=' ' * 9 + 'Validation')
-
+            loss_fn = getattr(torch.nn, self.training_config.loss_function)(reduction='none')
+            rec_errors = []
+            y_true = []
             for inputs in progress_bar:
                 x = inputs[0]['encoder_cont'].to(self.device)
-                ae_output = self.model(x)
-                val_loss = self.loss_fn(x, ae_output).item()
-                total_val_loss += val_loss
+                targets = np.squeeze(inputs[1][0])
+                output = self.model(x)  # all samples
+                loss = loss_fn(x, output)  # reconstruction loss
+                loss_per_sample = loss.mean(dim=(1, 2))
+                batch_loss = loss_per_sample.mean().item()
+                total_loss += batch_loss
+                y_true.extend(targets.tolist())
+                rec_errors.extend(loss.mean(dim=(1, 2)).tolist())  # reconstruction error per sample
+                progress_bar.set_postfix({'val_loss': batch_loss})
 
-                # Update progress bar
-                progress_bar.set_postfix({'val_loss': val_loss})
+        rec_errors = np.array(rec_errors)
+        y_true = np.array(y_true, dtype=int)
 
-        avg_val_loss = total_val_loss / len(val_dl)
-        return {'val_loss': avg_val_loss}
+        benign_rec_errors = rec_errors[y_true == 0]
+        malicious_rec_errors = rec_errors[y_true == 1]
+        if len(malicious_rec_errors) <= len(benign_rec_errors):
+            n_samples_per_class = len(malicious_rec_errors)
+            np.random.shuffle(benign_rec_errors)
+            benign_rec_errors = benign_rec_errors[:n_samples_per_class]
+        else:
+            n_samples_per_class = len(benign_rec_errors)
+            np.random.shuffle(malicious_rec_errors)
+            malicious_rec_errors = malicious_rec_errors[:n_samples_per_class]
+
+        balanced_rec_errors = np.concatenate([benign_rec_errors, malicious_rec_errors])
+        balanced_y_true = np.concatenate([np.zeros_like(benign_rec_errors), np.ones_like(malicious_rec_errors)])
+
+        fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_rec_errors)
+        optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
+        threshold = thresholds[optimal_idx]
+
+        balanceed_y_pred = (balanced_rec_errors >= threshold).astype(int)
+        y_pred = (rec_errors >= threshold).astype(int)
+        target_names = ['benign', 'malicious']
+        print('Balanced', classification_report(y_true=balanced_y_true,
+                                                y_pred=balanceed_y_pred,
+                                                target_names=target_names))
+        print('All data', classification_report(y_true=y_true,
+                                                y_pred=y_pred,
+                                                target_names=target_names))
+
+        metrics_results.update(classification_report(y_true=balanced_y_true,
+                                                     y_pred=balanceed_y_pred,
+                                                     target_names=target_names,
+                                                     output_dict=True)['macro avg'])
+
+        metrics_results.update({'loss': np.mean(rec_errors),
+                                'roc_auc': roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)})
+        print('Unbalanced roc', roc_auc_score(y_true=y_true, y_score=rec_errors))
+        metrics_results = {f'val_' + k: v for k, v in metrics_results.items()}
+        metrics_results['threshold'] = threshold
+        return metrics_results
 
     def _is_best_checkpoint(self) -> bool:
         """
@@ -214,26 +259,14 @@ class ModelTrainer:
             bool: True if current checkpoint is the best
         """
         current_value = self.metrics[self.training_config.target_metric]
-        best_value = self.best_checkpoint['metrics'][self.training_config.target_metric]
+        direction = self.training_config.optimization_direction
+        best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
+                                                         np.inf if direction == 'minimize' else -np.inf)
 
         if self.training_config.optimization_direction == 'maximize':
             return current_value > best_value
         else:  # minimize
             return current_value < best_value
-
-    def _update_best_checkpoint(self, epoch: int):
-        """
-        Update the best checkpoint with current model state.
-
-        Args:
-            epoch: Current epoch number
-        """
-        self.best_checkpoint.update({
-            'metrics': deepcopy(self.metrics),
-            'epoch': epoch,
-            'model_state_dict': deepcopy(self.model.state_dict()),
-            'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
-        })
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int):
         """
