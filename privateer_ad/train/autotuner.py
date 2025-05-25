@@ -117,7 +117,8 @@ class ModelAutoTuner:
             self,
             autotuning_config: Optional[AutotuningConfig] = None,
             tune_params: Optional[List[AutotuneParam]] = None,
-            config_overrides: Optional[Dict[str, Any]] = None
+            config_overrides: Optional[Dict[str, Any]] = None,
+            parent_run_id: Optional[str] = None
     ):
         """
         Initialize the autotuner.
@@ -136,7 +137,7 @@ class ModelAutoTuner:
 
         # Setup storage
         storage_url = self._setup_storage()
-
+        self.autotune_run_id = parent_run_id
         logger.info(
             f'Study: {self.autotuning_config.study_name} | '
             f'target: {self.autotuning_config.target_metric} '
@@ -185,8 +186,7 @@ class ModelAutoTuner:
 
         # Create training pipeline with trial-specific configuration
         train_pipeline = TrainPipeline(
-            run_name=f'trial-{trial.number}',
-            nested=True,
+            parent_run_id=self.autotune_run_id,
             config_overrides=combined_overrides
         )
 
