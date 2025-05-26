@@ -18,7 +18,7 @@ def autotune():
     mlflow.start_run()
     tuner = ModelAutoTuner(parent_run_id=mlflow.active_run().info.run_id)
     logger.info('Start autotuning.')
-    param_importance_fig, optimization_hist_fig = tuner.autotune()
+    param_importance_fig, optimization_hist_fig = tuner.run()
 
     param_importance_fig.write_html('param_importances.html')
     optimization_hist_fig.write_html('optimization_history.html')
