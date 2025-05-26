@@ -20,7 +20,6 @@ class SecAggFlowerClient(NumPyClient):
         else:
             logger.info(f'Found existing run IDs in client state: {self.client_state.configs_records['run_ids']}')
         self.partition_id = context.node_config['partition-id']
-        self.dp_enabled = context.run_config['dp-enabled']
         self.epochs = int(context.run_config.get('epochs'))
 
 
@@ -38,7 +37,6 @@ class SecAggFlowerClient(NumPyClient):
         train_pln = TrainPipeline(
             partition_id=self.partition_id,
             partition=True,
-            dp_enabled=self.dp_enabled,
             run_id=run_ids.get('run_id', None),
             parent_run_id=run_ids['server_run_id'],
             config_overrides={'training.epochs': self.epochs}
@@ -73,7 +71,6 @@ class SecAggFlowerClient(NumPyClient):
         train_pln = TrainPipeline(
             partition_id=self.partition_id,
             partition=True,
-            dp_enabled=self.dp_enabled,
             run_id=run_ids.get('run_id', None),
             parent_run_id=run_ids['server_run_id'],
             config_overrides={'training.epochs': self.epochs}
