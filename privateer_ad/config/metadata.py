@@ -138,7 +138,7 @@ class MetadataRegistry:
         'cqi': FeatureInfo(dtype='float', drop=True, is_input=False),
         'epre': FeatureInfo(dtype='float', drop=True, is_input=False),
         'initial_ta': FeatureInfo(dtype='float', drop=True, is_input=False),
-        'p_ue': FeatureInfo(dtype='float', drop=False, is_input=False),
+        'p_ue': FeatureInfo(dtype='float', drop=False, is_input=True),
         'pusch_snr': FeatureInfo(dtype='float', drop=False, is_input=False),
         'turbo_decoder_avg': FeatureInfo(dtype='float', drop=False, is_input=True),
         'attack': FeatureInfo(dtype='int', drop=False, is_input=False),

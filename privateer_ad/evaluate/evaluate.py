@@ -131,7 +131,7 @@ def evaluate(
             model=model,
             dataloader=dl,
             threshold=threshold,
-            prefix=f'eval_{data_path}',
+            prefix=f"{data_path if data_path in ['train', 'val', 'test'] else 'eval'}_",
             step=0
         )
         logger.info('Evaluation completed successfully')

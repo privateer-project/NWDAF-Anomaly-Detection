@@ -32,7 +32,6 @@ class TrainPipeline:
             self,
             partition_id: int = 0,
             partition: bool = False,
-            dp_enabled: Optional[bool] = None,
             run_id: Optional[str] = None,
             parent_run_id: Optional[str] = None,
             config_overrides: Optional[Dict[str, Any]] = None
@@ -43,7 +42,6 @@ class TrainPipeline:
         Args:
             partition_id: ID for data partitioning in federated learning
             partition: Whether to enable data partitioning
-            dp_enabled: Override for differential privacy setting
             run_id: MLFlow run ID
             parent_run_id: MLFlow parent run ID
             config_overrides: Dictionary of configuration overrides for testing
@@ -55,7 +53,7 @@ class TrainPipeline:
         self.config_overrides = config_overrides or {}
 
         # Inject configurations
-        self._inject_configurations(dp_enabled)
+        self._inject_configurations()
 
         # Setup device
         self._setup_device()
@@ -65,7 +63,6 @@ class TrainPipeline:
         mlflow.log_params({
             'client_id': self.partition_id,
             'partition_enabled': self.partition,
-            'dp_enabled': self.privacy_config.dp_enabled if hasattr(self, 'privacy_config') else False
         })
 
         # Setup data processing
@@ -83,7 +80,7 @@ class TrainPipeline:
         # Log configuration summary
         self._log_configuration()
 
-    def _inject_configurations(self, dp_enabled: Optional[bool] = None):
+    def _inject_configurations(self):
         """Inject all required configurations with optional overrides."""
         # Get all configurations
         self.paths_config = get_paths()
@@ -96,10 +93,6 @@ class TrainPipeline:
         # Apply configuration overrides
         if self.config_overrides:
             self._apply_config_overrides()
-
-        # Override DP setting if explicitly provided
-        if dp_enabled is not None:
-            self.privacy_config.dp_enabled = dp_enabled
 
     def _apply_config_overrides(self):
         """Apply configuration overrides for testing or special scenarios."""
@@ -176,7 +169,7 @@ class TrainPipeline:
 
         # Create model instance
         self.model = TransformerAD(model_config)
-        if self.privacy_config.dp_enabled:
+        if self.privacy_config.enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
             self.model = ModuleValidator.fix(self.model)
@@ -194,7 +187,7 @@ class TrainPipeline:
 
     def _setup_privacy(self):
         """Setup differential privacy if enabled."""
-        if not self.privacy_config.dp_enabled:
+        if not self.privacy_config.enabled:
             logger.info('Differential Privacy disabled.')
             return
 
@@ -323,7 +316,7 @@ class TrainPipeline:
         metrics, figures = evaluator.evaluate(
             self.model,
             self.test_dl,
-            prefix='eval',
+            prefix='test',
             step=step
         )
 

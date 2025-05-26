@@ -7,7 +7,7 @@ from privateer_ad.config import get_mlflow_config
 from privateer_ad.train import ModelAutoTuner
 
 
-def autotune(**kwargs):
+def autotune():
     logger.info('Initialize auto-tuning.')
     mlflow_config = get_mlflow_config()
 
@@ -16,9 +16,9 @@ def autotune(**kwargs):
     if experiment is not None:
         mlflow.set_experiment(experiment_id=experiment.experiment_id)
     mlflow.start_run()
-    tuner = ModelAutoTuner(**kwargs, parent_run_id=mlflow.active_run().info.run_id)
+    tuner = ModelAutoTuner(parent_run_id=mlflow.active_run().info.run_id)
     logger.info('Start autotuning.')
-    param_importance_fig, optimization_hist_fig = tuner.autotune()
+    param_importance_fig, optimization_hist_fig = tuner.run()
 
     param_importance_fig.write_html('param_importances.html')
     optimization_hist_fig.write_html('optimization_history.html')

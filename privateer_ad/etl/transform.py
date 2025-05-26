@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from privateer_ad import logger
 from privateer_ad.config import get_data_config, get_paths, get_metadata
-from .utils import get_dataset_path, check_existing_datasets
+from privateer_ad.etl.utils import get_dataset_path, check_existing_datasets
 
 
 class DataProcessor:

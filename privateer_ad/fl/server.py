@@ -29,7 +29,6 @@ def main(driver: Driver, context: Context) -> None:
     # Get run parameters from context
     fl_config.n_clients = context.run_config.get('n-clients', fl_config.n_clients)
     fl_config.num_rounds = context.run_config.get('num-server-rounds', fl_config.num_rounds)
-    dp_enabled = context.run_config.get('dp-enabled', None)
     context.run_config['server_run_id'] =  server_run_id
 
     logger.info(f'Federated Learning will run for {fl_config.num_rounds} rounds on {fl_config.n_clients} clients')
@@ -38,14 +37,7 @@ def main(driver: Driver, context: Context) -> None:
 
     # Log federated learning parameters to parent run
     mlflow.log_params(fl_config.__dict__)
-    logger.info({
-        'dp_enabled': dp_enabled,
-        'session_type': 'federated_learning'
-    })
-    mlflow.log_params({
-        'dp_enabled': dp_enabled,
-        'session_type': 'federated_learning'
-    })
+    mlflow.log_params({'session_type': 'federated_learning'})
 
     data_processor = DataProcessor(partition=False)
     test_dl = data_processor.get_dataloader('test',
@@ -125,7 +117,7 @@ def _final_evaluation(model, dataloader, server_round: int):
 
     model.to('cpu')
 
-    metrics, figures = evaluator.evaluate(model, dataloader, prefix='final_global', step=server_round)
+    metrics, figures = evaluator.evaluate(model, dataloader, prefix='global_test', step=server_round)
     logger.info(f"Final global evaluation metrics: {metrics}")
 
     sample_tensor = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')

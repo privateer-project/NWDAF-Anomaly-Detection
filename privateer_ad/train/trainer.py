@@ -113,7 +113,7 @@ class ModelTrainer:
             train_metrics = self._training_loop(epoch=epoch, train_dl=train_dl)
 
             # Validation phase
-            val_metrics = self._validation_loop(val_dl)
+            val_metrics = self._validation_loop(epoch=epoch, val_dl=val_dl)
 
             # Log metrics
             self.log_metrics(train_metrics | val_metrics, epoch)
@@ -177,7 +177,7 @@ class ModelTrainer:
         return {'loss': avg_loss
                 }
 
-    def _validation_loop(self, val_dl) -> Dict[str, float]:
+    def _validation_loop(self, epoch, val_dl) -> Dict[str, float]:
         """
         Execute validation after a training epoch.
 
@@ -232,18 +232,17 @@ class ModelTrainer:
         balanceed_y_pred = (balanced_rec_errors >= threshold).astype(int)
         y_pred = (rec_errors >= threshold).astype(int)
         target_names = ['benign', 'malicious']
-        print('Balanced', classification_report(y_true=balanced_y_true,
+        mlflow.log_text(classification_report(y_true=balanced_y_true,
                                                 y_pred=balanceed_y_pred,
-                                                target_names=target_names))
-        print('All data', classification_report(y_true=y_true,
+                                                target_names=target_names), f'{str(epoch).zfill(3)}_balanced_val_classification_report.txt')
+        mlflow.log_text(classification_report(y_true=y_true,
                                                 y_pred=y_pred,
-                                                target_names=target_names))
+                                                target_names=target_names), f'{str(epoch).zfill(3)}_val_classification_report.txt')
 
         metrics_results.update(classification_report(y_true=balanced_y_true,
                                                      y_pred=balanceed_y_pred,
                                                      target_names=target_names,
                                                      output_dict=True)['macro avg'])
-
         metrics_results.update({'loss': np.mean(rec_errors),
                                 'roc_auc': roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)})
         print('Unbalanced roc', roc_auc_score(y_true=y_true, y_score=rec_errors))
