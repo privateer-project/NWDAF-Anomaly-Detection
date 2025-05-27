@@ -32,7 +32,7 @@ class PrivateerAnomalyDetector:
         self.data_processor = None
         self.test_dataloader = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.threshold = 0.001  # Default threshold
+        self.threshold = 0.061  # Default threshold
 
         # Load everything at initialization
         self._load_model_and_dataloader(model_path, data_path)
@@ -321,20 +321,20 @@ app.layout = dbc.Container([
                         html.Label("🎯 Anomaly Threshold:", className="form-label"),
                         dcc.Slider(
                             id='threshold-slider',
-                            min=0.1,
-                            max=1.,
-                            step=0.01,
+                            min=0.01,
+                            max=0.1,
+                            step=0.001,
                             value=detector.threshold,
                             marks={
-                                0.1: '0.1',
-                                0.2: '0.2',
-                                0.3: '0.3',
-                                0.4: '0.4',
-                                0.5: '0.5',
-                                0.6: '0.6',
-                                0.7: '0.7',
-                                0.8: '0.8',
-                                0.9: '0.9',
+                                0.01: '0.01',
+                                0.02: '0.02',
+                                0.03: '0.03',
+                                0.04: '0.04',
+                                0.05: '0.05',
+                                0.06: '0.06',
+                                0.07: '0.07',
+                                0.08: '0.08',
+                                0.09: '0.09',
                             },
                             tooltip={"placement": "bottom", "always_visible": True}
                         )
