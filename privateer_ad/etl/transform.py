@@ -180,7 +180,8 @@ class DataProcessor:
                        batch_size=None,
                        seq_len=None,
                        partition_id=0,
-                       only_benign=None) -> DataLoader:
+                       only_benign=None,
+                       num_workers=None) -> DataLoader:
         logger.info(f'Get {path} dataloader with '
                     f'batch_size={batch_size}, '
                     f'seq_len={seq_len}, '
@@ -192,13 +193,23 @@ class DataProcessor:
         if only_benign is None:
             only_benign = self.data_config.only_benign_for_training
 
+        prefetch_factor = None
+        persistent_workers = None
+
+        if num_workers and num_workers > 1:
+            prefetch_factor = 10000
+            persistent_workers = True
+        if self.data_config.num_workers and self.data_config.num_workers > 1:
+            prefetch_factor = 10000
+            persistent_workers = True
+
         dataloader_params = {
             'train': path == 'train',
             'batch_size': batch_size,
-            'num_workers': self.data_config.num_workers,
+            'num_workers': num_workers or self.data_config.num_workers,
             'pin_memory': self.data_config.pin_memory,
-            'prefetch_factor': 10000,
-            'persistent_workers': True
+            'prefetch_factor': prefetch_factor,
+            'persistent_workers': persistent_workers
         }
 
         logger.info(f'Loading {path} dataset...')

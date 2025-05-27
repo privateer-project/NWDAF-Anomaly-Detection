@@ -55,7 +55,7 @@ class CustomStrategy(FedAvg):
             initial_parameters=initial_parameters
         )
         # Best model tracking
-        self.best_metric = np.Inf
+        self.best_metric = -np.Inf
 
     def _fit_config_fn(self, server_round: int):
         """Generate fit configuration for each round."""
@@ -120,5 +120,5 @@ class CustomStrategy(FedAvg):
         # Log metrics to MLFlow
         if mlflow.active_run() and metrics_aggregated:
             mlflow.log_metrics(metrics_aggregated, step=server_round)
-            mlflow.log_metric('eval_loss', loss_aggregated, step=server_round)
+            mlflow.log_metric('test_loss', loss_aggregated, step=server_round)
         return loss_aggregated, metrics_aggregated

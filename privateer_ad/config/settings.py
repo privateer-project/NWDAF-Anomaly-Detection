@@ -72,7 +72,7 @@ class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
 
     model_type: str = Field(default='TransformerAD')
-    input_size: int = Field(default=8)
+    input_size: int = Field(default=9)
     seq_len: int = Field(default=12)
     num_layers: int = Field(default=1)
     hidden_dim: int = Field(default=32)
