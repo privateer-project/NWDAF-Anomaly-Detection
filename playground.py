@@ -1,525 +1,262 @@
-#!/usr/bin/env python3
-"""
-PRIVATEER Network Anomaly Detection Demo with Actual Trained Model
-Uses the real TransformerAD model for anomaly detection
-"""
-
-import os
-import sys
 import time
 import threading
 import queue
-import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import datetime
 import dash
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import torch
-from pathlib import Path
-
+import torch.serialization  # For safe loading of models
+import sys
 # Add the privateer_ad package to the path
 sys.path.append('.')
 sys.path.append('./privateer_ad')
 
-try:
-    from privateer_ad.architectures import TransformerAD, TransformerADConfig
-    from privateer_ad.etl import DataProcessor
-    from privateer_ad.config import get_paths, get_model_config, get_training_config
-    from sklearn.metrics import roc_curve
-    PRIVATEER_AVAILABLE = True
-    print("✅ PRIVATEER modules loaded successfully")
-except ImportError as e:
-    print(f"❌ Error importing PRIVATEER modules: {e}")
-    print("Make sure you're running from the project root directory")
-    PRIVATEER_AVAILABLE = False
+from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from privateer_ad.etl import DataProcessor
+from privateer_ad.config import get_model_config, get_metadata, get_mlflow_config
+
+PRIVATEER_AVAILABLE = True
+print("✅ PRIVATEER modules loaded successfully")
+
 
 class PrivateerAnomalyDetector:
-    def __init__(self, model_path="experiments/20250313-181907/model.pt"):
+    """Simplified anomaly detector using only PRIVATEER components"""
+
+    def __init__(self, model_path="demo/demo_model.pth", data_path="train"):
+        if not PRIVATEER_AVAILABLE:
+            raise RuntimeError("PRIVATEER modules are required")
+
         self.model = None
         self.data_processor = None
+        self.test_dataloader = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.seq_len = 12  # Default sequence length
-        self.threshold = None
-        self.history = []
-        self.input_features = []
+        self.threshold = 0.061  # Default threshold
 
-        if PRIVATEER_AVAILABLE:
-            self._load_model_and_processor(model_path)
-        else:
-            print("⚠️ PRIVATEER modules not available, using fallback detector")
-            self._init_fallback()
+        # Load everything at initialization
+        self._load_model_and_dataloader(model_path, data_path)
+        # Calculate reconstruction error (L1 loss)
+        self.loss_fn = torch.nn.L1Loss(reduction='none')
 
-    def _load_model_and_processor(self, model_path):
-        """Load the actual PRIVATEER model and DataProcessor"""
+    def _create_safe_dataloader(self, data_path, model_config):
+        """Create dataloader with safe configuration for demo"""
+        try:
+            # First attempt with single-threaded configuration
+            dataloader = self.data_processor.get_dataloader(
+                path=data_path,
+                batch_size=1,
+                seq_len=model_config.seq_len,
+                only_benign=False
+            )
+
+            # Check if the dataloader has multiprocessing enabled and try to disable it
+            if hasattr(dataloader, 'num_workers') and dataloader.num_workers > 0:
+                print(f"⚠️ DataLoader using {dataloader.num_workers} workers, creating new single-threaded version...")
+                # If we can't modify it directly, we might need to recreate it
+                # This depends on how DataProcessor.get_dataloader works internally
+
+            return dataloader
+
+        except Exception as e:
+            print(f"❌ Error creating dataloader: {e}")
+            raise
+
+    def _load_model_and_dataloader(self, model_path, data_path):
+        """Load the PRIVATEER model and create test dataloader"""
         try:
             print(f"🔄 Loading model and data processor...")
 
-            # Initialize DataProcessor first
-            try:
-                self.data_processor = DataProcessor(partition=False)
-                print("✅ DataProcessor initialized successfully")
+            # Initialize DataProcessor
+            self.data_processor = DataProcessor(partition=False)
 
-                # Get input features from metadata
-                self.input_features = self.data_processor.input_features
-                print(f"📊 Input features: {self.input_features}")
+            # Override data config to disable multiprocessing for demo
+            if hasattr(self.data_processor, 'data_config'):
+                self.data_processor.data_config.num_workers = 0
+                self.data_processor.data_config.pin_memory = False
+                print("🔧 Disabled DataLoader multiprocessing for demo stability")
 
-            except Exception as e:
-                print(f"⚠️ Error initializing DataProcessor: {e}")
-                # Fallback to manual features
-                self.input_features = [
-                    'dl_bitrate', 'ul_bitrate', 'dl_retx', 'ul_tx',
-                    'dl_tx', 'ul_retx', 'bearer_0_dl_total_bytes', 'bearer_0_ul_total_bytes'
-                ]
+            print("✅ DataProcessor initialized successfully")
 
-            # Try to get configurations
-            try:
-                model_config = get_model_config()
-                training_config = get_training_config()
-                seq_len = model_config.seq_len
-                input_size = len(self.input_features)
-                print(f"📋 Using config: seq_len={seq_len}, input_size={input_size}")
-            except Exception as e:
-                # Fallback configurations
-                seq_len = 12
-                input_size = len(self.input_features)
-                print(f"⚠️ Using fallback model configuration: seq_len={seq_len}, input_size={input_size}")
+            # Get model configuration
+            model_config = get_model_config()
+
+            # Create test dataloader using helper method
+            self.test_dataloader = self._create_safe_dataloader(data_path, model_config)
+            print(f"✅ Test dataloader created with seq_len={model_config.seq_len}")
+
+            # Get sample for model configuration
+            sample_batch = next(iter(self.test_dataloader))
+            sample_input = sample_batch[0]['encoder_cont']
+            input_size = sample_input.shape[-1]
+            print(f"📊 Detected input size: {input_size}")
 
             # Create model configuration
             transformer_config = TransformerADConfig(
-                seq_len=seq_len,
+                seq_len=model_config.seq_len,
                 input_size=input_size,
-                num_layers=1,
-                hidden_dim=32,
-                latent_dim=16,
-                num_heads=1,
-                dropout=0.2
+                num_layers=model_config.num_layers,
+                hidden_dim=model_config.hidden_dim,
+                latent_dim=model_config.latent_dim,
+                num_heads=model_config.num_heads,
+                dropout=model_config.dropout
+
             )
+            # torch.serialization.add_safe_globals([TransformerAD])
+            # self.model = TransformerAD(transformer_config)
+            import mlflow
+            mlflow_conf = get_mlflow_config()
+            mlflow.set_tracking_uri(mlflow_conf.server_address)
+            self.model = mlflow.pytorch.load_model('mlflow-artifacts:/304908286791224575/177683639fde4f9b8baa6c4b4a8cfffe/artifacts/model')
+            print(self.model)
+            # state_dict = torch.load(model_path, map_location='cpu')
+            # cleaned_state_dict = {}
+            # for key, value in state_dict.items():
+            #     # Remove common prefixes
+            #     clean_key = key
+            #     for prefix in ['_module.', 'module.']:
+            #         if clean_key.startswith(prefix):
+            #             clean_key = clean_key[len(prefix):]
+            #     cleaned_state_dict[clean_key] = value
+            # self.model.load_state_dict(cleaned_state_dict)
 
-            # Create and load model
-            self.model = TransformerAD(transformer_config)
-
-            # Load the state dict
-            if os.path.exists(model_path):
-                state_dict = torch.load(model_path, map_location=self.device)
-
-                # Handle different state dict formats
-                if isinstance(state_dict, dict):
-                    # Remove common prefixes from distributed training
-                    cleaned_state_dict = {}
-                    for key, value in state_dict.items():
-                        clean_key = key
-                        for prefix in ['_module.', 'module.']:
-                            if clean_key.startswith(prefix):
-                                clean_key = clean_key[len(prefix):]
-                        cleaned_state_dict[clean_key] = value
-
-                    self.model.load_state_dict(cleaned_state_dict)
-                else:
-                    self.model.load_state_dict(state_dict)
-
-                print("✅ Model loaded successfully")
-            else:
-                print(f"❌ Model file not found: {model_path}")
-                self._init_fallback()
-                return
-
+            # Load the state dict if model file exists
             self.model.to(self.device)
             self.model.eval()
-            self.seq_len = seq_len
 
-            # Set a reasonable threshold (will be refined with data)
-            self.threshold = 0.01
-
-        except Exception as e:
-            print(f"❌ Error loading model: {e}")
-            import traceback
-            traceback.print_exc()
-            self._init_fallback()
-
-    def _init_fallback(self):
-        """Initialize fallback detector"""
-        self.model = None
-        self.data_processor = None
-        self.threshold = 2.5
-        self.input_features = [
-            'dl_bitrate', 'ul_bitrate', 'dl_retx', 'ul_tx',
-            'dl_tx', 'ul_retx', 'bearer_0_dl_total_bytes', 'bearer_0_ul_total_bytes'
-        ]
-        print("⚠️ Using statistical fallback detector")
-
-    def _prepare_input_with_dataprocessor(self, data_sequence):
-        """Prepare input data using the actual DataProcessor"""
-        try:
-            if len(data_sequence) < self.seq_len:
-                # Pad with the last available value
-                while len(data_sequence) < self.seq_len:
-                    data_sequence = [data_sequence[-1] if data_sequence else {}] + data_sequence
-
-            # Take only the last seq_len samples
-            data_sequence = data_sequence[-self.seq_len:]
-
-            # Convert to DataFrame for DataProcessor
-            df_data = []
-            current_time = datetime.now()
-
-            for i, sample in enumerate(data_sequence):
-                row = {}
-
-                # Add timestamp
-                row['_time'] = current_time - timedelta(seconds=self.seq_len-i-1)
-
-                # Add all available features
-                if isinstance(sample, dict):
-                    for feature in self.input_features:
-                        row[feature] = float(sample.get(feature, 0.0))
-
-                    # Add non-input features that might be needed
-                    row['imeisv'] = sample.get('device_id', 'demo_device')
-                    row['attack'] = sample.get('attack', 0)
-                    row['malicious'] = sample.get('attack', 0)
-                    row['cell'] = 'demo_cell'
-                else:
-                    # Fallback if sample is not a dict
-                    for j, feature in enumerate(self.input_features):
-                        row[feature] = float(sample[j] if j < len(sample) else 0.0)
-                    row['imeisv'] = 'demo_device'
-                    row['attack'] = 0
-                    row['malicious'] = 0
-                    row['cell'] = 'demo_cell'
-
-                df_data.append(row)
-
-            # Create DataFrame
-            df = pd.DataFrame(df_data)
-
-            # Use DataProcessor to preprocess
-            processed_df = self.data_processor.preprocess_data(df, partition_id=0)
-
-            # Extract the input features in the correct order
-            feature_data = processed_df[self.input_features].values
-
-            # Convert to tensor
-            tensor = torch.tensor(feature_data, dtype=torch.float32).unsqueeze(0).to(self.device)
-            return tensor
+            # Get input features from metadata
+            metadata = get_metadata()
+            self.input_features = metadata.get_input_features()
+            print(f"📊 Input features: {self.input_features}")
 
         except Exception as e:
-            print(f"❌ Error in DataProcessor preparation: {e}")
+            print(f"❌ Error loading model and dataloader: {e}")
             import traceback
             traceback.print_exc()
-            # Fallback to manual preparation
-            return self._prepare_input_manual(data_sequence)
+            raise
 
-    def _prepare_input_manual(self, data_sequence):
-        """Manual input preparation as fallback"""
-        if len(data_sequence) < self.seq_len:
-            # Pad with the last available value
-            while len(data_sequence) < self.seq_len:
-                data_sequence = [data_sequence[-1] if data_sequence else [0]*len(self.input_features)] + data_sequence
+    def detect_anomaly(self, input_batch):
+        """
+        Detect anomaly for a single batch from the dataloader
 
-        # Take only the last seq_len samples
-        data_sequence = data_sequence[-self.seq_len:]
+        Args:
+            input_batch: Batch from DataProcessor.get_dataloader()
 
-        # Extract features
-        feature_data = []
-        for sample in data_sequence:
-            if isinstance(sample, dict):
-                features = [float(sample.get(feat, 0.0)) for feat in self.input_features]
-            else:
-                features = sample[:len(self.input_features)]
-            feature_data.append(features)
-
-        # Convert to tensor (no scaling in fallback)
-        tensor = torch.tensor(feature_data, dtype=torch.float32).unsqueeze(0).to(self.device)
-        return tensor
-
-    def detect(self, data_point):
-        """Detect anomaly using the loaded model with DataProcessor"""
-        # Add to history
-        self.history.append(data_point)
-
-        if len(self.history) < self.seq_len:
-            return False, 0.0  # Not enough data yet
-
-        if self.model is None:
-            # Fallback to statistical method
-            return self._statistical_detect(data_point)
-
+        Returns:
+            tuple: (is_anomaly, reconstruction_error, true_label)
+        """
         try:
-            # Prepare input using DataProcessor
-            if self.data_processor is not None:
-                input_tensor = self._prepare_input_with_dataprocessor(self.history)
-            else:
-                input_tensor = self._prepare_input_manual(self.history)
+            # Extract input tensor and true label
+            input_tensor = input_batch[0]['encoder_cont'].to(self.device)
+            true_label = input_batch[1][0].item() if len(input_batch) > 1 else None
 
             # Run inference
             with torch.no_grad():
                 output = self.model(input_tensor)
-
-                # Calculate reconstruction error (MSE)
-                mse = torch.mean(torch.pow(input_tensor - output, 2)).item()
+                reconstruction_error = self.loss_fn(input_tensor, output).mean(dim=(1, 2)).item()
 
                 # Determine if anomaly
-                is_anomaly = mse > self.threshold
+                is_anomaly = reconstruction_error > self.threshold
 
-                return is_anomaly, mse
+                return is_anomaly, reconstruction_error, true_label
 
         except Exception as e:
-            print(f"❌ Error in model inference: {e}")
-            import traceback
-            traceback.print_exc()
-            return self._statistical_detect(data_point)
-
-    def _statistical_detect(self, data_point):
-        """Fallback statistical detection"""
-        if len(self.history) < 10:
-            return False, 0.0
-
-        # Simple combined metric
-        if isinstance(data_point, dict):
-            combined_metric = (data_point.get('dl_bitrate', 0) +
-                             data_point.get('ul_bitrate', 0) +
-                             data_point.get('dl_retx', 0) * 100)
-        else:
-            combined_metric = sum(data_point[:3]) if len(data_point) >= 3 else 0
-
-        recent_values = [self._get_combined_metric(h) for h in self.history[-50:]]
-        mean_val = np.mean(recent_values[:-1])
-        std_val = np.std(recent_values[:-1])
-
-        if std_val == 0:
-            return False, 0.0
-
-        z_score = abs((combined_metric - mean_val) / std_val)
-        is_anomaly = z_score > self.threshold
-
-        return is_anomaly, z_score
-
-    def _get_combined_metric(self, data_point):
-        """Extract combined metric from data point"""
-        if isinstance(data_point, dict):
-            return (data_point.get('dl_bitrate', 0) +
-                   data_point.get('ul_bitrate', 0) +
-                   data_point.get('dl_retx', 0) * 100)
-        else:
-            return sum(data_point[:3]) if len(data_point) >= 3 else 0
+            print(f"❌ Error in anomaly detection: {e}")
+            return False, 0.0, None
 
     def update_threshold(self, new_threshold):
         """Update the anomaly threshold"""
         self.threshold = new_threshold
-        print(f"🎯 Threshold updated to: {new_threshold:.4f}")
+        print(f"🎯 Threshold updated to: {new_threshold:.6f}")
 
-# Data simulator class (same as before but with better feature mapping)
+
 class NetworkTrafficSimulator:
-    def __init__(self, csv_path=None):
+    """Simplified traffic simulator using DataProcessor dataloader"""
+
+    def __init__(self, detector):
+        self.detector = detector
+        self.dataloader_iterator = None
         self.data_queue = queue.Queue()
         self.running = False
         self.thread = None
+        self.current_sample_index = 0
 
-        # Load test data if available
-        self.test_data = None
-        if csv_path and os.path.exists(csv_path):
-            try:
-                self.test_data = pd.read_csv(csv_path)
-                print(f"✅ Loaded test data with {len(self.test_data)} records")
+        # Create iterator from dataloader
+        self._reset_iterator()
 
-                # Map column names to expected features
-                self._map_columns()
+    def _reset_iterator(self):
+        """Reset the dataloader iterator to start from beginning"""
+        self.dataloader_iterator = iter(self.detector.test_dataloader)
+        self.current_sample_index = 0
+        print("🔄 Dataloader iterator reset to beginning")
 
-            except Exception as e:
-                print(f"❌ Error loading test data: {e}")
-
-        # Generate synthetic data if no test data available
-        if self.test_data is None:
-            self.test_data = self._generate_synthetic_data()
-
-        self.data_index = 0
-
-    def _map_columns(self):
-        """Map dataset columns to expected feature names using PRIVATEER metadata"""
+    def get_next_sample(self):
+        """Get the next sample from the dataloader"""
         try:
-            # Get expected features from DataProcessor if available
-            if PRIVATEER_AVAILABLE:
-                try:
-                    from privateer_ad.config import get_metadata
-                    metadata = get_metadata()
-                    expected_features = metadata.get_input_features()
-                    print(f"📋 Expected input features from metadata: {expected_features}")
-                except Exception as e:
-                    print(f"⚠️ Could not get metadata features: {e}")
-                    expected_features = [
-                        'dl_bitrate', 'ul_bitrate', 'dl_retx', 'ul_tx',
-                        'dl_tx', 'ul_retx', 'bearer_0_dl_total_bytes', 'bearer_0_ul_total_bytes'
-                    ]
-            else:
-                expected_features = [
-                    'dl_bitrate', 'ul_bitrate', 'dl_retx', 'ul_tx',
-                    'dl_tx', 'ul_retx', 'bearer_0_dl_total_bytes', 'bearer_0_ul_total_bytes'
-                ]
-        except:
-            expected_features = [
-                'dl_bitrate', 'ul_bitrate', 'dl_retx', 'ul_tx',
-                'dl_tx', 'ul_retx', 'bearer_0_dl_total_bytes', 'bearer_0_ul_total_bytes'
-            ]
+            sample = next(self.dataloader_iterator)
+            self.current_sample_index += 1
+            return sample
+        except StopIteration:
+            # End of dataset, restart from beginning
+            print("📄 End of dataset reached, restarting from beginning")
+            self._reset_iterator()
+            return self.get_next_sample()
 
-        # Common column mappings
-        column_mapping = {
-            'dl_bitrate': 'dl_bitrate',
-            'ul_bitrate': 'ul_bitrate',
-            'dl_retx': 'dl_retx',
-            'ul_tx': 'ul_tx',
-            'dl_tx': 'dl_tx',
-            'ul_retx': 'ul_retx',
-            'bearer_0_dl_total_bytes': 'bearer_0_dl_total_bytes',
-            'bearer_0_ul_total_bytes': 'bearer_0_ul_total_bytes',
-            'attack': 'attack',
-            'malicious': 'attack',  # Alternative attack column
-            'imeisv': 'imeisv',
-            'device_id': 'imeisv',
-            '_time': '_time',
-            'timestamp': '_time'
-        }
-
-        # Rename columns if they exist
-        for old_name, new_name in column_mapping.items():
-            if old_name in self.test_data.columns and new_name != old_name:
-                self.test_data = self.test_data.rename(columns={old_name: new_name})
-
-        # Fill missing required columns with realistic defaults
-        for feature in expected_features:
-            if feature not in self.test_data.columns:
-                print(f"⚠️ Missing feature {feature}, generating synthetic data")
-                # Generate realistic defaults based on feature name
-                if 'dl_bitrate' in feature:
-                    self.test_data[feature] = np.random.normal(5000, 1000, len(self.test_data))
-                elif 'ul_bitrate' in feature:
-                    self.test_data[feature] = np.random.normal(2000, 500, len(self.test_data))
-                elif 'retx' in feature:
-                    self.test_data[feature] = np.random.poisson(2, len(self.test_data))
-                elif 'tx' in feature:
-                    self.test_data[feature] = np.random.poisson(30, len(self.test_data))
-                elif 'bytes' in feature:
-                    if 'dl' in feature:
-                        self.test_data[feature] = np.random.normal(50000, 10000, len(self.test_data))
-                    else:
-                        self.test_data[feature] = np.random.normal(20000, 5000, len(self.test_data))
-                else:
-                    self.test_data[feature] = np.random.normal(100, 20, len(self.test_data))
-
-        # Ensure required metadata columns exist
-        required_columns = ['attack', 'imeisv', '_time']
-        for col in required_columns:
-            if col not in self.test_data.columns:
-                if col == 'attack':
-                    self.test_data[col] = 0  # Default to no attack
-                elif col == 'imeisv':
-                    self.test_data[col] = 'demo_device_001'  # Default device
-                elif col == '_time':
-                    # Create timestamps if missing
-                    self.test_data[col] = pd.date_range(
-                        start='2024-01-01',
-                        periods=len(self.test_data),
-                        freq='1S'
-                    )
-
-        # Ensure imeisv is string type
-        self.test_data['imeisv'] = self.test_data['imeisv'].astype(str)
-
-        # Add device_id for backward compatibility
-        if 'device_id' not in self.test_data.columns:
-            self.test_data['device_id'] = self.test_data['imeisv']
-
-        print(f"📊 Final dataset features: {list(self.test_data.columns)}")
-        print(f"📊 Dataset shape: {self.test_data.shape}")
-        print(f"📊 Attack samples: {self.test_data['attack'].sum()}")
-
-        # Show sample of data
-        print("📋 Sample data:")
-        print(self.test_data[expected_features + ['attack', 'imeisv']].head(3))
-
-    def _generate_synthetic_data(self):
-        """Generate synthetic network traffic data matching the model's expected format"""
-        np.random.seed(42)
-        n_samples = 1000
-
-        # Generate normal traffic patterns
-        base_dl_bitrate = 5000 + np.random.normal(0, 1000, n_samples)
-        base_ul_bitrate = 2000 + np.random.normal(0, 500, n_samples)
-        base_dl_retx = np.random.poisson(2, n_samples)
-        base_ul_retx = np.random.poisson(2, n_samples)
-        base_dl_tx = np.random.poisson(30, n_samples)
-        base_ul_tx = np.random.poisson(30, n_samples)
-        base_dl_bytes = np.random.normal(50000, 10000, n_samples)
-        base_ul_bytes = np.random.normal(20000, 5000, n_samples)
-
-        # Add some anomalies (attacks)
-        anomaly_indices = np.random.choice(n_samples, size=int(n_samples * 0.05), replace=False)
-
-        dl_bitrate = base_dl_bitrate.copy()
-        ul_bitrate = base_ul_bitrate.copy()
-        dl_retx = base_dl_retx.copy()
-        ul_retx = base_ul_retx.copy()
-        dl_tx = base_dl_tx.copy()
-        ul_tx = base_ul_tx.copy()
-        dl_bytes = base_dl_bytes.copy()
-        ul_bytes = base_ul_bytes.copy()
-
-        # Inject anomalies
-        for idx in anomaly_indices:
-            dl_bitrate[idx] *= np.random.uniform(3, 10)  # High traffic
-            ul_bitrate[idx] *= np.random.uniform(5, 15)  # Very high upload
-            dl_retx[idx] *= np.random.uniform(4, 8)      # High retransmissions
-            ul_retx[idx] *= np.random.uniform(4, 8)      # High retransmissions
-            dl_tx[idx] *= np.random.uniform(2, 5)        # High transmissions
-            ul_tx[idx] *= np.random.uniform(2, 5)        # High transmissions
-            dl_bytes[idx] *= np.random.uniform(3, 8)     # High byte counts
-            ul_bytes[idx] *= np.random.uniform(3, 8)     # High byte counts
-
-        data = pd.DataFrame({
-            'timestamp': pd.date_range(start='2024-01-01', periods=n_samples, freq='1S'),
-            'dl_bitrate': dl_bitrate,
-            'ul_bitrate': ul_bitrate,
-            'dl_retx': dl_retx,
-            'ul_retx': ul_retx,
-            'dl_tx': dl_tx,
-            'ul_tx': ul_tx,
-            'bearer_0_dl_total_bytes': dl_bytes,
-            'bearer_0_ul_total_bytes': ul_bytes,
-            'device_id': np.random.choice(['Device_001', 'Device_002', 'Device_003'], n_samples),
-            'attack': np.isin(range(n_samples), anomaly_indices).astype(int)
-        })
-
-        print("✅ Generated synthetic network traffic data")
-        return data
-
-    def start_simulation(self, interval=1.0):
+    def start_simulation(self, interval=0.1):
         """Start the data simulation"""
         self.running = True
         self.thread = threading.Thread(target=self._simulation_loop, args=(interval,))
         self.thread.daemon = True
         self.thread.start()
+        print(f"▶️ Simulation started with {interval}s interval")
 
     def stop_simulation(self):
         """Stop the data simulation"""
         self.running = False
         if self.thread:
             self.thread.join()
+        print("⏸️ Simulation stopped")
 
     def _simulation_loop(self, interval):
         """Main simulation loop"""
         while self.running:
-            if self.data_index >= len(self.test_data):
-                self.data_index = 0  # Loop back to start
+            try:
+                # Get next sample from dataloader
+                sample = self.get_next_sample()
 
-            row = self.test_data.iloc[self.data_index].to_dict()
-            row['timestamp'] = datetime.now()
+                # Detect anomaly
+                is_anomaly, score, true_label = self.detector.detect_anomaly(sample)
 
-            self.data_queue.put(row)
-            self.data_index += 1
+                # Create result dictionary
+                result = {
+                    'timestamp': datetime.now(),
+                    'sample_index': self.current_sample_index,
+                    'is_anomaly': is_anomaly,
+                    'reconstruction_error': score,
+                    'true_label': true_label,
+                    'input_tensor': sample[0]['encoder_cont'].cpu().numpy(),
+                    'feature_values': {}
+                }
 
-            time.sleep(interval)
+                # Extract feature values for display
+                input_flat = sample[0]['encoder_cont'].squeeze().cpu().numpy()
+                if len(input_flat.shape) == 2:  # [seq_len, features]
+                    # Take the last timestep for current values
+                    current_features = input_flat[-1]
+                    for i, feature_name in enumerate(self.detector.input_features):
+                        if i < len(current_features):
+                            result['feature_values'][feature_name] = float(current_features[i])
+
+                # Put result in queue
+                self.data_queue.put(result)
+
+                time.sleep(interval)
+
+            except Exception as e:
+                print(f"❌ Error in simulation loop: {e}")
+                import traceback
+                traceback.print_exc()
+                time.sleep(interval)
 
     def get_latest_data(self):
         """Get all available data from queue"""
@@ -531,22 +268,25 @@ class NetworkTrafficSimulator:
                 break
         return data
 
+
 # Initialize components
-simulator = NetworkTrafficSimulator()
+print("🔄 Initializing PRIVATEER components...")
 detector = PrivateerAnomalyDetector()
+simulator = NetworkTrafficSimulator(detector)
 
 # Storage for real-time data
 realtime_data = {
     'timestamp': [],
-    'dl_bitrate': [],
-    'ul_bitrate': [],
-    'dl_retx': [],
-    'ul_tx': [],
-    'device_id': [],
+    'sample_index': [],
+    'reconstruction_error': [],
     'is_anomaly': [],
-    'anomaly_score': [],
-    'true_attack': []
+    'true_label': [],
+    'feature_values': {}  # Will be populated with actual feature names
 }
+
+# Initialize feature storage
+for feature in detector.input_features:
+    realtime_data['feature_values'][feature] = []
 
 max_points = 200  # Keep last 200 points for display
 
@@ -559,8 +299,8 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             html.H1("🛡️ PRIVATEER Network Anomaly Detection Demo",
-                   className="text-center mb-4"),
-                                html.P("Using TransformerAD Model with DataProcessor for Real-time Anomaly Detection",
+                    className="text-center mb-4"),
+            html.P("Using TransformerAD Model with DataProcessor Test Dataset",
                    className="text-center text-muted"),
             html.Hr(),
         ])
@@ -581,11 +321,21 @@ app.layout = dbc.Container([
                         html.Label("🎯 Anomaly Threshold:", className="form-label"),
                         dcc.Slider(
                             id='threshold-slider',
-                            min=0.0001,
-                            max=1,
-                            step=0.0001,
+                            min=0.01,
+                            max=0.1,
+                            step=0.001,
                             value=detector.threshold,
-                            marks={0.0001: '0.0001', 0.001: '0.001', 0.01: '0.01', 0.05: '0.05', 1.: '1.0'},
+                            marks={
+                                0.01: '0.01',
+                                0.02: '0.02',
+                                0.03: '0.03',
+                                0.04: '0.04',
+                                0.05: '0.05',
+                                0.06: '0.06',
+                                0.07: '0.07',
+                                0.08: '0.08',
+                                0.09: '0.09',
+                            },
                             tooltip={"placement": "bottom", "always_visible": True}
                         )
                     ], className="mb-3"),
@@ -599,8 +349,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("📊 Real-time Network Metrics", className="card-title"),
-                    dcc.Graph(id="realtime-metrics", style={'height': '400px'})
+                    html.H4("📊 Feature Values (Latest Sample)", className="card-title"),
+                    dcc.Graph(id="feature-display", style={'height': '400px'})
                 ])
             ])
         ], width=6),
@@ -608,7 +358,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("🚨 Anomaly Detection (TransformerAD)", className="card-title"),
+                    html.H4("🚨 Anomaly Detection Results", className="card-title"),
                     dcc.Graph(id="anomaly-detection", style={'height': '400px'})
                 ])
             ])
@@ -639,15 +389,17 @@ app.layout = dbc.Container([
 
 ], fluid=True)
 
+
 # Callbacks
 @app.callback(
-    Output('detector-state', 'data', allow_duplicate=True),
+    Output('simulation-state', 'data', allow_duplicate=True),
     Input('threshold-slider', 'value'),
     prevent_initial_call=True
 )
 def update_threshold(threshold):
     detector.update_threshold(threshold)
-    return {'threshold': threshold}
+    return {'running': True}  # Just return current state
+
 
 @app.callback(
     [Output('simulation-state', 'data'),
@@ -678,25 +430,30 @@ def control_simulation(start_clicks, stop_clicks, reset_clicks, state):
         simulator.stop_simulation()
         # Clear realtime data
         for key in realtime_data:
-            realtime_data[key].clear()
-        # Reset detector history
-        detector.history.clear()
+            if key != 'feature_values':
+                realtime_data[key].clear()
+            else:
+                for feature in realtime_data['feature_values']:
+                    realtime_data['feature_values'][feature].clear()
+        # Reset dataloader iterator
+        simulator._reset_iterator()
         return {'running': False}, True, create_status_badge("Reset", "warning")
 
     return state, True, create_status_badge("Stopped", "danger")
 
+
 def create_status_badge(text, color):
-    model_info = "TransformerAD + DataProcessor" if detector.model is not None and detector.data_processor is not None else \
-                 "TransformerAD (Manual)" if detector.model is not None else "Statistical Fallback"
     return dbc.Row([
         dbc.Col([
             dbc.Badge(f"Status: {text}", color=color, className="fs-6 me-2"),
-            dbc.Badge(f"Model: {model_info}", color="info", className="fs-6")
+            dbc.Badge("Model: TransformerAD + DataProcessor", color="info", className="fs-6"),
+            dbc.Badge(f"Sample: {simulator.current_sample_index}", color="secondary", className="fs-6 ms-2")
         ])
     ])
 
+
 @app.callback(
-    [Output('realtime-metrics', 'figure'),
+    [Output('feature-display', 'figure'),
      Output('anomaly-detection', 'figure'),
      Output('stats-display', 'children')],
     [Input('interval-component', 'n_intervals')],
@@ -704,38 +461,41 @@ def create_status_badge(text, color):
 )
 def update_graphs(n, state):
     if not state.get('running', False):
-        return create_empty_figure("Simulation Stopped"), create_empty_figure("Simulation Stopped"), html.P("Start simulation to see statistics")
+        return create_empty_figure("Simulation Stopped"), create_empty_figure("Simulation Stopped"), html.P(
+            "Start simulation to see statistics")
 
     # Get new data
     new_data = simulator.get_latest_data()
 
-    # Process new data
-    for row in new_data:
-        # Apply anomaly detection using the actual model
-        is_anomaly, score = detector.detect(row)
+    # Add new data to realtime storage
+    for data_point in new_data:
+        realtime_data['timestamp'].append(data_point['timestamp'])
+        realtime_data['sample_index'].append(data_point['sample_index'])
+        realtime_data['reconstruction_error'].append(data_point['reconstruction_error'])
+        realtime_data['is_anomaly'].append(data_point['is_anomaly'])
+        realtime_data['true_label'].append(data_point['true_label'])
 
-        # Add to realtime data
-        realtime_data['timestamp'].append(row['timestamp'])
-        realtime_data['dl_bitrate'].append(row.get('dl_bitrate', 0))
-        realtime_data['ul_bitrate'].append(row.get('ul_bitrate', 0))
-        realtime_data['dl_retx'].append(row.get('dl_retx', 0))
-        realtime_data['ul_tx'].append(row.get('ul_tx', 0))
-        realtime_data['device_id'].append(row.get('device_id', 'Unknown'))
-        realtime_data['is_anomaly'].append(is_anomaly)
-        realtime_data['anomaly_score'].append(score)
-        realtime_data['true_attack'].append(row.get('attack', 0))
+        # Add feature values
+        for feature, value in data_point['feature_values'].items():
+            if feature in realtime_data['feature_values']:
+                realtime_data['feature_values'][feature].append(value)
 
     # Limit data size
     if len(realtime_data['timestamp']) > max_points:
         for key in realtime_data:
-            realtime_data[key] = realtime_data[key][-max_points:]
+            if key != 'feature_values':
+                realtime_data[key] = realtime_data[key][-max_points:]
+            else:
+                for feature in realtime_data['feature_values']:
+                    realtime_data['feature_values'][feature] = realtime_data['feature_values'][feature][-max_points:]
 
     # Create figures
-    metrics_fig = create_metrics_figure()
+    feature_fig = create_feature_figure()
     anomaly_fig = create_anomaly_figure()
     stats = create_statistics()
 
-    return metrics_fig, anomaly_fig, stats
+    return feature_fig, anomaly_fig, stats
+
 
 def create_empty_figure(title):
     fig = go.Figure()
@@ -752,52 +512,56 @@ def create_empty_figure(title):
     )
     return fig
 
-def create_metrics_figure():
+
+def create_feature_figure():
     if not realtime_data['timestamp']:
         return create_empty_figure("No Data Available")
 
     fig = go.Figure()
 
-    # Add traces for different metrics
-    fig.add_trace(go.Scatter(
-        x=realtime_data['timestamp'],
-        y=realtime_data['dl_bitrate'],
-        mode='lines',
-        name='Download Bitrate',
-        line=dict(color='blue')
-    ))
+    # Plot the most important features
+    colors = ['blue', 'green', 'orange', 'red', 'purple', 'brown', 'pink', 'gray']
+    feature_names = list(realtime_data['feature_values'].keys())[:6]  # Show top 6 features
 
-    fig.add_trace(go.Scatter(
-        x=realtime_data['timestamp'],
-        y=realtime_data['ul_bitrate'],
-        mode='lines',
-        name='Upload Bitrate',
-        line=dict(color='green')
-    ))
+    for i, feature in enumerate(feature_names):
+        if feature in realtime_data['feature_values'] and realtime_data['feature_values'][feature]:
+            fig.add_trace(go.Scatter(
+                x=realtime_data['timestamp'],
+                y=realtime_data['feature_values'][feature],
+                mode='lines',
+                name=feature,
+                line=dict(color=colors[i % len(colors)])
+            ))
 
     # Highlight anomalies
     anomaly_times = [realtime_data['timestamp'][i] for i, anomaly in enumerate(realtime_data['is_anomaly']) if anomaly]
-    anomaly_dl = [realtime_data['dl_bitrate'][i] for i, anomaly in enumerate(realtime_data['is_anomaly']) if anomaly]
 
-    if anomaly_times:
-        fig.add_trace(go.Scatter(
-            x=anomaly_times,
-            y=anomaly_dl,
-            mode='markers',
-            name='Detected Anomalies',
-            marker=dict(color='red', size=10, symbol='x'),
-            showlegend=True
-        ))
+    if anomaly_times and feature_names:
+        # Use first feature for anomaly markers
+        first_feature = feature_names[0]
+        if first_feature in realtime_data['feature_values']:
+            anomaly_values = [realtime_data['feature_values'][first_feature][i]
+                              for i, anomaly in enumerate(realtime_data['is_anomaly']) if anomaly]
+
+            fig.add_trace(go.Scatter(
+                x=anomaly_times,
+                y=anomaly_values,
+                mode='markers',
+                name='Detected Anomalies',
+                marker=dict(color='red', size=10, symbol='x'),
+                showlegend=True
+            ))
 
     fig.update_layout(
-        title="Network Traffic Metrics (with Anomaly Highlights)",
+        title="Network Feature Values (Preprocessed by DataProcessor)",
         xaxis_title="Time",
-        yaxis_title="Bitrate (bps)",
+        yaxis_title="Feature Value (Normalized)",
         hovermode='x unified',
         showlegend=True
     )
 
     return fig
+
 
 def create_anomaly_figure():
     if not realtime_data['timestamp']:
@@ -805,12 +569,12 @@ def create_anomaly_figure():
 
     fig = go.Figure()
 
-    # Add anomaly scores
+    # Add reconstruction errors
     colors = ['red' if anomaly else 'blue' for anomaly in realtime_data['is_anomaly']]
 
     fig.add_trace(go.Scatter(
         x=realtime_data['timestamp'],
-        y=realtime_data['anomaly_score'],
+        y=realtime_data['reconstruction_error'],
         mode='markers+lines',
         name='Reconstruction Error',
         marker=dict(color=colors, size=6),
@@ -822,12 +586,14 @@ def create_anomaly_figure():
         y=detector.threshold,
         line_dash="dash",
         line_color="red",
-        annotation_text=f"Threshold ({detector.threshold:.4f})"
+        annotation_text=f"Threshold ({detector.threshold:.6f})"
     )
 
-    # Add ground truth if available
-    true_anomaly_times = [realtime_data['timestamp'][i] for i, attack in enumerate(realtime_data['true_attack']) if attack]
-    true_anomaly_scores = [realtime_data['anomaly_score'][i] for i, attack in enumerate(realtime_data['true_attack']) if attack]
+    # Add ground truth markers
+    true_anomaly_times = [realtime_data['timestamp'][i] for i, label in enumerate(realtime_data['true_label']) if
+                          label == 1]
+    true_anomaly_scores = [realtime_data['reconstruction_error'][i] for i, label in
+                           enumerate(realtime_data['true_label']) if label == 1]
 
     if true_anomaly_times:
         fig.add_trace(go.Scatter(
@@ -840,13 +606,14 @@ def create_anomaly_figure():
         ))
 
     fig.update_layout(
-        title="TransformerAD + DataProcessor Anomaly Detection Results",
+        title="TransformerAD Anomaly Detection Results",
         xaxis_title="Time",
-        yaxis_title="Reconstruction Error (MSE)" if detector.model else "Z-Score",
+        yaxis_title="Reconstruction Error (L1 Loss)",
         hovermode='x unified'
     )
 
     return fig
+
 
 def create_statistics():
     if not realtime_data['timestamp']:
@@ -854,40 +621,26 @@ def create_statistics():
 
     total_points = len(realtime_data['timestamp'])
     detected_anomalies = sum(realtime_data['is_anomaly'])
-    true_attacks = sum(realtime_data['true_attack'])
-
-    # Calculate metrics
-    if detected_anomalies > 0:
-        detection_rate = (detected_anomalies / total_points) * 100
-    else:
-        detection_rate = 0
+    true_attacks = sum(1 for label in realtime_data['true_label'] if label == 1)
 
     # True positive rate
     true_positives = sum(1 for i in range(len(realtime_data['is_anomaly']))
-                        if realtime_data['is_anomaly'][i] and realtime_data['true_attack'][i])
+                         if realtime_data['is_anomaly'][i] and realtime_data['true_label'][i] == 1)
 
-    if true_attacks > 0:
-        true_positive_rate = (true_positives / true_attacks) * 100
-    else:
-        true_positive_rate = 0
+    true_positive_rate = (true_positives / true_attacks) * 100 if true_attacks > 0 else 0
 
     # False positive rate
     false_positives = sum(1 for i in range(len(realtime_data['is_anomaly']))
-                         if realtime_data['is_anomaly'][i] and not realtime_data['true_attack'][i])
+                          if realtime_data['is_anomaly'][i] and realtime_data['true_label'][i] == 0)
 
-    false_negatives = sum(1 for i in range(len(realtime_data['is_anomaly']))
-                         if not realtime_data['is_anomaly'][i] and realtime_data['true_attack'][i])
-
-    if (total_points - true_attacks) > 0:
-        false_positive_rate = (false_positives / (total_points - true_attacks)) * 100
-    else:
-        false_positive_rate = 0
+    normal_samples = total_points - true_attacks
+    false_positive_rate = (false_positives / normal_samples) * 100 if normal_samples > 0 else 0
 
     return dbc.Row([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("📊 Total Points"),
+                    html.H5("📊 Total Samples"),
                     html.H3(f"{total_points}", className="text-primary")
                 ])
             ])
@@ -914,24 +667,31 @@ def create_statistics():
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("✅ True Positive Rate"),
-                    html.H3(f"{true_positive_rate:.1f}%", className="text-success")
+                    html.H5("✅ True Positives"),
+                    html.H3(f"{true_positives}", className="text-success")
                 ])
             ])
-        ], width=3),
+        ], width=2),
 
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("❌ False Positive Rate"),
+                    html.H5("✅ TPR"),
+                    html.H3(f"{true_positive_rate:.1f}%", className="text-success")
+                ])
+            ])
+        ], width=2),
+
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("❌ FPR"),
                     html.H3(f"{false_positive_rate:.1f}%", className="text-info")
                 ])
             ])
-        ], width=3)
+        ], width=2)
     ])
 
-# Add missing store for detector state
-app.layout.children.append(dcc.Store(id='detector-state', data={'threshold': detector.threshold}))
 
 if __name__ == '__main__':
     print("🛡️ PRIVATEER Network Anomaly Detection Demo")
@@ -939,34 +699,16 @@ if __name__ == '__main__':
     print("🤖 Using TransformerAD Model with DataProcessor")
     print(f"📱 Device: {detector.device}")
     print(f"🎯 Initial Threshold: {detector.threshold}")
-    if detector.data_processor is not None:
-        print("✅ DataProcessor: Active (proper scaling & preprocessing)")
-        print(f"📊 Input Features: {detector.input_features}")
-    else:
-        print("⚠️ DataProcessor: Not available (manual preprocessing)")
+    print(f"📊 Input Features: {detector.input_features}")
+    try:
+        model_config = get_model_config()
+        print(f"📏 Sequence Length: {model_config.seq_len}")
+    except:
+        print("📏 Sequence Length: 12 (default)")
+    print(f"📄 Test Dataset: Loaded via DataProcessor.get_dataloader('test')")
     print("=" * 50)
     print("Starting web server...")
     print("Open your browser and go to: http://127.0.0.1:8050")
     print("=" * 50)
-
-    # Try to find test data in common locations
-    test_data_paths = [
-        'data/processed/test.csv',
-        'privateer_ad/data/processed/test.csv',
-        '../data/processed/test.csv',
-        'test.csv'
-    ]
-
-    found_data = False
-    for path in test_data_paths:
-        if os.path.exists(path):
-            print(f"✅ Found test data at: {path}")
-            simulator = NetworkTrafficSimulator(path)
-            found_data = True
-            break
-
-    if not found_data:
-        print("ℹ️  Using synthetic data (no test.csv found)")
-        simulator = NetworkTrafficSimulator()
 
     app.run_server(debug=True, host='127.0.0.1', port=8050)

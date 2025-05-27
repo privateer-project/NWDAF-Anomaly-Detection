@@ -83,7 +83,7 @@ class SecAggFlowerClient(NumPyClient):
         metrics = train_pln.evaluate_model(step=server_round)
         num_examples = sum(len(batch[0]['encoder_cont']) for batch in train_pln.test_dl)
 
-        loss = metrics.pop('eval_loss', 0.0)
+        loss = metrics.pop('test_loss')
         return float(loss), num_examples, metrics
 
 def client_fn(context: Context):
