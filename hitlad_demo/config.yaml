@@ -18,6 +18,7 @@ demo:
   save_results: true
   alert_filter_epochs: 1000
   perfect_results_mode: false
+  use_pretrained_filter: true  # When true, skips training and uses pretrained model
 
 # Model settings
 model_type: "autoencoder"  # Options: "classifier" or "autoencoder"

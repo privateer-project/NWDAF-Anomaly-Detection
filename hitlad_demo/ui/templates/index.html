@@ -70,8 +70,8 @@
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <button class="btn btn-success" onclick="submitFeedback(true)">True Positive</button>
-                                    <button class="btn btn-danger" onclick="submitFeedback(false)">False Positive</button>
+                                    <button class="btn btn-danger" onclick="submitFeedback(true)">Anomaly</button>
+                                    <button class="btn btn-success" onclick="submitFeedback(false)">Not Anomaly</button>
                                 </div>
                             </div>
                         </div>
@@ -129,10 +129,10 @@
         </div>
 
         <!-- Navigation Buttons -->
-        <div class="row mt-4 mb-4">
-            <div class="col-12 d-flex justify-content-between">
-                <button class="btn btn-secondary" onclick="previousStep()" id="prev-btn" style="display: none;">Previous</button>
-                <button class="btn btn-primary" onclick="nextStep()" id="next-btn" style="display: none;">Next</button>
+        <div class="row mt-4 mb-4" style="display: none; color: transparent;">
+            <div class="col-12 d-flex justify-content-between" style="display: none; color: transparent;">
+                <button class="btn btn-secondary" onclick="previousStep()" id="prev-btn" style="display: none; color: transparent;">Previous</button>
+                <button class="btn btn-primary" onclick="nextStep()" id="next-btn" style="display: none; color: transparent;">Next</button>
             </div>
         </div>
     </div>

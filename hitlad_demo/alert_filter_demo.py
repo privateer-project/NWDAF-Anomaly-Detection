@@ -18,6 +18,7 @@ import os
 import sys
 import argparse
 import yaml
+import json
 import numpy as np
 import torch
 from pathlib import Path
@@ -76,6 +77,7 @@ class AlertFilterDemo:
         self.original_anomaly_labels = []
         self.stored_feedback = []  # Store feedback for perfect results mode
         
+        
     def _create_directories(self):
         """Create necessary directories for the demo."""
         for dir_path in [
@@ -83,7 +85,30 @@ class AlertFilterDemo:
             self.config['paths']['feedback_dir']
         ]:
             os.makedirs(dir_path, exist_ok=True)
-    
+            
+    def reset_feedback_collector(self) -> None:
+        """
+        Reset the feedback collector to mock feedback
+        """
+        
+        # overrite the content of feedback.json with mock_feedback.json
+        feedback_path = Path(self.config['paths']['feedback_dir']) / 'feedback.json'
+        mock_feedback_path = Path(self.config['paths']['feedback_dir']) / 'mock_feedback.json'
+        if mock_feedback_path.exists():
+            print(f"{Fore.YELLOW}Resetting feedback collector{Style.RESET_ALL}")
+            with open(mock_feedback_path, 'r') as f:
+                mock_feedback = json.load(f)
+            with open(feedback_path, 'w') as f:
+                json.dump(mock_feedback, f, indent=4)
+        else:
+            print(f"{Fore.RED}Mock feedback file not found: {mock_feedback_path}. Cannot reset feedback collector.{Style.RESET_ALL}")
+        
+        self.feedback_collector = FeedbackCollector(
+            storage_path=Path(self.config['paths']['feedback_dir'])
+        )
+        
+        
+            
     def load_data(self) -> None:
         """
         Load real data for the demo.

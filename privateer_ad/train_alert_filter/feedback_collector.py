@@ -28,7 +28,7 @@ class FeedbackCollector:
                 If None, uses the default path from PathsConf.
         """
         paths = PathsConf()
-        self.storage_path = storage_path or paths.root.joinpath('feedback_data')
+        self.storage_path = storage_path or paths.root.joinpath('hitlad_demo', 'feedback')
         self.storage_file = self.storage_path.joinpath('feedback.json')
         self.logger = setup_logger('feedback-collector')
 

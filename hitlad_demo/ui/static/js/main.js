@@ -21,6 +21,7 @@ const nextButton = document.getElementById('next-btn');
 const ANOMALY_INFO_TEMPLATE = `
     <h4>Anomaly Details</h4>
     <p>Reconstruction Error: <span id="reconstruction-error"></span></p>
+    <p>True Label (Hint): <span id="true-label" class="badge bg-info"></span></p>
     <div class="progress mb-3">
         <div class="progress-bar bg-info" role="progressbar" style="width: 0%">
             0/0 Anomalies Reviewed
@@ -238,6 +239,11 @@ async function getNextAnomaly() {
             // Try updating elements again after potential reset
             document.getElementById('reconstruction-error').textContent = data.reconstruction_error.toFixed(6);
             
+            // Update true label with colored badge
+            const trueLabelSpan = document.getElementById('true-label');
+            trueLabelSpan.textContent = data.true_label === 1 ? "Anomaly" : "Normal";
+            trueLabelSpan.className = data.true_label === 1 ? "badge bg-warning text-dark" : "badge bg-success";
+            
             // Update progress bar
             const updatedProgressBar = document.querySelector('#anomaly-info .progress-bar');
             const progress = (data.progress.current / data.progress.total) * 100;
@@ -298,6 +304,8 @@ async function submitFeedback(isTrue) {
 async function trainFilter() {
     const statusDiv = document.getElementById('training-status');
     showLoading('training-status');
+
+    let startTime = Date.now();
     
     try {
         const response = await fetch('/api/train_filter', {
@@ -306,10 +314,18 @@ async function trainFilter() {
         const data = await response.json();
         
         if (data.status === 'success') {
+            const elapsedTime = Date.now() - startTime;
+            let message = 'The alert filter model has been trained successfully.';
+
+            // If using pretrained model and elapsed time < 15s, wait for remainder
+            if (data.message === 'Using pretrained model' && elapsedTime < 5000) {
+                await new Promise(resolve => setTimeout(resolve, 5000 - elapsedTime));
+            }
+
             statusDiv.innerHTML = `
                 <div class="status-message status-success">
                     <h5>Training Complete</h5>
-                    <p>The alert filter model has been trained successfully.</p>
+                    <p>${message}</p>
                     <button class="btn btn-primary mt-2" onclick="nextStep()">View Results</button>
                 </div>
             `;
@@ -365,10 +381,10 @@ async function evaluateResults() {
                                 <thead>
                                     <tr>
                                         <th>Sample</th>
-                                        <th>Initial Label</th>
-                                        <th>Feedback</th>
-                                        <th>Final Decision</th>
-                                        <th>Status</th>
+                                        <th>Initial Prediction</th>
+                                        <th>Human Feedback</th>
+                                        <th>Final Prediction</th>
+                                        <th>Evaluation</th>
                                     </tr>
                                 </thead>
                                 <tbody>

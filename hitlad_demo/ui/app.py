@@ -81,6 +81,8 @@ def start_demo():
         'sampled_indices': None,
         'feedback_mapping': {}  # Reset feedback mapping
     }
+    
+    demo.reset_feedback_collector()
     return jsonify({'status': 'success', 'step': 0})
 
 @app.route('/api/detect_anomalies', methods=['POST'])
@@ -177,10 +179,26 @@ def submit_feedback():
 
 @app.route('/api/train_filter', methods=['POST'])
 def train_filter():
-    """Train the alert filter model."""
+    """Train the alert filter model or simulate training when using pretrained model."""
     try:
-        demo.train_filter_model()
-        return jsonify({'status': 'success'})
+        use_pretrained = config['demo'].get('use_pretrained_filter', False)
+        
+        if use_pretrained:
+            # When using pretrained model, copy it to the filter model path
+            import shutil
+            import time
+
+            pretrained_path = os.path.join(os.path.dirname(config['paths']['filter_model_path']), 
+                                         'pretrained_alert_filter_model.pt')
+            shutil.copy(pretrained_path, config['paths']['filter_model_path'])
+            
+            # Simulate training time
+            time.sleep(5)
+            return jsonify({'status': 'success', 'message': 'Using pretrained model'})
+        else:
+            # Actually train the model
+            demo.train_filter_model()
+            return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
@@ -250,4 +268,3 @@ def evaluate_results():
 if __name__ == '__main__':
     # app.run(debug=True, port=5000)
     app.run(host="0.0.0.0", port=5000, debug=True)
-
