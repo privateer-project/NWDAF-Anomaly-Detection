@@ -313,11 +313,11 @@ def make_predictions_with_filter(
 
     # Print classification report for both unfiltered and filtered decisions
     print("\nUnfiltered Anomaly Detection Results:", len(predictions_np), len(labels_np))
-    print_balanced_classification_report(labels_np, predictions_np)
+    # print_balanced_classification_report(labels_np, predictions_np)
     
     if alert_filter is not None and use_filter:
         print("\nFiltered Anomaly Detection Results:", len(filtered_decisions_np), len(labels_np))
-        print_balanced_classification_report(labels_np, filtered_decisions_np)
+        # print_balanced_classification_report(labels_np, filtered_decisions_np)
     
     return inputs_np, latents_np, losses_np, predictions_np, filtered_decisions_np, labels_np
 

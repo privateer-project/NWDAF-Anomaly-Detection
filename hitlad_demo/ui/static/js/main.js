@@ -455,10 +455,10 @@ function endDemo() {
     const endButton = document.querySelector('.btn-success.btn-lg');
     if (endButton) {
         endButton.disabled = true;
-        endButton.innerHTML = `
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            Finishing Demo...
-        `;
+        // endButton.innerHTML = `
+        //     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        //     Finishing Demo...
+        // `;
     }
     
     // Transition to completion state after a short delay
