@@ -66,7 +66,6 @@ class PathConfig(BaseSettings):
         return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
 
 
-
 class DataConfig(BaseSettings):
     """Data processing and loading configuration"""
 
@@ -124,7 +123,7 @@ class TrainingConfig(BaseSettings):
 
     learning_rate: float = Field(default=0.0007, gt=0.0)
     epochs: int = Field(default=120, gt=0)
-    loss_function: str = Field(default='L1Loss')
+    loss_fn: str = Field(default='L1Loss')
 
     # Early stopping
     early_stopping_enabled: bool = Field(default=True)
