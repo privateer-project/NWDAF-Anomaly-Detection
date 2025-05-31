@@ -6,12 +6,12 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from privateer_ad.config import get_paths
+from privateer_ad.config import PathConfig
 from privateer_ad import logger
 
 @dataclass
 class DownloadConfig:
-    paths = get_paths()
+    paths = PathConfig()
     zip_name: str = 'nwdaf-data.zip'
     url: str = paths.data_url
     extraction_dir: Path = paths.raw_dir
