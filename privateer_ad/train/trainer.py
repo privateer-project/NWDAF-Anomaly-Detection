@@ -61,9 +61,9 @@ class ModelTrainer:
             logger.info('Early stopping enabled.')
             self.es_not_improved_epochs = 0
             valid_directions = ('maximize', 'minimize')
-            if self.training_config.optimization_direction not in valid_directions:
+            if self.training_config.direction not in valid_directions:
                 raise ValueError(f'optimization_direction must be one of {valid_directions}. '
-                                 f'Current value: {self.training_config.optimization_direction}')
+                                 f'Current value: {self.training_config.direction}')
 
         # Initialize metrics and best checkpoint
         self.metrics = {}
@@ -240,11 +240,10 @@ class ModelTrainer:
             bool: True if current checkpoint is the best
         """
         current_value = self.metrics[self.training_config.target_metric]
-        direction = self.training_config.optimization_direction
         best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
-                                                         np.inf if direction == 'minimize' else -np.inf)
+                                                         np.inf if self.training_config.direction == 'minimize' else -np.inf)
 
-        if self.training_config.optimization_direction == 'maximize':
+        if self.training_config.direction == 'maximize':
             return current_value > best_value
         else:  # minimize
             return current_value < best_value
