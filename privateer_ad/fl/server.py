@@ -6,7 +6,7 @@ from flwr.server import Driver, LegacyContext, ServerApp, ServerConfig
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
 from privateer_ad import logger
-from privateer_ad.config import get_fl_config, get_mlflow_config, get_training_config, get_model_config, get_paths
+from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig
 from privateer_ad.etl import DataProcessor
 from privateer_ad.evaluate import ModelEvaluator
 from privateer_ad.fl.strategy import CustomStrategy
@@ -25,7 +25,7 @@ def main(driver: Driver, context: Context) -> None:
         context: Flower context containing run configuration
     """
     _, server_run_id = _setup_mlflow()
-    fl_config = get_fl_config()
+    fl_config = FederatedLearningConfig()
     # Get run parameters from context
     fl_config.n_clients = context.run_config.get('n-clients', fl_config.n_clients)
     fl_config.num_rounds = context.run_config.get('num-server-rounds', fl_config.num_rounds)
@@ -39,12 +39,8 @@ def main(driver: Driver, context: Context) -> None:
     mlflow.log_params(fl_config.__dict__)
     mlflow.log_params({'session_type': 'federated_learning'})
 
-    data_processor = DataProcessor(partition=False)
-    test_dl = data_processor.get_dataloader('test',
-                                            batch_size=1024,
-                                            seq_len=get_model_config().seq_len,
-                                            only_benign=False
-                                            )
+    data_processor = DataProcessor()
+    test_dl = data_processor.get_dataloader('test', only_benign=False)
     sample = next(iter(test_dl))[0]['encoder_cont'][:1].to('cpu')
 
     strategy = CustomStrategy(
@@ -85,7 +81,7 @@ def main(driver: Driver, context: Context) -> None:
 def _setup_mlflow():
     """Setup MLFlow tracking if enabled."""
     try:
-        mlflow_config = get_mlflow_config()
+        mlflow_config = MLFlowConfig()
         mlflow.set_tracking_uri(mlflow_config.server_address)
         mlflow.set_experiment(mlflow_config.experiment_name)
         if mlflow.active_run():
@@ -107,13 +103,9 @@ def _setup_mlflow():
 def _final_evaluation(model, dataloader, server_round: int):
     """Perform final evaluation on the best model."""
     logger.info("Performing final evaluation on the global test set...")
-    training_config = get_training_config()
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    evaluator = ModelEvaluator(
-        criterion=training_config.loss_function,
-        device=device
-    )
+    evaluator = ModelEvaluator(device=device)
 
     model.to('cpu')
 
@@ -129,7 +121,7 @@ def _final_evaluation(model, dataloader, server_round: int):
     _input_np = sample_tensor.detach().numpy()
     _output_np = _output.detach().numpy() if not isinstance(_output, dict) else {k: v.detach().numpy() for k, v in
                                                                                  _output.items()}
-    pip_requirements = str(get_paths().root_dir.joinpath('requirements.txt'))
+    pip_requirements = str(PathConfig().root_dir.joinpath('requirements.txt'))
 
     mlflow.pytorch.log_model(pytorch_model=model,
                              artifact_path='final_global_model',
