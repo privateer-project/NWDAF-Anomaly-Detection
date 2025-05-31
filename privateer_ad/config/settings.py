@@ -132,7 +132,7 @@ class TrainingConfig(BaseSettings):
 
     # Optimization
     target_metric: str = Field(default='val_f1-score')
-    optimization_direction: Literal['minimize', 'maximize'] = Field(default='maximize')
+    direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
     model_config = {'env_prefix': 'PVTR_TRAIN_',
                     'env_file': '.env',
