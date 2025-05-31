@@ -1,4 +1,3 @@
-import os
 from copy import deepcopy
 
 import joblib
@@ -20,19 +19,17 @@ from privateer_ad.etl.utils import get_dataset_path, check_existing_datasets
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
 
-    def __init__(self, data_config=None, paths_config=None, metadata_config=None):
+    def __init__(self, data_config: DataConfig | None =None):
         """
         Initialize DataProcessor.
 
         Args:
             data_config: Optional data configuration override
-            paths_config: Optional paths configuration override
-            metadata_config: Optional metadata configuration override
         """
         logger.info('Initializing DataProcessor...')
         self.data_config = data_config or DataConfig()
-        self.paths_config = paths_config or PathConfig()
-        self.metadata_config = metadata_config or MetadataConfig()
+        self.paths_config = PathConfig()
+        self.metadata_config = MetadataConfig()
 
         # Setup paths
         self.scaler_path = self.paths_config.scalers_dir.joinpath('scaler.pkl')
@@ -42,6 +39,8 @@ class DataProcessor:
 
         # Extract feature configurations
         self.input_features = self.metadata_config.get_input_features()
+        self.features_dtypes = self.metadata_config.get_features_dtypes()
+        self.drop_features = self.metadata_config.get_drop_features()
 
     def prepare_datasets(self, raw_dataset_path=None) -> None:
         """Prepare complete datasets from raw data."""
@@ -70,7 +69,7 @@ class DataProcessor:
             logger.info(f'{k} saved at {save_path}')
 
     def read_csv(self, path):
-        dtypes = deepcopy(self.metadata_config.get_features_dtypes())
+        dtypes = deepcopy(self.features_dtypes)
         dtypes.pop('_time', None)
         try:
             return pd.read_csv(get_dataset_path(path), dtype=dtypes, parse_dates=['_time'])
@@ -117,7 +116,7 @@ class DataProcessor:
     def clean_data(self, df):
         if '_time' in df.columns:
             df = df[df['_time'] != '<NA>']
-        df = df.drop(columns=self.metadata_config.get_drop_features(), errors='ignore')
+        df = df.drop(columns=self.drop_features, errors='ignore')
         df = df.drop_duplicates()
         df = df.dropna(axis='rows')
         df.reset_index(drop=True, inplace=True)
