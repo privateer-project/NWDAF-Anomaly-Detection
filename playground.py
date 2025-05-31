@@ -1,33 +1,25 @@
 import time
 import threading
 import queue
-import plotly.graph_objects as go
-from datetime import datetime
-import dash
-from dash import dcc, html, Input, Output, State
-import dash_bootstrap_components as dbc
-import torch
-import torch.serialization  # For safe loading of models
-import sys
-# Add the privateer_ad package to the path
-sys.path.append('.')
-sys.path.append('./privateer_ad')
 
-from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from datetime import datetime
+
+import dash
+import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
+import mlflow
+import torch
+
+from dash import dcc, html, Input, Output, State
+
 from privateer_ad.etl import DataProcessor
 from privateer_ad.config import get_model_config, get_metadata, get_mlflow_config
-
-PRIVATEER_AVAILABLE = True
-print("✅ PRIVATEER modules loaded successfully")
 
 
 class PrivateerAnomalyDetector:
     """Simplified anomaly detector using only PRIVATEER components"""
 
-    def __init__(self, model_path="demo/demo_model.pth", data_path="train"):
-        if not PRIVATEER_AVAILABLE:
-            raise RuntimeError("PRIVATEER modules are required")
-
+    def __init__(self, model_path="demo/demo_model.pth", data_path="test"):
         self.model = None
         self.data_processor = None
         self.test_dataloader = None
@@ -68,7 +60,7 @@ class PrivateerAnomalyDetector:
             print(f"🔄 Loading model and data processor...")
 
             # Initialize DataProcessor
-            self.data_processor = DataProcessor(partition=False)
+            self.data_processor = DataProcessor()
 
             # Override data config to disable multiprocessing for demo
             if hasattr(self.data_processor, 'data_config'):
@@ -91,34 +83,10 @@ class PrivateerAnomalyDetector:
             input_size = sample_input.shape[-1]
             print(f"📊 Detected input size: {input_size}")
 
-            # Create model configuration
-            transformer_config = TransformerADConfig(
-                seq_len=model_config.seq_len,
-                input_size=input_size,
-                num_layers=model_config.num_layers,
-                hidden_dim=model_config.hidden_dim,
-                latent_dim=model_config.latent_dim,
-                num_heads=model_config.num_heads,
-                dropout=model_config.dropout
-
-            )
-            # torch.serialization.add_safe_globals([TransformerAD])
-            # self.model = TransformerAD(transformer_config)
-            import mlflow
             mlflow_conf = get_mlflow_config()
             mlflow.set_tracking_uri(mlflow_conf.server_address)
             self.model = mlflow.pytorch.load_model('mlflow-artifacts:/304908286791224575/177683639fde4f9b8baa6c4b4a8cfffe/artifacts/model')
             print(self.model)
-            # state_dict = torch.load(model_path, map_location='cpu')
-            # cleaned_state_dict = {}
-            # for key, value in state_dict.items():
-            #     # Remove common prefixes
-            #     clean_key = key
-            #     for prefix in ['_module.', 'module.']:
-            #         if clean_key.startswith(prefix):
-            #             clean_key = clean_key[len(prefix):]
-            #     cleaned_state_dict[clean_key] = value
-            # self.model.load_state_dict(cleaned_state_dict)
 
             # Load the state dict if model file exists
             self.model.to(self.device)
