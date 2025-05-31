@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import mlflow
 import torch
@@ -13,6 +13,7 @@ from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.architectures import TransformerAD
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
+from privateer_ad.utils import get_signature
 
 
 class TrainPipeline:
@@ -54,7 +55,8 @@ class TrainPipeline:
             mlflow.end_run()
         mlflow.start_run(run_id=self.mlflow_config.client_run_id, parent_run_id=self.mlflow_config.server_run_id)
         self.mlflow_config.client_run_id = mlflow.active_run().info.run_id
-        logging.info(f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.client_run_id})')
+        logging.info(
+            f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.client_run_id})')
 
         # Setup datasets
         logging.info('Setup dataloaders.')
@@ -97,6 +99,16 @@ class TrainPipeline:
                 max_grad_norm=self.privacy_config.max_grad_norm
             )
 
+        self.trainer = ModelTrainer(model=self.model,
+                                    optimizer=self.optimizer,
+                                    device=self.device,
+                                    privacy_engine=self.privacy_engine if hasattr(self, 'privacy_engine') else None,
+                                    paths_config=self.paths_config,
+                                    training_config=self.training_config,
+                                    privacy_config=self.privacy_config)
+
+        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn, device=self.device)
+
         # Log configuration if MLFlow is enabled
         if mlflow.active_run():
             mlflow.log_params({'device': str(self.device)})
@@ -110,27 +122,16 @@ class TrainPipeline:
                                         )),
                             'model_summary.txt')
 
-
     def _log_model(self):
-        """Log trained model to MLFlow with proper signature."""
+        """Log trained model to MLFlow with proper signature and champion tagging."""
         self.model.to('cpu')
-        _input = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
-        _output = self.model(_input)
-
-        if isinstance(_output, dict):
-            _output = {key: val.detach().numpy() for key, val in _output.items()}
-        else:
-            _output = _output.detach().numpy()
-
-        mlflow.pytorch.log_model(
-            pytorch_model=self.model,
-            artifact_path='model',
-            signature=mlflow.models.infer_signature(
-                model_input=_input.detach().numpy(),
-                model_output=_output
-            ),
-            pip_requirements=str(self.paths_config.root_dir.joinpath('requirements.txt'))
-        )
+        # Log the model
+        mlflow.pytorch.log_model(pytorch_model=self.model,
+                                 artifact_path='model',
+                                 registered_model_name='TransformerAD',
+                                 signature=get_signature(self.model, self.train_dl),
+                                 pip_requirements=str(self.paths_config.root_dir.joinpath('requirements.txt'))
+                                 )
 
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
@@ -144,31 +145,23 @@ class TrainPipeline:
         """
         logging.info('Start Training...')
         self.model.train()
-
-        trainer = ModelTrainer(model=self.model,
-                               optimizer=self.optimizer,
-                               device=self.device,
-                               privacy_engine = self.privacy_engine if hasattr(self, 'privacy_engine') else None,
-                               paths_config=self.paths_config,
-                               training_config=self.training_config,
-                               privacy_config=self.privacy_config)
         try:
-            trainer.training(train_dl=self.train_dl,
-                             val_dl=self.val_dl,
-                             start_epoch=start_epoch)
+            self.trainer.training(train_dl=self.train_dl,
+                                  val_dl=self.val_dl,
+                                  start_epoch=start_epoch)
         except KeyboardInterrupt:
             logging.warning('Training interrupted by user...')
 
         # Set model to best checkpoint
-        self.model.load_state_dict(deepcopy(trainer.best_checkpoint['model_state_dict']))
+        self.model.load_state_dict(deepcopy(self.trainer.best_checkpoint['model_state_dict']))
 
         self._log_model()
 
         logging.info('Training Finished.')
 
-        return trainer.best_checkpoint
+        return self.trainer.best_checkpoint
 
-    def evaluate_model(self, step: int = 0) -> Dict[str, float]:
+    def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Evaluate the trained model.
 
@@ -179,15 +172,14 @@ class TrainPipeline:
             Evaluation metrics
         """
         self.model.eval()
-        evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn, device=self.device)
 
-        metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
+        metrics, figures = self.evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
 
         metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
         logging.info(f'Test metrics:\n{metrics_logs}')
-        return metrics
+        return metrics, figures
 
-    def train_eval(self, start_epoch: int = 0) -> Dict[str, float]:
+    def train_eval(self, start_epoch: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
         Complete training and evaluation pipeline.
 
@@ -198,8 +190,8 @@ class TrainPipeline:
             Evaluation metrics
         """
         self.train_model(start_epoch=start_epoch)
-        metrics = self.evaluate_model(step=start_epoch)
-        return metrics
+        metrics, figures = self.evaluate_model(step=start_epoch)
+        return metrics, figures
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # End parent run
