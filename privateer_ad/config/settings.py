@@ -2,14 +2,12 @@
 Configuration files
 """
 
-import logging
 from pathlib import Path
 from typing import Optional, Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 from .metadata import MetadataConfig
-logger = logging.getLogger(__name__)
 
 # =============================================================================
 # CONFIGURATION CLASSES
@@ -21,7 +19,7 @@ class PathConfig(BaseSettings):
     root_dir: Path = Field(default_factory=lambda: PathConfig._get_package_root())
     data_url: str = "https://zenodo.org/api/records/13900057/files-archive"
 
-    model_config = {'env_prefix': 'PRIVATEER_',
+    model_config = {'env_prefix': 'PVTR_PATH_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -68,23 +66,62 @@ class PathConfig(BaseSettings):
         return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
 
 
+
+class DataConfig(BaseSettings):
+    """Data processing and loading configuration"""
+
+    train_size: float = Field(default=0.8, gt=0.0, lt=1.0, description='Training set size as a fraction of the dataset. '
+                                                                       'Example: "0.8" for 80% of the dataset. Default: "0.8" Test size is calculated as 1 - train_size - val_size')
+    val_size: float = Field(default=0.1, gt=0.0, lt=1.0, description='Validation set size as a fraction of the dataset. '
+                                                                     'Example: "0.1" for 10% of the dataset. Default: "0.1". Test size is calculated as 1 - train_size - val_size')
+    partition_id: int = Field(default=-1, ge=-1, description='Partition ID for data partitioning. Default: "-1"')
+    partition_by: str = Field(default='cell', description="Column to partition data by. Default: 'cell'")
+    num_partitions: int = Field(default=0, ge=0, description="Number of partitions to split the data into. Default: 1")
+    num_classes_per_partition: int = Field(default=1, ge=1, description="Number of classes per partition. Default: 1")
+
+    random_seed: int = Field(default=42)
+    batch_size: int = Field(default=1024, gt=0)
+    seq_len: int = Field(default=12, ge=1)
+
+    num_workers: int = Field(default=4, ge=0)
+    pin_memory: bool = Field(default=True)
+    prefetch_factor: int | None = Field(default=10000, ge=1)
+    persistent_workers: bool = Field(default=True)
+
+    @model_validator(mode='after')
+    def validate_splits_sum_to_one(self):
+        total = self.train_size + self.val_size
+        if 1.0 - total < 0.:
+            raise ValueError(f'Train and val sizes must be between 0 and 1. Total: {total}')
+        return self
+
+    model_config = {'env_prefix': 'PVTR_DATA_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
+
+
 class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
 
     model_type: str = Field(default='TransformerAD')
-    input_size: int = Field(default=9)
-    seq_len: int = Field(default=12)
-    num_layers: int = Field(default=1)
-    hidden_dim: int = Field(default=32)
-    latent_dim: int = Field(default=16)
-    num_heads: int = Field(default=1)
+    input_size: int = Field(default=9, ge=1)
+    num_layers: int = Field(default=1, ge=1)
+    embed_dim: int = Field(default=32, ge=1)
+    latent_dim: int = Field(default=16, ge=1)
+    num_heads: int = Field(default=1, ge=1)
     dropout: float = Field(default=0.2, ge=0.0, le=1.0)
+    seq_len: int = Field(default=12, ge=1)
+
+    model_config = {'env_prefix': 'PVTR_MODEL_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
 
 
 class TrainingConfig(BaseSettings):
     """Training process configuration"""
 
-    batch_size: int = Field(default=1024, gt=0)
     learning_rate: float = Field(default=0.0007, gt=0.0)
     epochs: int = Field(default=120, gt=0)
     loss_function: str = Field(default='L1Loss')
@@ -98,31 +135,10 @@ class TrainingConfig(BaseSettings):
     target_metric: str = Field(default='val_f1-score')
     optimization_direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
-    model_config = {'env_prefix': 'PRIVATEER_',
+    model_config = {'env_prefix': 'PVTR_TRAIN_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
-
-class DataConfig(BaseSettings):
-    """Data processing and loading configuration"""
-
-    train_size: float = Field(default=0.8, gt=0.0, lt=1.0)
-    val_size: float = Field(default=0.1, gt=0.0, lt=1.0)
-    test_size: float = Field(default=0.1, gt=0.0, lt=1.0)
-
-    only_benign_for_training: bool = Field(default=True)
-    apply_scaling: bool = Field(default=True)
-    random_seed: int = Field(default=42)
-
-    num_workers: int = Field(default=4, ge=0)
-    pin_memory: bool = Field(default=True)
-
-    @model_validator(mode='after')
-    def validate_splits_sum_to_one(self):
-        total = self.train_size + self.val_size + self.test_size
-        if abs(total - 1.0) > 0.001:
-            raise ValueError(f'Dataset splits must sum to 1.0, got {total}')
-        return self
 
 
 class AutotuningConfig(BaseSettings):
@@ -142,12 +158,10 @@ class AutotuningConfig(BaseSettings):
     # Sampler configuration
     sampler_type: Literal["tpe", "random", "cmaes"] = Field(default="tpe", description="Type of sampler to use")
 
-    model_config = {
-        'env_prefix': 'AUTOTUNE_',
-        'env_file': '.env',
-        'extra': 'ignore',
-        'case_sensitive': False
-    }
+    model_config = {'env_prefix': 'PVTR_AUTO_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
 
 
 class FederatedLearningConfig(BaseSettings):
@@ -168,7 +182,7 @@ class FederatedLearningConfig(BaseSettings):
     epochs_per_round: int = Field(default=1, gt=0)
     partition_data: bool = Field(default=True)
 
-    model_config = {'env_prefix': 'FL_',
+    model_config = {'env_prefix': 'PVTR_FL_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -186,7 +200,7 @@ class PrivacyConfig(BaseSettings):
     anonymization_enabled: bool = Field(default=False)
     location_privacy_enabled: bool = Field(default=False)
 
-    model_config = {'env_prefix': 'DP_',
+    model_config = {'env_prefix': 'PVTR_DP_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -198,9 +212,10 @@ class MLFlowConfig(BaseSettings):
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
     server_address: str = Field(default="http://localhost:5001", description="MLFlow server address")
     experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")
-    server_run_name: str = Field(default="federated-learning", description="Server run name")
+    server_run_id: str | None = Field(default=None, description="Server run id")
+    client_run_id: str | None = Field(default=None, description="Client run id")
 
-    model_config = {'env_prefix': 'MLFLOW_',
+    model_config = {'env_prefix': 'PVTR_MLFLOW_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
