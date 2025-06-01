@@ -6,11 +6,11 @@ from flwr.server import Driver, LegacyContext, ServerApp, ServerConfig
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
 from privateer_ad import logger
-from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig
+from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig, TrainingConfig
 from privateer_ad.etl import DataProcessor
 from privateer_ad.evaluate import ModelEvaluator
 from privateer_ad.fl.strategy import CustomStrategy
-
+from privateer_ad.utils import log_model
 
 # Flower ServerApp
 app = ServerApp()
@@ -24,12 +24,17 @@ def main(driver: Driver, context: Context) -> None:
         driver: Flower driver instance
         context: Flower context containing run configuration
     """
-    _, server_run_id = _setup_mlflow()
+    mlflow_config = MLFlowConfig()
+    _, server_run_id = setup_mlflow(experiment_name=mlflow_config.experiment_name,
+                                    server_address=mlflow_config.server_address)
+    mlflow_config.server_run_id = server_run_id
+
     fl_config = FederatedLearningConfig()
+    training_config = TrainingConfig()
+
     # Get run parameters from context
     fl_config.n_clients = context.run_config.get('n-clients', fl_config.n_clients)
     fl_config.num_rounds = context.run_config.get('num-server-rounds', fl_config.num_rounds)
-    context.run_config['server_run_id'] =  server_run_id
 
     logger.info(f'Federated Learning will run for {fl_config.num_rounds} rounds on {fl_config.n_clients} clients')
     logger.info(f'Secure aggregation: {fl_config.secure_aggregation_enabled}')
@@ -41,12 +46,8 @@ def main(driver: Driver, context: Context) -> None:
 
     data_processor = DataProcessor()
     test_dl = data_processor.get_dataloader('test', only_benign=False)
-    sample = next(iter(test_dl))[0]['encoder_cont'][:1].to('cpu')
 
-    strategy = CustomStrategy(
-        input_size=sample.shape[-1],
-        server_run_id=server_run_id
-    )
+    strategy = CustomStrategy(training_config=training_config, mlflow_config=mlflow_config)
 
     # Setup and run FL
     server_context = LegacyContext(
@@ -72,18 +73,34 @@ def main(driver: Driver, context: Context) -> None:
         workflow(driver, server_context)
         logger.info('Federated learning completed')
     finally:
-        _final_evaluation(model=strategy.model, dataloader=test_dl, server_round=fl_config.num_rounds)
+        logger.info("Performing final evaluation on the global test set...")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        evaluator = ModelEvaluator(device=device)
+
+        metrics, _ = evaluator.evaluate(strategy.model, test_dl, prefix='global_test', step=fl_config.num_rounds)
+        logger.info(f"Final global evaluation metrics: {metrics}")
+
+        log_model(model=strategy.model,
+                  model_name='global_TransformerAD',
+                  dataloader=test_dl,
+                  direction=strategy.training_config.direction,
+                  target_metric=strategy.training_config.target_metric,
+                  current_target_metric=metrics[strategy.training_config.target_metric],
+                  experiment_id=mlflow.get_experiment_by_name(mlflow_config.experiment_name).experiment_id,
+                  pip_requirements=PathConfig().requirements_file.as_posix())
+
+        logger.info("Final model logged to MLFlow successfully")
         # End parent run
         if mlflow.active_run():
             mlflow.end_run()
 
 
-def _setup_mlflow():
+def setup_mlflow(experiment_name, server_address):
     """Setup MLFlow tracking if enabled."""
     try:
-        mlflow_config = MLFlowConfig()
-        mlflow.set_tracking_uri(mlflow_config.server_address)
-        mlflow.set_experiment(mlflow_config.experiment_name)
+        mlflow.set_tracking_uri(server_address)
+        mlflow.set_experiment(experiment_name)
         if mlflow.active_run():
             logger.info(
                 f"Found active run: {mlflow.active_run().info.run_name} - "
@@ -92,41 +109,10 @@ def _setup_mlflow():
             mlflow.end_run()
 
         mlflow.start_run()
-        server_run_name = mlflow.active_run().info.run_name
-        server_run_id = mlflow.active_run().info.run_id
-        logger.info(f"MLFlow run started: name: {server_run_name} (ID: {server_run_id})")
-        return server_run_name, server_run_id
+        run_name = mlflow.active_run().info.run_name
+        run_id = mlflow.active_run().info.run_id
+        logger.info(f"MLFlow run started: name: {run_name} (ID: {run_id})")
+        return run_name, run_id
     except Exception as e:
         logger.error(f"Failed to setup MLFlow: {e}")
         return None, None
-
-def _final_evaluation(model, dataloader, server_round: int):
-    """Perform final evaluation on the best model."""
-    logger.info("Performing final evaluation on the global test set...")
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    evaluator = ModelEvaluator(device=device)
-
-    model.to('cpu')
-
-    metrics, figures = evaluator.evaluate(model, dataloader, prefix='global_test', step=server_round)
-    logger.info(f"Final global evaluation metrics: {metrics}")
-
-    sample_tensor = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')
-
-    model.to('cpu')
-    _output = model(sample_tensor)
-
-    # Convert to numpy AFTER model call
-    _input_np = sample_tensor.detach().numpy()
-    _output_np = _output.detach().numpy() if not isinstance(_output, dict) else {k: v.detach().numpy() for k, v in
-                                                                                 _output.items()}
-    pip_requirements = str(PathConfig().root_dir.joinpath('requirements.txt'))
-
-    mlflow.pytorch.log_model(pytorch_model=model,
-                             artifact_path='final_global_model',
-                             registered_model_name='privateer_global_model',
-                             signature=mlflow.models.infer_signature(_input_np, _output_np),
-                             pip_requirements=pip_requirements
-                             )
-    logger.info("Final model logged to MLFlow successfully")
