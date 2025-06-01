@@ -140,6 +140,7 @@ class ModelTrainer:
 
             # Compute loss
             batch_loss = torch.mean(self.loss_fn(x, output))
+
             # Backward pass
             batch_loss.backward()
             self.optimizer.step()
@@ -190,11 +191,13 @@ class ModelTrainer:
         balanced_rec_errors = torch.concatenate([benign_rec_errors, malicious_rec_errors])
         balanced_y_true = torch.concatenate([torch.zeros(n_samples_per_class, dtype=torch.int32),
                                              torch.ones(n_samples_per_class, dtype=torch.int32)])
+
         # Offload to CPU
         losses = losses.cpu()
         y_true = y_true.cpu()
         balanced_y_true = balanced_y_true.cpu()
         balanced_rec_errors = balanced_rec_errors.cpu()
+
         # Compute threshold
         fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_rec_errors)
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
@@ -224,7 +227,7 @@ class ModelTrainer:
         report_dict = balanced_metrics | unbalanced_metrics | {'balanced_roc': balanced_roc,
                                                                'unbalanced_roc': roc,
                                                                'loss': torch.mean(losses).item()}
-        
+
         report_dict = {f'val_' + k: v for k, v in report_dict.items()}
         report_dict['threshold'] = threshold
         return report_dict
