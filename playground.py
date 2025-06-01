@@ -13,7 +13,7 @@ import torch
 from dash import dcc, html, Input, Output, State
 
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import get_model_config, get_metadata, get_mlflow_config
+from privateer_ad.config import ModelConfig, MetadataConfig, MLFlowConfig
 
 
 class PrivateerAnomalyDetector:
@@ -71,7 +71,7 @@ class PrivateerAnomalyDetector:
             print("✅ DataProcessor initialized successfully")
 
             # Get model configuration
-            model_config = get_model_config()
+            model_config = ModelConfig()
 
             # Create test dataloader using helper method
             self.test_dataloader = self._create_safe_dataloader(data_path, model_config)
@@ -83,7 +83,7 @@ class PrivateerAnomalyDetector:
             input_size = sample_input.shape[-1]
             print(f"📊 Detected input size: {input_size}")
 
-            mlflow_conf = get_mlflow_config()
+            mlflow_conf = MLFlowConfig()
             mlflow.set_tracking_uri(mlflow_conf.server_address)
             self.model = mlflow.pytorch.load_model('mlflow-artifacts:/304908286791224575/177683639fde4f9b8baa6c4b4a8cfffe/artifacts/model')
             print(self.model)
@@ -93,7 +93,7 @@ class PrivateerAnomalyDetector:
             self.model.eval()
 
             # Get input features from metadata
-            metadata = get_metadata()
+            metadata = MetadataConfig()
             self.input_features = metadata.get_input_features()
             print(f"📊 Input features: {self.input_features}")
 
@@ -669,7 +669,7 @@ if __name__ == '__main__':
     print(f"🎯 Initial Threshold: {detector.threshold}")
     print(f"📊 Input Features: {detector.input_features}")
     try:
-        model_config = get_model_config()
+        model_config = ModelConfig()
         print(f"📏 Sequence Length: {model_config.seq_len}")
     except:
         print("📏 Sequence Length: 12 (default)")
