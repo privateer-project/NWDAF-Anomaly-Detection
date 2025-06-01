@@ -33,15 +33,6 @@ from .settings import (
     PrivacyConfig,
     MLFlowConfig,
     MetadataConfig,
-    get_paths,
-    get_model_config,
-    get_training_config,
-    get_data_config,
-    get_fl_config,
-    get_privacy_config,
-    get_mlflow_config,
-    get_autotuning_config,
-    get_metadata
 )
 
 __all__ = [
@@ -54,13 +45,4 @@ __all__ = [
     'MLFlowConfig',
     'MetadataConfig',
     'AutotuningConfig',
-    'get_paths',
-    'get_model_config',
-    'get_training_config',
-    'get_autotuning_config',
-    'get_data_config',
-    'get_fl_config',
-    'get_privacy_config',
-    'get_mlflow_config',
-    'get_metadata',
 ]
