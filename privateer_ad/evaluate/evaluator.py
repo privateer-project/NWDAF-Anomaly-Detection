@@ -12,7 +12,7 @@ from privateer_ad.visualizations import Visualizer
 
 
 class ModelEvaluator:
-    def __init__(self, device: torch.device, loss_fn: str=None,):
+    def __init__(self, device: torch.device, loss_fn: str=None):
         self.device = device
         self.loss_fn = loss_fn or TrainingConfig().loss_fn
 

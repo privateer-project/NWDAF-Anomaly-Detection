@@ -55,13 +55,12 @@ def load_model_weights(model_path: str, paths_config) -> dict:
     raise FileNotFoundError(f'Could not find model file at any of: {[str(p) for p in possible_paths]}')
 
 
-def log_model(model, dataloader, direction, target_metric, current_target_metric, experiment_name, pip_requirements):
+def log_model(model, model_name, dataloader, direction, target_metric, current_target_metric, experiment_id, pip_requirements):
     """Log trained model to MLFlow with proper signature and champion tagging."""
     model.to('cpu')
     signature = get_signature(model=model, dataloader=dataloader)
 
     client = mlflow.tracking.MlflowClient()
-    model_name = 'TransformerAD'
 
     # Determine sort direction for finding best run
     if direction == 'maximize':
@@ -69,19 +68,15 @@ def log_model(model, dataloader, direction, target_metric, current_target_metric
     else:
         sorting = 'ASC'
 
-    # Get current target metric value
-
     # Check if this is a new champion
     is_champion = True
     previous_champion_version = None
 
     try:
         # Find the best run across all experiments
-        best_run = client.search_runs(
-            mlflow.get_experiment_by_name(experiment_name).experiment_id,
-            order_by=[f'metrics.{target_metric} {sorting}'],
-            max_results=1
-        )[0]
+        best_run = client.search_runs(experiment_id,
+                                      order_by=[f'metrics.{target_metric} {sorting}'],
+                                      max_results=1)[0]
 
         if target_metric in best_run.data.metrics:
             best_target_metric = best_run.data.metrics[target_metric]
@@ -116,7 +111,7 @@ def log_model(model, dataloader, direction, target_metric, current_target_metric
     # Log the model
     model_info = mlflow.pytorch.log_model(
         pytorch_model=model,
-        artifact_path='model',
+        artifact_path=model_name,
         registered_model_name=model_name,
         signature=signature,
         pip_requirements=pip_requirements)
