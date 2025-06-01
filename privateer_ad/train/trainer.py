@@ -1,17 +1,18 @@
+import logging
+
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, Any, Optional, List
+from typing import List, Dict, Any
 
 import mlflow
 import numpy as np
 import torch
 
 from tqdm import tqdm
-from opacus.privacy_engine import PrivacyEngine
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 
 from privateer_ad import logger
-from privateer_ad.config import PathConfig, TrainingConfig, PrivacyConfig
+from privateer_ad.config import TrainingConfig
 
 
 class ModelTrainer:
@@ -29,10 +30,7 @@ class ModelTrainer:
             model: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
             device: torch.device,
-            privacy_engine: Optional[PrivacyEngine] = None,
-            paths_config: PathConfig = None,
-            training_config: TrainingConfig = None,
-            privacy_config: PrivacyConfig = None):
+            training_config: TrainingConfig = None):
         """
         Initialize the ModelTrainer.
 
@@ -46,15 +44,12 @@ class ModelTrainer:
         self.model = model
         self.optimizer = optimizer
         self.device = device
-        self.privacy_engine = privacy_engine
 
         # Inject dependencies
-        self.paths_config = paths_config or PathConfig()
         self.training_config = training_config or TrainingConfig()
-        self.privacy_config = privacy_config or PrivacyConfig()
 
         self.model = self.model.to(self.device)
-        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='mean')
+        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
 
         # Initialize early stopping tracking
         if self.training_config.early_stopping_enabled:
@@ -96,31 +91,34 @@ class ModelTrainer:
         """
 
         for epoch in range(start_epoch, start_epoch + self.training_config.epochs):
-            local_epoch = epoch - start_epoch
+            try:
+                local_epoch = epoch - start_epoch
 
-            # Training phase
-            train_metrics = self._training_loop(epoch=epoch, train_dl=train_dl)
+                # Training phase
+                train_report = self._training_loop(epoch=epoch, train_dl=train_dl)
 
-            # Validation phase
-            val_metrics = self._validation_loop(val_dl=val_dl)
+                # Validation phase
+                val_report = self._validation_loop(val_dl=val_dl)
 
-            # Log metrics
-            self.log_metrics(train_metrics | val_metrics, epoch)
+                # Log metrics
+                self.log_metrics(train_report | val_report, epoch)
 
-            # Check if this is the best model so far
-            is_best = self._is_best_checkpoint()
+                # Check if this is the best model so far
+                is_best = self._is_best_checkpoint()
 
-            if is_best:
-                self.best_checkpoint.update({
-                    'metrics': deepcopy(self.metrics),
-                    'epoch': epoch,
-                    'model_state_dict': deepcopy(self.model.state_dict()),
-                    'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
-                })
+                if is_best:
+                    self.best_checkpoint.update({
+                        'metrics': deepcopy(self.metrics),
+                        'epoch': epoch,
+                        'model_state_dict': deepcopy(self.model.state_dict()),
+                        'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
+                    })
 
-            # Early stopping check
-            if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
-                break
+                # Early stopping check
+                if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
+                    break
+            except KeyboardInterrupt:
+                logging.warning('Training interrupted by user...')
         pprint(self.get_training_summary())
         return self.best_checkpoint
 
@@ -141,8 +139,7 @@ class ModelTrainer:
             output = self.model(x)
 
             # Compute loss
-            batch_loss = self.loss_fn(x, output)
-
+            batch_loss = torch.mean(self.loss_fn(x, output))
             # Backward pass
             batch_loss.backward()
             self.optimizer.step()
@@ -157,24 +154,22 @@ class ModelTrainer:
         self.model.eval()
 
         with torch.no_grad():
-            progress_bar = tqdm(val_dl, desc=' ' * 9 + 'Validation')
-            loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
-            losses: List[float] | np.ndarray = []
-            y_true: List[int] | np.ndarray = []
+            progress_bar = tqdm(val_dl, desc=' ' * 5 + 'Validation')
+            losses: List[torch.Tensor] | torch.Tensor = []
+            y_true: List[torch.Tensor] | torch.Tensor = []
 
             for inputs in progress_bar:
                 x = inputs[0]['encoder_cont'].to(self.device)
                 targets = np.squeeze(inputs[1][0])
                 output = self.model(x)  # all samples
-                batch_losses = loss_fn(x, output)  # reconstruction loss
-                batch_loss_per_sample = batch_losses.mean(dim=(1, 2))
-                batch_loss = batch_loss_per_sample.mean().item()
-                y_true.extend(targets.tolist())
-                losses.extend(batch_loss_per_sample.tolist())  # reconstruction error per sample
-                progress_bar.set_postfix({'val_loss': batch_loss})
+                batch_losses = self.loss_fn(x, output)  # reconstruction loss
+                batch_loss_per_sample = torch.mean(input=batch_losses, dim=(1, 2))
+                y_true.append(targets)
+                losses.append(batch_loss_per_sample)  # reconstruction error per sample
+                progress_bar.set_postfix({'val_loss': torch.mean(batch_loss_per_sample).item()})
 
-            losses = np.ndarray(losses)
-            y_true = np.ndarray(y_true, dtype=int)
+            losses = torch.concatenate(losses)
+            y_true = torch.concatenate(y_true)
 
         # Split benign and malicious samples
         benign_rec_errors = losses[y_true == 0]
@@ -184,26 +179,30 @@ class ModelTrainer:
         n_samples_per_class = min(map(len, [benign_rec_errors, malicious_rec_errors]))
 
         # shuffle samples
-        np.random.shuffle(benign_rec_errors)
-        np.random.shuffle(malicious_rec_errors)
+        benign_rec_errors = benign_rec_errors[torch.randperm(benign_rec_errors.size()[0])]
+        malicious_rec_errors = malicious_rec_errors[torch.randperm(malicious_rec_errors.size()[0])]
 
         # select min number of samples per class
         benign_rec_errors = benign_rec_errors[:n_samples_per_class]
         malicious_rec_errors = malicious_rec_errors[:n_samples_per_class]
 
         # concatenate benign and malicious samples to get balanced dataset
-        balanced_rec_errors = np.concatenate([benign_rec_errors, malicious_rec_errors])
-        balanced_y_true = np.concatenate([np.zeros(n_samples_per_class, dtype=np.int32),
-                                          np.ones(n_samples_per_class, dtype=np.int32)])
-
+        balanced_rec_errors = torch.concatenate([benign_rec_errors, malicious_rec_errors])
+        balanced_y_true = torch.concatenate([torch.zeros(n_samples_per_class, dtype=torch.int32),
+                                             torch.ones(n_samples_per_class, dtype=torch.int32)])
+        # Offload to CPU
+        losses = losses.cpu()
+        y_true = y_true.cpu()
+        balanced_y_true = balanced_y_true.cpu()
+        balanced_rec_errors = balanced_rec_errors.cpu()
         # Compute threshold
         fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_rec_errors)
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
         threshold = thresholds[optimal_idx]
 
         # Compute metrics
-        balanced_y_pred = (balanced_rec_errors >= threshold).astype(int)
-        y_pred = (losses >= threshold).astype(int)
+        balanced_y_pred = torch.where(balanced_rec_errors >= threshold, 1, 0)
+        y_pred = torch.where(losses >= threshold, 1, 0)
 
         target_names = ['benign', 'malicious']
         balanced_metrics = classification_report(y_true=balanced_y_true,
@@ -220,16 +219,14 @@ class ModelTrainer:
         roc = roc_auc_score(y_true=y_true, y_score=losses)
 
         balanced_metrics = {'balanced_' + k: v for k, v in balanced_metrics.items()}
-        metrics = {'unbalanced_' + k: v for k, v in unbalanced_metrics.items()}
+        unbalanced_metrics = {'unbalanced_' + k: v for k, v in unbalanced_metrics.items()}
 
-        report_dict = balanced_metrics | metrics | {'balanced_roc': balanced_roc,
-                                                        'unbalanced_roc': roc,
-                                                        'loss': np.mean(losses)}
-
+        report_dict = balanced_metrics | unbalanced_metrics | {'balanced_roc': balanced_roc,
+                                                               'unbalanced_roc': roc,
+                                                               'loss': torch.mean(losses).item()}
+        
         report_dict = {f'val_' + k: v for k, v in report_dict.items()}
         report_dict['threshold'] = threshold
-        if self.privacy_engine:
-            report_dict['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
         return report_dict
 
     def _is_best_checkpoint(self) -> bool:

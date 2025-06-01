@@ -1,5 +1,5 @@
 import logging
-from copy import deepcopy
+
 from typing import Dict, Any, Tuple
 
 import mlflow
@@ -13,7 +13,7 @@ from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.architectures import TransformerAD
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
-from privateer_ad.utils import get_signature
+from privateer_ad.utils import get_signature, log_model
 
 
 class TrainPipeline:
@@ -69,10 +69,16 @@ class TrainPipeline:
 
         # Setup model and optimizer
         torch.serialization.add_safe_globals([TransformerAD])
-
+        self.model_config.seq_len = self.data_config.seq_len
         # Create model instance
-        self.model = TransformerAD()
-        if self.privacy_config.enabled:
+        self.model = TransformerAD(self.model_config)
+
+        model_summary = str(summary(model=self.model,
+                                    input_data=next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu'),
+                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')
+                                    )
+                            )
+        if self.privacy_config.dp_enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
             self.model = ModuleValidator.fix(self.model)
@@ -81,7 +87,7 @@ class TrainPipeline:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config.learning_rate)
 
         # Setup privacy if enabled
-        if not self.privacy_config.enabled:
+        if not self.privacy_config.dp_enabled:
             logging.info('Differential Privacy disabled.')
         else:
             logging.info('Differential Privacy enabled.')
@@ -102,10 +108,7 @@ class TrainPipeline:
         self.trainer = ModelTrainer(model=self.model,
                                     optimizer=self.optimizer,
                                     device=self.device,
-                                    privacy_engine=self.privacy_engine if hasattr(self, 'privacy_engine') else None,
-                                    paths_config=self.paths_config,
-                                    training_config=self.training_config,
-                                    privacy_config=self.privacy_config)
+                                    training_config=self.training_config)
 
         self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn, device=self.device)
 
@@ -114,12 +117,9 @@ class TrainPipeline:
             mlflow.log_params({'device': str(self.device)})
             mlflow.log_params(self.training_config.model_dump())
             mlflow.log_params(self.data_config.model_dump())
-            mlflow.log_params(self.model.config.model_dump())
+            mlflow.log_params(self.model_config.model_dump())
             mlflow.log_params(self.privacy_config.model_dump())
-            mlflow.log_text(str(summary(model=self.model,
-                                        input_data=next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu'),
-                                        col_names=('input_size', 'output_size', 'num_params', 'params_percent')
-                                        )),
+            mlflow.log_text(model_summary,
                             'model_summary.txt')
 
     def _log_model(self):
@@ -130,7 +130,7 @@ class TrainPipeline:
                                  artifact_path='model',
                                  registered_model_name='TransformerAD',
                                  signature=get_signature(self.model, self.train_dl),
-                                 pip_requirements=str(self.paths_config.root_dir.joinpath('requirements.txt'))
+                                 pip_requirements=self.paths_config.requirements_file.as_posix()
                                  )
 
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
@@ -144,22 +144,25 @@ class TrainPipeline:
             Best checkpoint information
         """
         logging.info('Start Training...')
-        self.model.train()
-        try:
-            self.trainer.training(train_dl=self.train_dl,
-                                  val_dl=self.val_dl,
-                                  start_epoch=start_epoch)
-        except KeyboardInterrupt:
-            logging.warning('Training interrupted by user...')
+        best_checkpoint = self.trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
 
         # Set model to best checkpoint
-        self.model.load_state_dict(deepcopy(self.trainer.best_checkpoint['model_state_dict']))
+        self.model.load_state_dict(best_checkpoint['model_state_dict'])
+        if self.privacy_engine:
+            best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
 
-        self._log_model()
+        log_model(model=self.model,
+                  model_name='TransformerAD',
+                  dataloader=self.train_dl,
+                  direction=self.training_config.direction,
+                  target_metric=self.training_config.target_metric,
+                  current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
+                  experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
+                  pip_requirements=self.paths_config.requirements_file.as_posix())
 
         logging.info('Training Finished.')
 
-        return self.trainer.best_checkpoint
+        return best_checkpoint
 
     def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
