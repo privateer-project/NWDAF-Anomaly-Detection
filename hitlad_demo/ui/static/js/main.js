@@ -375,7 +375,42 @@ async function evaluateResults() {
             // Display performance metrics cards
             statsDiv.innerHTML = `
                 <div class="row mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Before Filter</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>False Positives</h6>
+                                        <p class="h3 text-danger mb-1">${data.statistics.before.false_positives.count}</p>
+                                        <p class="text-muted">${data.statistics.before.false_positives.percentage.toFixed(1)}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">After Filter</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h6>False Positives</h6>
+                                        <p class="h3 text-danger mb-1">${data.statistics.after.false_positives.count}</p>
+                                        <p class="text-muted">${data.statistics.after.false_positives.percentage.toFixed(1)}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
                         <div class="card text-center h-100">
                             <div class="card-body">
                                 <h5 class="card-title">False Positive Reduction</h5>
@@ -383,14 +418,13 @@ async function evaluateResults() {
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="card text-center h-100">
                             <div class="card-body">
                                 <h5 class="card-title">True Positive Retention</h5>
                                 <p class="display-4 text-primary">${data.statistics.true_positive_retention.toFixed(1)}%</p>
                             </div>
                         </div>
-                    </div>
                     </div>
                 </div>
                 

@@ -230,10 +230,33 @@ def evaluate_results():
         filtered_tp = np.sum((filtered_decisions == 1) & (dataset_labels == 1))
         filtered_fp = np.sum((filtered_decisions == 1) & (dataset_labels == 0))
 
-        # Calculate percentages
+        # Calculate initial percentages
+        total_initial_alerts = initial_tp + initial_fp
+        initial_tp_percentage = (initial_tp / total_initial_alerts * 100) if total_initial_alerts > 0 else 0
+        initial_fp_percentage = (initial_fp / total_initial_alerts * 100) if total_initial_alerts > 0 else 0
+
+        # Calculate filtered percentages
+        total_filtered_alerts = filtered_tp + filtered_fp
+        filtered_tp_percentage = (filtered_tp / total_filtered_alerts * 100) if total_filtered_alerts > 0 else 0
+        filtered_fp_percentage = (filtered_fp / total_filtered_alerts * 100) if total_filtered_alerts > 0 else 0
+
+        # Calculate reduction and retention percentages
         fp_reduction_percentage = ((initial_fp - filtered_fp) / initial_fp * 100) if initial_fp > 0 else 0
         tp_retention_percentage = (filtered_tp / initial_tp * 100) if initial_tp > 0 else 0
+
+        # Console output
+        print("\nBefore Alert Filter:")
+        print(f"True Positives: {initial_tp} ({initial_tp_percentage:.1f}%)")
+        print(f"False Positives: {initial_fp} ({initial_fp_percentage:.1f}%)")
         
+        print("\nAfter Alert Filter:")
+        print(f"True Positives: {filtered_tp} ({filtered_tp_percentage:.1f}%)")
+        print(f"False Positives: {filtered_fp} ({filtered_fp_percentage:.1f}%)")
+        
+        print("\nPerformance Metrics:")
+        print(f"False Positive Reduction: {fp_reduction_percentage:.2f}%")
+        print(f"True Positive Retention: {tp_retention_percentage:.2f}%")
+
         # Generate detailed comparison data for the *sampled* anomalies (as before)
         sampled_indices = session_data.get('sampled_indices', [])
         reviewed_anomalies = []
@@ -252,6 +275,25 @@ def evaluate_results():
                     'matches_feedback': feedback == final_decision_for_sample
                 })
                 
+        # Calculate initial percentages
+        total_initial_alerts = initial_tp + initial_fp
+        initial_tp_percentage = (initial_tp / total_initial_alerts * 100) if total_initial_alerts > 0 else 0
+        initial_fp_percentage = (initial_fp / total_initial_alerts * 100) if total_initial_alerts > 0 else 0
+
+        # Calculate filtered percentages
+        total_filtered_alerts = filtered_tp + filtered_fp
+        filtered_tp_percentage = (filtered_tp / total_filtered_alerts * 100) if total_filtered_alerts > 0 else 0
+        filtered_fp_percentage = (filtered_fp / total_filtered_alerts * 100) if total_filtered_alerts > 0 else 0
+
+        print("\nBefore Alert Filter:")
+        print(f"True Positives: {initial_tp} ({initial_tp_percentage:.1f}%)")
+        print(f"False Positives: {initial_fp} ({initial_fp_percentage:.1f}%)")
+        
+        print("\nAfter Alert Filter:")
+        print(f"True Positives: {filtered_tp} ({filtered_tp_percentage:.1f}%)")
+        print(f"False Positives: {filtered_fp} ({filtered_fp_percentage:.1f}%)")
+        
+        print("\nPerformance Metrics:")
         print(f"False Positive Reduction: {fp_reduction_percentage:.2f}%")
         print(f"True Positive Retention: {tp_retention_percentage:.2f}%")
         
@@ -260,6 +302,14 @@ def evaluate_results():
             'statistics': {
                 'false_positive_reduction': max(float(fp_reduction_percentage), random.uniform(33.6, 34.8)),
                 'true_positive_retention': max(float(tp_retention_percentage), random.uniform(97.0, 98.3)),
+                'before': {
+                    'true_positives': {'count': int(initial_tp), 'percentage': float(initial_tp_percentage)},
+                    'false_positives': {'count': int(initial_fp), 'percentage': float(initial_fp_percentage)}
+                },
+                'after': {
+                    'true_positives': {'count': int(filtered_tp), 'percentage': float(filtered_tp_percentage)},
+                    'false_positives': {'count': int(filtered_fp), 'percentage': float(filtered_fp_percentage)}
+                }
             },
             'reviewed_anomalies': reviewed_anomalies
         })
