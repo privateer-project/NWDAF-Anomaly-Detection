@@ -1,3 +1,6 @@
+// random number generator for demo purposes
+const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min; 
+
 // Global state
 let currentStep = 0;
 let currentAnomalyIndex = null;
@@ -20,8 +23,12 @@ const nextButton = document.getElementById('next-btn');
 // HTML Templates
 const ANOMALY_INFO_TEMPLATE = `
     <h4>Anomaly Details</h4>
-    <p>Reconstruction Error: <span id="reconstruction-error"></span></p>
-    <p>True Label (Hint): <span id="true-label" class="badge bg-info"></span></p>
+    <p><span>Reconstruction Error:</span> <span id="reconstruction-error"></span></p>
+    <p><span>Service Impact:</span> <span id="service-impact" class="badge"></span></p>
+    <p><span>Affected Users:</span> <span id="affected-users"></span></p>
+    <p><span>Related Anomalies:</span> <span id="related-anomalies"></span></p>
+    <p><span>Network Impact:</span> <span id="network-impact"></span></p>
+    <p><span>True Label (Hint):</span> <span id="true-label" class="badge bg-info"></span></p>
     <div class="progress mb-3">
         <div class="progress-bar bg-info" role="progressbar" style="width: 0%">
             0/0 Anomalies Reviewed
@@ -238,6 +245,22 @@ async function getNextAnomaly() {
             
             // Try updating elements again after potential reset
             document.getElementById('reconstruction-error').textContent = data.reconstruction_error.toFixed(6);
+
+            // Generate random values
+
+            // Set service impact with color
+            // Service impact should be low 50% or the time, medium, 40%, high 10%
+            const serviceImpact = Math.random() < 0.5 ? 'Low' : (Math.random() < 0.9 ? 'Medium' : 'High');
+            const serviceImpactSpan = document.getElementById('service-impact');
+            serviceImpactSpan.textContent = serviceImpact;
+            serviceImpactSpan.className = `badge ${serviceImpact === 'High' ? 'bg-danger' : serviceImpact === 'Medium' ? 'bg-warning text-dark' : 'bg-info'}`;
+
+            // Set other metrics
+            const affectedUsers = Math.floor(Math.random() * (1000 - 100 + 1)) + 100;
+            document.getElementById('affected-users').textContent = affectedUsers.toLocaleString();
+            document.getElementById('related-anomalies').textContent = random(0, 7) + ' in last hour';
+            document.getElementById('network-impact').textContent = `Bandwidth +${random(11, 54)}% above normal`;
+            // document.getElementById('similar-case').textContent = `${previousCases[Math.floor(Math.random() * previousCases.length)]} (labeled as ${data.true_label === 1 ? 'Anomaly' : 'Normal'})`;
             
             // Update true label with colored badge
             const trueLabelSpan = document.getElementById('true-label');

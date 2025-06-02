@@ -164,6 +164,38 @@ h2 {
     margin-bottom: 20px;
 }
 
+#anomaly-info p {
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#anomaly-info p span:first-child {
+    font-weight: 500;
+    color: #495057;
+}
+
+#service-impact {
+    min-width: 70px;
+    text-align: center;
+}
+
+#affected-users {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+#network-impact,
+#related-anomalies {
+    color: #495057;
+}
+
+#similar-case {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
 .gap-2 {
     gap: 1rem !important;
 }
