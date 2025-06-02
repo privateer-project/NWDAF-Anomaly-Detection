@@ -15,7 +15,6 @@ from .metadata import MetadataConfig
 
 class PathConfig(BaseSettings):
     """All file and directory paths using package-based root resolution"""
-
     root_dir: Path = Field(default_factory=lambda: PathConfig._get_package_root())
     data_url: str = "https://zenodo.org/api/records/13900057/files-archive"
 
@@ -71,7 +70,6 @@ class PathConfig(BaseSettings):
 
 class DataConfig(BaseSettings):
     """Data processing and loading configuration"""
-
     train_size: float = Field(default=0.8, gt=0.0, lt=1.0, description='Training set size as a fraction of the dataset. '
                                                                        'Example: "0.8" for 80% of the dataset. Default: "0.8" Test size is calculated as 1 - train_size - val_size')
     val_size: float = Field(default=0.1, gt=0.0, lt=1.0, description='Validation set size as a fraction of the dataset. '
@@ -105,13 +103,12 @@ class DataConfig(BaseSettings):
 
 class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
-
     model_type: str = Field(default='TransformerAD')
     input_size: int = Field(default=9, ge=1)
     num_layers: int = Field(default=1, ge=1)
-    embed_dim: int = Field(default=64, ge=1)
+    embed_dim: int = Field(default=32, ge=1)
     latent_dim: int = Field(default=16, ge=1)
-    num_heads: int = Field(default=2, ge=1)
+    num_heads: int = Field(default=1, ge=1)
     dropout: float = Field(default=0.2, ge=0.0, le=1.0)
     seq_len: int = Field(default=12, ge=1)
 
@@ -123,13 +120,12 @@ class ModelConfig(BaseSettings):
 
 class TrainingConfig(BaseSettings):
     """Training process configuration"""
-
     learning_rate: float = Field(default=0.001, gt=0.0)
-    epochs: int = Field(default=500, gt=0)
+    epochs: int = Field(default=100, gt=0)
     loss_fn: str = Field(default='L1Loss')
 
     # Early stopping
-    early_stopping_enabled: bool = Field(default=False)
+    early_stopping_enabled: bool = Field(default=True)
     early_stopping_patience: int = Field(default=20, gt=0)
     early_stopping_warmup: int = Field(default=10, gt=0)
 
@@ -145,7 +141,6 @@ class TrainingConfig(BaseSettings):
 
 class AutotuningConfig(BaseSettings):
     """Hyperparameter optimization configuration"""
-
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
     n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
@@ -194,9 +189,9 @@ class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
     dp_enabled: bool = Field(default=False)
-    target_epsilon: float = Field(default=0.5, gt=0.0)
-    target_delta: float = Field(default=1e-7, gt=0.0)
-    max_grad_norm: float = Field(default=0.5, gt=0.0)
+    target_epsilon: float = Field(default=0.3, gt=0.0)
+    target_delta: float = Field(default=1e-8, gt=0.0)
+    max_grad_norm: float = Field(default=.7, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)
@@ -209,7 +204,6 @@ class PrivacyConfig(BaseSettings):
 
 class MLFlowConfig(BaseSettings):
     """MLFlow experiment tracking configuration"""
-
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
     server_address: str = Field(default="http://localhost:5001", description="MLFlow server address")
     experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")

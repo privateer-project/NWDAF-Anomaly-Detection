@@ -104,7 +104,8 @@ class TrainPipeline:
                 target_delta=self.privacy_config.target_delta,
                 max_grad_norm=self.privacy_config.max_grad_norm
             )
-
+        if self.training_config.early_stopping_enabled:
+            logging.info('Early stopping enabled.')
         self.trainer = ModelTrainer(model=self.model,
                                     optimizer=self.optimizer,
                                     device=self.device,
@@ -148,18 +149,6 @@ class TrainPipeline:
 
         # Set model to best checkpoint
         self.model.load_state_dict(best_checkpoint['model_state_dict'])
-        if self.privacy_engine:
-            best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
-
-        log_model(model=self.model,
-                  model_name='TransformerAD',
-                  dataloader=self.train_dl,
-                  direction=self.training_config.direction,
-                  target_metric=self.training_config.target_metric,
-                  current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
-                  experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
-                  pip_requirements=self.paths_config.requirements_file.as_posix())
-
         logging.info('Training Finished.')
 
         return best_checkpoint
@@ -192,8 +181,21 @@ class TrainPipeline:
         Returns:
             Evaluation metrics
         """
-        self.train_model(start_epoch=start_epoch)
+        best_checkpoint = self.train_model(start_epoch=start_epoch)
         metrics, figures = self.evaluate_model(step=start_epoch)
+        model_name = 'TransformerAD'
+        if self.privacy_config.dp_enabled:
+            metrics['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
+            model_name += '_DP'
+
+        log_model(model=self.model,
+                  model_name=model_name,
+                  dataloader=self.train_dl,
+                  direction=self.training_config.direction,
+                  target_metric=self.training_config.target_metric,
+                  current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
+                  experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
+                  pip_requirements=self.paths_config.requirements_file.as_posix())
         return metrics, figures
 
     def __exit__(self, exc_type, exc_val, exc_tb):

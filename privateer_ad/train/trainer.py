@@ -53,7 +53,6 @@ class ModelTrainer:
 
         # Initialize early stopping tracking
         if self.training_config.early_stopping_enabled:
-            logger.info('Early stopping enabled.')
             self.es_not_improved_epochs = 0
             valid_directions = ('maximize', 'minimize')
             if self.training_config.direction not in valid_directions:

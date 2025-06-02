@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 
 import joblib
@@ -11,7 +12,6 @@ from sklearn.model_selection import train_test_split
 from flwr_datasets.partitioner import PathologicalPartitioner
 from torch.utils.data import DataLoader
 
-from privateer_ad import logger
 from privateer_ad.config import DataConfig, PathConfig, MetadataConfig
 from privateer_ad.etl.utils import get_dataset_path, check_existing_datasets
 
@@ -26,7 +26,7 @@ class DataProcessor:
         Args:
             data_config: Optional data configuration override
         """
-        logger.info('Initializing DataProcessor...')
+        logging.info('Initializing DataProcessor...')
         self.data_config = data_config or DataConfig()
         self.paths_config = PathConfig()
         self.metadata_config = MetadataConfig()
@@ -49,7 +49,7 @@ class DataProcessor:
         check_existing_datasets()
 
         raw_df = self.read_csv(raw_dataset_path)
-        logger.info(f'Loaded data from {raw_dataset_path}')
+        logging.info(f'Loaded data from {raw_dataset_path}')
 
         # Use configuration for train size
         datasets = self.split_data(raw_df)
@@ -60,13 +60,13 @@ class DataProcessor:
         # Ensure processed directory exists
         self.paths_config.processed_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info('Save datasets...')
+        logging.info('Save datasets...')
         for k, df in datasets.items():
             save_path = get_dataset_path(k)
             processed_df = self.preprocess_data(df)
-            logger.warning(f'Save size {k}: {len(processed_df)}')
+            logging.warning(f'Save size {k}: {len(processed_df)}')
             processed_df.to_csv(save_path, index=False)
-            logger.info(f'{k} saved at {save_path}')
+            logging.info(f'{k} saved at {save_path}')
 
     def read_csv(self, path):
         dtypes = deepcopy(self.features_dtypes)
@@ -82,14 +82,14 @@ class DataProcessor:
         test_dfs = []
         for device, device_info in self.metadata_config.devices.items():
             device_df = df.loc[df['imeisv'] == device_info.imeisv]
-            logger.debug(f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
+            logging.debug(f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
                          f' benign samples - {len(device_df[device_df["attack"] == 0])}')
 
             device_in_attacks = device_df['attack_number'].isin(device_info.in_attacks)
-            logger.debug(f'Sum  - {sum(device_in_attacks)} Len - {len(device_in_attacks)}')
+            logging.debug(f'Sum  - {sum(device_in_attacks)} Len - {len(device_in_attacks)}')
             device_df.loc[device_in_attacks, 'attack'] = 1
             device_df.loc[~device_in_attacks, 'attack'] = 0
-            logger.debug(f'After: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])} '
+            logging.debug(f'After: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])} '
                          f'benign samples - {len(device_df[device_df["attack"] == 0])}')
             device_train_df, df_tmp = train_test_split(device_df,
                                                        train_size=self.data_config.train_size,
@@ -108,7 +108,7 @@ class DataProcessor:
         datasets = {'train': df_train, 'val': df_val, 'test': df_test}
 
         for k, df in datasets.items():
-            logger.debug(f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
+            logging.debug(f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
                          f'benign length: {len(df[df["attack"] == 0])} '
                          f'{k} shape: {df.shape}')
         return datasets
@@ -149,13 +149,13 @@ class DataProcessor:
                 df['attack'] = df['attack'].astype(int)
                 df = df[df['attack'] == 0]
             else:
-                logger.warning('Cannot get benign data. No column named `attack` in dataset.')
+                logging.warning('Cannot get benign data. No column named `attack` in dataset.')
         return df
 
     def get_partition(self, df: DataFrame) -> DataFrame:
         """Partition data."""
         if self.data_config.partition_id == -1:
-            logger.info(f'No partitioning. Returning original dataset.')
+            logging.info(f'No partitioning.')
             return df
         elif self.data_config.partition_id >= self.data_config.num_partitions:
             raise ValueError(f'partition_id ({self.data_config.partition_id}) is greater than num_partitions ({self.data_config.num_partitions})')
@@ -171,7 +171,7 @@ class DataProcessor:
             shuffle=False)
 
         partitioner.dataset = Dataset.from_pandas(df)
-        logger.info(f'Get partition: {self.data_config.partition_id + 1}/{self.data_config.num_partitions}')
+        logging.info(f'Get partition: {self.data_config.partition_id + 1}/{self.data_config.num_partitions}')
         partitioned_df = partitioner.load_partition(self.data_config.partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
 
@@ -189,13 +189,13 @@ class DataProcessor:
             'persistent_workers': self.data_config.persistent_workers
         }
 
-        logger.info(f'Get {path} dataloader with '
+        logging.info(f'Get {path} dataloader with '
                     f'batch_size: {self.data_config.batch_size}, '
                     f'seq_len: {self.data_config.seq_len}, '
                     f'partition_id: {self.data_config.partition_id},'
                     f' only_benign: {only_benign}')
 
-        logger.info(f'Loading {path} dataset...')
+        logging.info(f'Loading {path} dataset...')
         df = self.read_csv(path)
         df = self.preprocess_data(df=df, only_benign=only_benign)
 
@@ -217,7 +217,6 @@ class DataProcessor:
             predict_mode=False,
         ).to_dataloader(**dataloader_params)
 
-        logger.info(f'Finished loading {path} dataset.')
         return dataloader
 
 

@@ -74,22 +74,22 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
 
     try:
         # Find the best run across all experiments
-        best_run = client.search_runs(experiment_id,
-                                      order_by=[f'metrics.{target_metric} {sorting}'],
-                                      max_results=1)[0]
+        best_run = client.search_runs(experiment_id, order_by=[f'metrics.`{target_metric}` {sorting}'], max_results=1)[0]
 
         if target_metric in best_run.data.metrics:
             best_target_metric = best_run.data.metrics[target_metric]
 
             # Compare with previous best
             if direction == 'maximize':
-                is_champion = current_target_metric > best_target_metric
+                is_champion = current_target_metric >= best_target_metric
             else:
-                is_champion = current_target_metric < best_target_metric
+                is_champion = current_target_metric <= best_target_metric
 
             print(f'Previous best {target_metric}: {best_target_metric}')
             print(f'Current {target_metric}: {current_target_metric}')
             print(f'Is new champion: {is_champion}')
+        else:
+            print('Metric not found in best run. Skipping champion tagging.')
 
         # Find previous champion version to remove tag
         if is_champion:
@@ -115,6 +115,8 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
         registered_model_name=model_name,
         signature=signature,
         pip_requirements=pip_requirements)
+    # Get the version number of the newly logged model
+    current_version = model_info.registered_model_version
 
     # Handle champion tagging
     if is_champion:
@@ -123,15 +125,13 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
         # Remove champion tag from previous version
         if previous_champion_version:
             try:
-                client.delete_model_version_tag(model_name, previous_champion_version, '🏆champion')
+                client.delete_model_version_tag(model_name, previous_champion_version, 'champion')
                 print(f"Removed champion tag from version {previous_champion_version}")
             except Exception as e:
                 print(f"Error removing champion tag from previous version: {e}")
 
         try:
-            # Get the version number of the newly logged model
-            current_version = model_info.registered_model_version
-            client.set_model_version_tag(model_name, current_version, '🏆champion', 'true')
+            client.set_model_version_tag(model_name, current_version, 'champion', 'true')
 
             # Also add metadata about when it became champion
             import datetime
@@ -141,18 +141,20 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
                 'champion_since',
                 datetime.datetime.now().isoformat()
             )
-            client.set_model_version_tag(
-                model_name,
-                current_version,
-                target_metric,
-                str(current_target_metric)
-            )
 
             print(f"Added champion tag to version {current_version}")
         except Exception as e:
             print(f"Error adding champion tag: {e}")
     else:
-        print(f"Model performance ({current_target_metric}) did not exceed previous best. No champion tag added.")
+        print(f"Model performance ({current_target_metric}) did not exceed"
+              f" previous best ({best_target_metric}). No champion tag added.")
+
+    client.set_model_version_tag(
+        model_name,
+        current_version,
+        target_metric,
+        str(current_target_metric)
+    )
 
 def get_signature(model, dataloader):
     _input = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')
@@ -164,3 +166,34 @@ def get_signature(model, dataloader):
         _output = _output.detach().numpy()
     signature = mlflow.models.infer_signature(model_input=_input.detach().numpy(), model_output=_output)
     return signature
+
+
+def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
+    """Simple function to load your champion model."""
+    "http://localhost:5001"
+    mlflow.tracking.set_tracking_uri(tracking_uri)
+    client = mlflow.tracking.MlflowClient()
+
+    # Get registered model
+    registered_model = client.get_registered_model(model_name)
+
+    # Find champion version
+    for version in registered_model.latest_versions:
+        version_details = client.get_model_version(model_name, version.version)
+        if version_details.tags.get('champion') == 'true':
+            # Load the champion model
+            model_uri = f"models:/{model_name}/{version.version}"
+            model = mlflow.pytorch.load_model(model_uri)
+            print(f"🏆 Loaded champion model v{version.version}")
+            return model
+
+    # If no champion found, load latest
+    latest_version = registered_model.latest_versions[0].version
+    model_uri = f"models:/{model_name}/{latest_version}"
+    model = mlflow.pytorch.load_model(model_uri)
+    print(f"⚠️ No champion found, loaded latest v{latest_version}")
+    return model
+
+# Usage - this is all you need!
+if __name__ == '__main__':
+    champion_model: torch.nn.Module = load_champion_model("TransformerAD")
