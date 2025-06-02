@@ -2,14 +2,12 @@
 Configuration files
 """
 
-import logging
 from pathlib import Path
 from typing import Optional, Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 from .metadata import MetadataConfig
-logger = logging.getLogger(__name__)
 
 # =============================================================================
 # CONFIGURATION CLASSES
@@ -17,11 +15,10 @@ logger = logging.getLogger(__name__)
 
 class PathConfig(BaseSettings):
     """All file and directory paths using package-based root resolution"""
-
     root_dir: Path = Field(default_factory=lambda: PathConfig._get_package_root())
     data_url: str = "https://zenodo.org/api/records/13900057/files-archive"
 
-    model_config = {'env_prefix': 'PRIVATEER_',
+    model_config = {'env_prefix': 'PRIVATEER_PATH_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -67,27 +64,65 @@ class PathConfig(BaseSettings):
     def raw_dataset(self) -> Path:
         return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
 
+    @property
+    def requirements_file(self) -> Path:
+        return self.root_dir.joinpath('requirements.txt')
+
+class DataConfig(BaseSettings):
+    """Data processing and loading configuration"""
+    train_size: float = Field(default=0.8, gt=0.0, lt=1.0, description='Training set size as a fraction of the dataset. '
+                                                                       'Example: "0.8" for 80% of the dataset. Default: "0.8" Test size is calculated as 1 - train_size - val_size')
+    val_size: float = Field(default=0.1, gt=0.0, lt=1.0, description='Validation set size as a fraction of the dataset. '
+                                                                     'Example: "0.1" for 10% of the dataset. Default: "0.1". Test size is calculated as 1 - train_size - val_size')
+    partition_id: int = Field(default=-1, ge=-1, description='Partition ID for data partitioning. Default: "-1"')
+    partition_by: str = Field(default='cell', description="Column to partition data by. Default: 'cell'")
+    num_partitions: int = Field(default=0, ge=0, description="Number of partitions to split the data into. Default: 1")
+    num_classes_per_partition: int = Field(default=1, ge=1, description="Number of classes per partition. Default: 1")
+
+    random_seed: int = Field(default=42)
+    batch_size: int = Field(default=4096, gt=0)
+    seq_len: int = Field(default=12, ge=1)
+
+    num_workers: int = Field(default=4, ge=0)
+    pin_memory: bool = Field(default=True)
+    prefetch_factor: int | None = Field(default=10000, ge=1)
+    persistent_workers: bool = Field(default=True)
+
+    @model_validator(mode='after')
+    def validate_splits_sum_to_one(self):
+        total = self.train_size + self.val_size
+        if 1.0 - total < 0.:
+            raise ValueError(f'Train and val sizes must be between 0 and 1. Total: {total}')
+        return self
+
+    model_config = {'env_prefix': 'PRIVATEER_DATA_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
+
 
 class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
-
     model_type: str = Field(default='TransformerAD')
-    input_size: int = Field(default=9)
-    seq_len: int = Field(default=12)
-    num_layers: int = Field(default=1)
-    hidden_dim: int = Field(default=32)
-    latent_dim: int = Field(default=16)
-    num_heads: int = Field(default=1)
+    input_size: int = Field(default=9, ge=1)
+    num_layers: int = Field(default=1, ge=1)
+    embed_dim: int = Field(default=32, ge=1)
+    latent_dim: int = Field(default=16, ge=1)
+    num_heads: int = Field(default=1, ge=1)
     dropout: float = Field(default=0.2, ge=0.0, le=1.0)
+    seq_len: int = Field(default=12, ge=1)
+
+    model_config = {'env_prefix': 'PRIVATEER_MODEL_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
 
 
 class TrainingConfig(BaseSettings):
     """Training process configuration"""
-
-    batch_size: int = Field(default=1024, gt=0)
-    learning_rate: float = Field(default=0.0007, gt=0.0)
-    epochs: int = Field(default=120, gt=0)
-    loss_function: str = Field(default='L1Loss')
+    learning_rate: float = Field(default=0.001, gt=0.0)
+    epochs: int = Field(default=100, gt=0)
+    loss_fn: str = Field(default='L1Loss')
 
     # Early stopping
     early_stopping_enabled: bool = Field(default=True)
@@ -95,39 +130,17 @@ class TrainingConfig(BaseSettings):
     early_stopping_warmup: int = Field(default=10, gt=0)
 
     # Optimization
-    target_metric: str = Field(default='val_f1-score')
-    optimization_direction: Literal['minimize', 'maximize'] = Field(default='maximize')
+    target_metric: str = Field(default='val_balanced_f1-score')
+    direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
-    model_config = {'env_prefix': 'PRIVATEER_',
+    model_config = {'env_prefix': 'PRIVATEER_TRAIN_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
 
-class DataConfig(BaseSettings):
-    """Data processing and loading configuration"""
-
-    train_size: float = Field(default=0.8, gt=0.0, lt=1.0)
-    val_size: float = Field(default=0.1, gt=0.0, lt=1.0)
-    test_size: float = Field(default=0.1, gt=0.0, lt=1.0)
-
-    only_benign_for_training: bool = Field(default=True)
-    apply_scaling: bool = Field(default=True)
-    random_seed: int = Field(default=42)
-
-    num_workers: int = Field(default=4, ge=0)
-    pin_memory: bool = Field(default=True)
-
-    @model_validator(mode='after')
-    def validate_splits_sum_to_one(self):
-        total = self.train_size + self.val_size + self.test_size
-        if abs(total - 1.0) > 0.001:
-            raise ValueError(f'Dataset splits must sum to 1.0, got {total}')
-        return self
-
 
 class AutotuningConfig(BaseSettings):
     """Hyperparameter optimization configuration"""
-
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
     n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
@@ -142,12 +155,10 @@ class AutotuningConfig(BaseSettings):
     # Sampler configuration
     sampler_type: Literal["tpe", "random", "cmaes"] = Field(default="tpe", description="Type of sampler to use")
 
-    model_config = {
-        'env_prefix': 'AUTOTUNE_',
-        'env_file': '.env',
-        'extra': 'ignore',
-        'case_sensitive': False
-    }
+    model_config = {'env_prefix': 'PRIVATEER_AUTOTUNE_',
+                    'env_file': '.env',
+                    'extra': 'ignore',
+                    'case_sensitive': False}
 
 
 class FederatedLearningConfig(BaseSettings):
@@ -168,7 +179,7 @@ class FederatedLearningConfig(BaseSettings):
     epochs_per_round: int = Field(default=1, gt=0)
     partition_data: bool = Field(default=True)
 
-    model_config = {'env_prefix': 'FL_',
+    model_config = {'env_prefix': 'PRIVATEER_FL_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -177,16 +188,15 @@ class FederatedLearningConfig(BaseSettings):
 class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
-    enabled: bool = Field(default=False)
-    target_epsilon: float = Field(default=0.5, gt=0.0)
-    target_delta: float = Field(default=1e-7, gt=0.0)
-    max_grad_norm: float = Field(default=0.5, gt=0.0)
+    dp_enabled: bool = Field(default=False)
+    target_epsilon: float = Field(default=0.3, gt=0.0)
+    target_delta: float = Field(default=1e-8, gt=0.0)
+    max_grad_norm: float = Field(default=.7, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)
-    location_privacy_enabled: bool = Field(default=False)
 
-    model_config = {'env_prefix': 'DP_',
+    model_config = {'env_prefix': 'PRIVATEER_DP_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
@@ -194,58 +204,16 @@ class PrivacyConfig(BaseSettings):
 
 class MLFlowConfig(BaseSettings):
     """MLFlow experiment tracking configuration"""
-
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
     server_address: str = Field(default="http://localhost:5001", description="MLFlow server address")
     experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")
-    server_run_name: str = Field(default="federated-learning", description="Server run name")
+    server_run_id: str | None = Field(default=None, description="Server run id")
+    client_run_id: str | None = Field(default=None, description="Client run id")
 
-    model_config = {'env_prefix': 'MLFLOW_',
+    model_config = {'env_prefix': 'PRIVATEER_MLFLOW_',
                     'env_file': '.env',
                     'extra': 'ignore',
                     'case_sensitive': False}
-
-# =============================================================================
-# SIMPLE CONFIGURATION ACCESS
-# =============================================================================
-
-# Direct instantiation - no complex registry pattern
-def get_paths() -> PathConfig:
-    """Get path configuration"""
-    return PathConfig()
-
-def get_model_config() -> ModelConfig:
-    """Get model configuration"""
-    return ModelConfig()
-
-def get_training_config() -> TrainingConfig:
-    """Get training configuration"""
-    return TrainingConfig()
-
-def get_autotuning_config() -> AutotuningConfig:
-    """Get autotuning configuration"""
-    return AutotuningConfig()
-
-def get_data_config() -> DataConfig:
-    """Get data configuration"""
-    return DataConfig()
-
-def get_fl_config() -> FederatedLearningConfig:
-    """Get federated learning configuration"""
-    return FederatedLearningConfig()
-
-def get_privacy_config() -> PrivacyConfig:
-    """Get privacy configuration"""
-    return PrivacyConfig()
-
-def get_mlflow_config() -> MLFlowConfig:
-    """Get MLFlow configuration"""
-    return MLFlowConfig()
-
-def get_metadata() -> MetadataConfig:
-    """Get metadata configuration"""
-    return MetadataConfig()
-
 
 # =============================================================================
 # CONFIGURATION VALIDATION
@@ -257,7 +225,7 @@ def validate_config():
 
     # Basic validation - individual configs handle their own validation
     try:
-        fl_cfg = get_fl_config()
+        fl_cfg = FederatedLearningConfig()
         if fl_cfg.reconstruction_threshold > fl_cfg.num_shares:
             errors.append(
                 f"Reconstruction threshold ({fl_cfg.reconstruction_threshold}) "

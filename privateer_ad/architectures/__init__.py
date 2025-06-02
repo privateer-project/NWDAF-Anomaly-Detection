@@ -1,6 +1,5 @@
-from .transformer_ad import TransformerAD, TransformerADConfig
+from .transformer_ad import TransformerAD
 
 __all__ = [
     'TransformerAD',
-    'TransformerADConfig'
 ]

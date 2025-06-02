@@ -1,139 +1,47 @@
 import time
 import threading
 import queue
-import plotly.graph_objects as go
+
 from datetime import datetime
+
 import dash
-from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
 import torch
-import torch.serialization  # For safe loading of models
-import sys
-# Add the privateer_ad package to the path
-sys.path.append('.')
-sys.path.append('./privateer_ad')
 
-from privateer_ad.architectures import TransformerAD, TransformerADConfig
+from dash import dcc, html, Input, Output, State
+
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import get_model_config, get_metadata, get_mlflow_config
-
-PRIVATEER_AVAILABLE = True
-print("✅ PRIVATEER modules loaded successfully")
-
+from privateer_ad.config import ModelConfig, MetadataConfig, MLFlowConfig, DataConfig, TrainingConfig
+from privateer_ad.utils import load_champion_model
 
 class PrivateerAnomalyDetector:
     """Simplified anomaly detector using only PRIVATEER components"""
 
-    def __init__(self, model_path="demo/demo_model.pth", data_path="train"):
-        if not PRIVATEER_AVAILABLE:
-            raise RuntimeError("PRIVATEER modules are required")
+    def __init__(self):
+        self.data_config = DataConfig()
+        self.mlflow_config = MLFlowConfig()
+        self.metadata = MetadataConfig()
+        self.training_config = TrainingConfig()
 
-        self.model = None
-        self.data_processor = None
-        self.test_dataloader = None
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Initialize DataProcessor
+        self.data_config.num_workers = 0
+        self.data_config.pin_memory = False
+        self.data_config.batch_size = 1
+        self.data_processor = DataProcessor(self.data_config)
+        self.test_dataloader = self.data_processor.get_dataloader('test')
+
         self.threshold = 0.061  # Default threshold
-
-        # Load everything at initialization
-        self._load_model_and_dataloader(model_path, data_path)
+        self.model = load_champion_model(self.mlflow_config.server_address, model_name='TransformerAD_DP')
+        self.model.to(self.device)
+        self.model.eval()
         # Calculate reconstruction error (L1 loss)
-        self.loss_fn = torch.nn.L1Loss(reduction='none')
+        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
 
-    def _create_safe_dataloader(self, data_path, model_config):
-        """Create dataloader with safe configuration for demo"""
-        try:
-            # First attempt with single-threaded configuration
-            dataloader = self.data_processor.get_dataloader(
-                path=data_path,
-                batch_size=1,
-                seq_len=model_config.seq_len,
-                only_benign=False
-            )
-
-            # Check if the dataloader has multiprocessing enabled and try to disable it
-            if hasattr(dataloader, 'num_workers') and dataloader.num_workers > 0:
-                print(f"⚠️ DataLoader using {dataloader.num_workers} workers, creating new single-threaded version...")
-                # If we can't modify it directly, we might need to recreate it
-                # This depends on how DataProcessor.get_dataloader works internally
-
-            return dataloader
-
-        except Exception as e:
-            print(f"❌ Error creating dataloader: {e}")
-            raise
-
-    def _load_model_and_dataloader(self, model_path, data_path):
-        """Load the PRIVATEER model and create test dataloader"""
-        try:
-            print(f"🔄 Loading model and data processor...")
-
-            # Initialize DataProcessor
-            self.data_processor = DataProcessor(partition=False)
-
-            # Override data config to disable multiprocessing for demo
-            if hasattr(self.data_processor, 'data_config'):
-                self.data_processor.data_config.num_workers = 0
-                self.data_processor.data_config.pin_memory = False
-                print("🔧 Disabled DataLoader multiprocessing for demo stability")
-
-            print("✅ DataProcessor initialized successfully")
-
-            # Get model configuration
-            model_config = get_model_config()
-
-            # Create test dataloader using helper method
-            self.test_dataloader = self._create_safe_dataloader(data_path, model_config)
-            print(f"✅ Test dataloader created with seq_len={model_config.seq_len}")
-
-            # Get sample for model configuration
-            sample_batch = next(iter(self.test_dataloader))
-            sample_input = sample_batch[0]['encoder_cont']
-            input_size = sample_input.shape[-1]
-            print(f"📊 Detected input size: {input_size}")
-
-            # Create model configuration
-            transformer_config = TransformerADConfig(
-                seq_len=model_config.seq_len,
-                input_size=input_size,
-                num_layers=model_config.num_layers,
-                hidden_dim=model_config.hidden_dim,
-                latent_dim=model_config.latent_dim,
-                num_heads=model_config.num_heads,
-                dropout=model_config.dropout
-
-            )
-            # torch.serialization.add_safe_globals([TransformerAD])
-            # self.model = TransformerAD(transformer_config)
-            import mlflow
-            mlflow_conf = get_mlflow_config()
-            mlflow.set_tracking_uri(mlflow_conf.server_address)
-            self.model = mlflow.pytorch.load_model('mlflow-artifacts:/304908286791224575/177683639fde4f9b8baa6c4b4a8cfffe/artifacts/model')
-            print(self.model)
-            # state_dict = torch.load(model_path, map_location='cpu')
-            # cleaned_state_dict = {}
-            # for key, value in state_dict.items():
-            #     # Remove common prefixes
-            #     clean_key = key
-            #     for prefix in ['_module.', 'module.']:
-            #         if clean_key.startswith(prefix):
-            #             clean_key = clean_key[len(prefix):]
-            #     cleaned_state_dict[clean_key] = value
-            # self.model.load_state_dict(cleaned_state_dict)
-
-            # Load the state dict if model file exists
-            self.model.to(self.device)
-            self.model.eval()
-
-            # Get input features from metadata
-            metadata = get_metadata()
-            self.input_features = metadata.get_input_features()
-            print(f"📊 Input features: {self.input_features}")
-
-        except Exception as e:
-            print(f"❌ Error loading model and dataloader: {e}")
-            import traceback
-            traceback.print_exc()
-            raise
+        # Get input features from metadata
+        self.input_features = self.metadata.get_input_features()
 
     def detect_anomaly(self, input_batch):
         """
@@ -186,14 +94,13 @@ class NetworkTrafficSimulator:
 
     def _reset_iterator(self):
         """Reset the dataloader iterator to start from beginning"""
-        self.dataloader_iterator = iter(self.detector.test_dataloader)
         self.current_sample_index = 0
         print("🔄 Dataloader iterator reset to beginning")
 
     def get_next_sample(self):
         """Get the next sample from the dataloader"""
         try:
-            sample = next(self.dataloader_iterator)
+            sample = next(self.detector.test_dataloader)
             self.current_sample_index += 1
             return sample
         except StopIteration:
@@ -701,7 +608,7 @@ if __name__ == '__main__':
     print(f"🎯 Initial Threshold: {detector.threshold}")
     print(f"📊 Input Features: {detector.input_features}")
     try:
-        model_config = get_model_config()
+        model_config = ModelConfig()
         print(f"📏 Sequence Length: {model_config.seq_len}")
     except:
         print("📏 Sequence Length: 12 (default)")

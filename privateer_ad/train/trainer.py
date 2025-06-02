@@ -1,14 +1,18 @@
-from copy import deepcopy
-from typing import Dict, Any, Optional
+import logging
 
+from copy import deepcopy
+from pprint import pprint
+from typing import List, Dict, Any
+
+import mlflow
 import numpy as np
 import torch
-import mlflow
+
 from tqdm import tqdm
-from opacus.privacy_engine import PrivacyEngine
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
+
 from privateer_ad import logger
-from privateer_ad.config import TrainingConfig, get_paths, get_privacy_config
+from privateer_ad.config import TrainingConfig
 
 
 class ModelTrainer:
@@ -26,9 +30,7 @@ class ModelTrainer:
             model: torch.nn.Module,
             optimizer: torch.optim.Optimizer,
             device: torch.device,
-            training_config: TrainingConfig,
-            privacy_engine: Optional[PrivacyEngine] = None,
-    ):
+            training_config: TrainingConfig = None):
         """
         Initialize the ModelTrainer.
 
@@ -36,47 +38,28 @@ class ModelTrainer:
             model: The PyTorch model to be trained
             optimizer: The optimizer used for training
             device: The device (CPU/GPU) where training will be performed
-            training_config: Training configuration object with all parameters
         """
         logger.info('Instantiate ModelTrainer...')
 
-        # Inject dependencies
-        self.device = device
-        self.privacy_config = get_privacy_config()
-        self.paths_config = get_paths()
-        self.training_config = training_config
-
-        self.model = model.to(self.device)
+        self.model = model
         self.optimizer = optimizer
-        self.privacy_engine = privacy_engine
+        self.device = device
+
+        # Inject dependencies
+        self.training_config = training_config or TrainingConfig()
+
+        self.model = self.model.to(self.device)
+        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
 
         # Initialize early stopping tracking
         if self.training_config.early_stopping_enabled:
             self.es_not_improved_epochs = 0
-            self._validate_optimization_direction()
-
-            if mlflow.active_run():
-                mlflow.log_params({
-                    'early_stopping_patience': self.training_config.early_stopping_patience,
-                    'early_stopping_warmup': self.training_config.early_stopping_warmup,
-                    'target_metric': self.training_config.target_metric,
-                    'optimization_direction': self.training_config.optimization_direction
-                })
+            valid_directions = ('maximize', 'minimize')
+            if self.training_config.direction not in valid_directions:
+                raise ValueError(f'optimization_direction must be one of {valid_directions}. '
+                                 f'Current value: {self.training_config.direction}')
 
         # Initialize metrics and best checkpoint
-        self._initialize_tracking()
-
-    def _validate_optimization_direction(self):
-        """Validate the optimization direction setting."""
-        valid_directions = ('maximize', 'minimize')
-        if self.training_config.optimization_direction not in valid_directions:
-            raise ValueError(
-                f'optimization_direction must be one of {valid_directions}. '
-                f'Current value: {self.training_config.optimization_direction}'
-            )
-
-    def _initialize_tracking(self):
-        """Initialize metrics tracking and best checkpoint storage."""
         self.metrics = {}
         self.best_checkpoint: Dict[str, Any] = {
             'epoch': 0,
@@ -106,54 +89,45 @@ class ModelTrainer:
                 - epoch: Epoch number when best model was achieved
         """
 
-        for epoch in range(start_epoch + 1, start_epoch + 1 + self.training_config.epochs):
-            local_epoch = epoch - start_epoch
+        for epoch in range(start_epoch, start_epoch + self.training_config.epochs):
+            try:
+                local_epoch = epoch - start_epoch
 
-            # Training phase
-            train_metrics = self._training_loop(epoch=epoch, train_dl=train_dl)
+                # Training phase
+                train_report = self._training_loop(epoch=epoch, train_dl=train_dl)
 
-            # Validation phase
-            val_metrics = self._validation_loop(epoch=epoch, val_dl=val_dl)
+                # Validation phase
+                val_report = self._validation_loop(val_dl=val_dl)
 
-            # Log metrics
-            self.log_metrics(train_metrics | val_metrics, epoch)
+                # Log metrics
+                self.log_metrics(train_report | val_report, epoch)
 
-            # Check if this is the best model so far
-            is_best = self._is_best_checkpoint()
+                # Check if this is the best model so far
+                is_best = self._is_best_checkpoint()
 
-            if is_best:
-                self.best_checkpoint.update({
-                    'metrics': deepcopy(self.metrics),
-                    'epoch': epoch,
-                    'model_state_dict': deepcopy(self.model.state_dict()),
-                    'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
-                })
+                if is_best:
+                    self.best_checkpoint.update({
+                        'metrics': deepcopy(self.metrics),
+                        'epoch': epoch,
+                        'model_state_dict': deepcopy(self.model.state_dict()),
+                        'optimizer_state_dict': deepcopy(self.optimizer.state_dict())
+                    })
 
-            # Early stopping check
-            if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
-                break
-
+                # Early stopping check
+                if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
+                    break
+            except KeyboardInterrupt:
+                logging.warning('Training interrupted by user...')
+        pprint(self.get_training_summary())
         return self.best_checkpoint
 
     def _training_loop(self, epoch: int, train_dl) -> Dict[str, float]:
-        """
-        Execute one training epoch.
-
-        Args:
-            epoch: Current epoch number
-            train_dl: DataLoader for training data
-
-        Returns:
-            Dict[str, float]: Dictionary containing training metrics (loss)
-        """
         self.model.train()
-        total_loss = 0.0
         self.model.to(self.device)
-        progress_bar = tqdm(
-            train_dl,
-            desc=f'Epoch {epoch} - Train'
-        )
-        loss_fn = getattr(torch.nn, self.training_config.loss_function)(reduction='mean')
+
+        total_loss = 0.0
+        progress_bar = tqdm(train_dl, desc=f'Epoch {epoch} - Train')
+
         for inputs in progress_bar:
             x = inputs[0]['encoder_cont'].to(self.device)
 
@@ -164,7 +138,7 @@ class ModelTrainer:
             output = self.model(x)
 
             # Compute loss
-            batch_loss = loss_fn(x, output)
+            batch_loss = torch.mean(self.loss_fn(x, output))
 
             # Backward pass
             batch_loss.backward()
@@ -174,81 +148,88 @@ class ModelTrainer:
             # Update progress bar
             progress_bar.set_postfix({'loss': batch_loss.item()})
         avg_loss = total_loss / len(train_dl)
-        return {'loss': avg_loss
-                }
+        return {'loss': avg_loss}
 
-    def _validation_loop(self, epoch, val_dl) -> Dict[str, float]:
-        """
-        Execute validation after a training epoch.
-
-        Args:
-            val_dl: DataLoader for validation data
-
-        Returns:
-            Dict[str, float]: Dictionary containing validation metrics (val_loss)
-        """
+    def _validation_loop(self, val_dl) -> Dict[str, float]:
         self.model.eval()
-        total_loss = 0.0
-        metrics_results = {}
 
         with torch.no_grad():
-            progress_bar = tqdm(val_dl, desc=' ' * 9 + 'Validation')
-            loss_fn = getattr(torch.nn, self.training_config.loss_function)(reduction='none')
-            rec_errors = []
-            y_true = []
+            progress_bar = tqdm(val_dl, desc=' ' * 5 + 'Validation')
+            losses: List[torch.Tensor] | torch.Tensor = []
+            y_true: List[torch.Tensor] | torch.Tensor = []
+
             for inputs in progress_bar:
                 x = inputs[0]['encoder_cont'].to(self.device)
                 targets = np.squeeze(inputs[1][0])
                 output = self.model(x)  # all samples
-                loss = loss_fn(x, output)  # reconstruction loss
-                loss_per_sample = loss.mean(dim=(1, 2))
-                batch_loss = loss_per_sample.mean().item()
-                total_loss += batch_loss
-                y_true.extend(targets.tolist())
-                rec_errors.extend(loss.mean(dim=(1, 2)).tolist())  # reconstruction error per sample
-                progress_bar.set_postfix({'val_loss': batch_loss})
+                batch_losses = self.loss_fn(x, output)  # reconstruction loss
+                batch_loss_per_sample = torch.mean(input=batch_losses, dim=(1, 2))
+                y_true.append(targets)
+                losses.append(batch_loss_per_sample)  # reconstruction error per sample
+                progress_bar.set_postfix({'val_loss': torch.mean(batch_loss_per_sample).item()})
 
-        rec_errors = np.array(rec_errors)
-        y_true = np.array(y_true, dtype=int)
+            losses = torch.concatenate(losses)
+            y_true = torch.concatenate(y_true)
 
-        benign_rec_errors = rec_errors[y_true == 0]
-        malicious_rec_errors = rec_errors[y_true == 1]
-        if len(malicious_rec_errors) <= len(benign_rec_errors):
-            n_samples_per_class = len(malicious_rec_errors)
-            np.random.shuffle(benign_rec_errors)
-            benign_rec_errors = benign_rec_errors[:n_samples_per_class]
-        else:
-            n_samples_per_class = len(benign_rec_errors)
-            np.random.shuffle(malicious_rec_errors)
-            malicious_rec_errors = malicious_rec_errors[:n_samples_per_class]
+        # Split benign and malicious samples
+        benign_rec_errors = losses[y_true == 0]
+        malicious_rec_errors = losses[y_true == 1]
 
-        balanced_rec_errors = np.concatenate([benign_rec_errors, malicious_rec_errors])
-        balanced_y_true = np.concatenate([np.zeros_like(benign_rec_errors), np.ones_like(malicious_rec_errors)])
+        # get min number of samples per class
+        n_samples_per_class = min(map(len, [benign_rec_errors, malicious_rec_errors]))
 
+        # shuffle samples
+        benign_rec_errors = benign_rec_errors[torch.randperm(benign_rec_errors.size()[0])]
+        malicious_rec_errors = malicious_rec_errors[torch.randperm(malicious_rec_errors.size()[0])]
+
+        # select min number of samples per class
+        benign_rec_errors = benign_rec_errors[:n_samples_per_class]
+        malicious_rec_errors = malicious_rec_errors[:n_samples_per_class]
+
+        # concatenate benign and malicious samples to get balanced dataset
+        balanced_rec_errors = torch.concatenate([benign_rec_errors, malicious_rec_errors])
+        balanced_y_true = torch.concatenate([torch.zeros(n_samples_per_class, dtype=torch.int32),
+                                             torch.ones(n_samples_per_class, dtype=torch.int32)])
+
+        # Offload to CPU
+        losses = losses.cpu()
+        y_true = y_true.cpu()
+        balanced_y_true = balanced_y_true.cpu()
+        balanced_rec_errors = balanced_rec_errors.cpu()
+
+        # Compute threshold
         fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_rec_errors)
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
         threshold = thresholds[optimal_idx]
 
-        balanceed_y_pred = (balanced_rec_errors >= threshold).astype(int)
-        y_pred = (rec_errors >= threshold).astype(int)
-        target_names = ['benign', 'malicious']
-        mlflow.log_text(classification_report(y_true=balanced_y_true,
-                                                y_pred=balanceed_y_pred,
-                                                target_names=target_names), f'{str(epoch).zfill(3)}_balanced_val_classification_report.txt')
-        mlflow.log_text(classification_report(y_true=y_true,
-                                                y_pred=y_pred,
-                                                target_names=target_names), f'{str(epoch).zfill(3)}_val_classification_report.txt')
+        # Compute metrics
+        balanced_y_pred = torch.where(balanced_rec_errors >= threshold, 1, 0)
+        y_pred = torch.where(losses >= threshold, 1, 0)
 
-        metrics_results.update(classification_report(y_true=balanced_y_true,
-                                                     y_pred=balanceed_y_pred,
-                                                     target_names=target_names,
-                                                     output_dict=True)['macro avg'])
-        metrics_results.update({'loss': np.mean(rec_errors),
-                                'roc_auc': roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)})
-        print('Unbalanced roc', roc_auc_score(y_true=y_true, y_score=rec_errors))
-        metrics_results = {f'val_' + k: v for k, v in metrics_results.items()}
-        metrics_results['threshold'] = threshold
-        return metrics_results
+        target_names = ['benign', 'malicious']
+        balanced_metrics = classification_report(y_true=balanced_y_true,
+                                                 y_pred=balanced_y_pred,
+                                                 target_names=target_names,
+                                                 output_dict=True)['macro avg']
+
+        unbalanced_metrics = classification_report(y_true=y_true,
+                                                   y_pred=y_pred,
+                                                   target_names=target_names,
+                                                   output_dict=True)['macro avg']
+
+        balanced_roc = roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)
+        roc = roc_auc_score(y_true=y_true, y_score=losses)
+
+        balanced_metrics = {'balanced_' + k: v for k, v in balanced_metrics.items()}
+        unbalanced_metrics = {'unbalanced_' + k: v for k, v in unbalanced_metrics.items()}
+
+        report_dict = balanced_metrics | unbalanced_metrics | {'balanced_roc': balanced_roc,
+                                                               'unbalanced_roc': roc,
+                                                               'loss': torch.mean(losses).item()}
+
+        report_dict = {f'val_' + k: v for k, v in report_dict.items()}
+        report_dict['threshold'] = threshold
+        return report_dict
 
     def _is_best_checkpoint(self) -> bool:
         """
@@ -258,11 +239,10 @@ class ModelTrainer:
             bool: True if current checkpoint is the best
         """
         current_value = self.metrics[self.training_config.target_metric]
-        direction = self.training_config.optimization_direction
         best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
-                                                         np.inf if direction == 'minimize' else -np.inf)
+                                                         np.inf if self.training_config.direction == 'minimize' else -np.inf)
 
-        if self.training_config.optimization_direction == 'maximize':
+        if self.training_config.direction == 'maximize':
             return current_value > best_value
         else:  # minimize
             return current_value < best_value
@@ -278,21 +258,11 @@ class ModelTrainer:
         # Update internal metrics
         self.metrics.update(metrics)
 
-        # Log to MLFlow if available
-        if mlflow.active_run():
-            mlflow.log_metrics(self.metrics, step=epoch)
-            # Log privacy metrics if DP is enabled
-            if self.privacy_engine:
-                mlflow.log_metrics(
-                    {'epsilon': self.privacy_engine.get_epsilon(self.privacy_config.target_delta)},
-                    step=epoch
-                )
+        # Log to MLFlow
+        mlflow.log_metrics(self.metrics, step=epoch)
 
         # Format and log to console
-        formatted_metrics = [
-            f'{key}: {str(round(value, 5))}'
-            for key, value in self.metrics.items()
-        ]
+        formatted_metrics = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
         logger.info(f'Metrics: {" ".join(formatted_metrics)}')
 
     def _check_early_stopping(self, epoch: int, is_best: bool) -> bool:
@@ -332,10 +302,7 @@ class ModelTrainer:
 
         # Check if patience limit reached
         if self.es_not_improved_epochs >= self.training_config.early_stopping_patience:
-            logger.warning(
-                f'Early stopping triggered. No improvement for '
-                f'{self.es_not_improved_epochs} epochs.'
-            )
+            logger.warning(f'Early stopping triggered. No improvement for {self.es_not_improved_epochs} epochs.')
             return True
 
         return False
@@ -347,13 +314,9 @@ class ModelTrainer:
         Returns:
             Dict containing training summary information
         """
-        return {
-            'best_epoch': self.best_checkpoint['epoch'],
-            'best_metrics': self.best_checkpoint['metrics'],
-            'total_epochs_trained': self.best_checkpoint['epoch'],
-            'early_stopping_triggered': (
-                    self.training_config.early_stopping_enabled and
-                    self.es_not_improved_epochs >= self.training_config.early_stopping_patience
-            ),
-            'configuration': self.training_config.model_dump()
-        }
+        return {'best_epoch': self.best_checkpoint['epoch'],
+                'best_metrics': self.best_checkpoint['metrics'],
+                'total_epochs_trained': self.best_checkpoint['epoch'],
+                'early_stopping_triggered': (self.training_config.early_stopping_enabled and
+                                             self.es_not_improved_epochs >= self.training_config.early_stopping_patience),
+                'configuration': self.training_config.model_dump()}
