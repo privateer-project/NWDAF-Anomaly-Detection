@@ -48,7 +48,7 @@ class ModelTrainer:
         self.training_config = training_config or TrainingConfig()
 
         self.model = self.model.to(self.device)
-        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
+        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn_name)(reduction='none')
 
         # Initialize early stopping tracking
         if self.training_config.early_stopping_enabled:

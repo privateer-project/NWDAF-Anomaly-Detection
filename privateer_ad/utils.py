@@ -238,10 +238,7 @@ def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
             threshold = 0.5
 
         # Extract loss_fn from parameters
-        loss_fn_name = run.data.params.get('loss_fn')
-        if loss_fn_name is None:
-            # Try alternative parameter names
-            loss_fn_name = run.data.params.get('training.loss_fn', TrainingConfig().loss_fn)
+        loss_fn_name = run.data.params.get('loss_fn_name', TrainingConfig().loss_fn_name)
         loss_fn = getattr(torch.nn, loss_fn_name)(reduction='none')
         logging.info(f"✅ Successfully loaded:")
         logging.info(f"🏆 Model: {model_name} v{champion_version}")

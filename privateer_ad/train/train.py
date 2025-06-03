@@ -109,7 +109,7 @@ class TrainPipeline:
                                     device=self.device,
                                     training_config=self.training_config)
 
-        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn, device=self.device)
+        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
 
         # Log configuration if MLFlow is enabled
         if mlflow.active_run():
