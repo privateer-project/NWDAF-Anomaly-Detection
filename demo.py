@@ -17,7 +17,7 @@ import torch
 from dash import dcc, html, Input, Output, State
 
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import DataConfig, MLFlowConfig, MetadataConfig, TrainingConfig
+from privateer_ad.config import DataConfig, MLFlowConfig, MetadataConfig
 from privateer_ad.utils import load_champion_model
 
 
@@ -35,7 +35,6 @@ class PrivateerAnomalyDetector:
         self.data_config.persistent_workers = False
         self.mlflow_config = MLFlowConfig()
         self.metadata = MetadataConfig()
-        self.training_config = TrainingConfig()
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

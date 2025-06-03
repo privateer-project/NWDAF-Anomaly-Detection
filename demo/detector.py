@@ -4,32 +4,21 @@ Anomaly Detector Service - Detects anomalies using PRIVATEER model
 import os
 import json
 import numpy as np
-import torch
+
 from kafka import KafkaConsumer, KafkaProducer
 from datetime import datetime
 
-from privateer_ad.config import MLFlowConfig, MetadataConfig, TrainingConfig
+from privateer_ad.config import MLFlowConfig, MetadataConfig
 from privateer_ad.utils import load_champion_model
 
 
 class Detector:
     def __init__(self):
-        self.threshold = float(os.environ.get('THRESHOLD', '0.061'))
-        self.model = self._load_model()
+        self.mlflow_config = MLFlowConfig()
         self.metadata = MetadataConfig()
         self.feature_list = self.metadata.get_input_features()
-        self.mlflow_config = MLFlowConfig()
-        self.loss_fn = getattr(torch.nn, TrainingConfig().loss_fn)(reduction='none')
+        self.model, self.threshold, self.loss_fn = load_champion_model(tracking_uri=self.mlflow_config.tracking_uri)
 
-    def _load_model(self):
-        """Load pre-trained model or use simple threshold-based detection"""
-        try:
-            # In production, load from MLFlow
-            # For demo, use simple autoencoder simulation
-            model = load_champion_model(tracking_uri=self.mlflow_config.tracking_uri)
-            return model
-        except Exception as e:
-            raise f"Model did not load: {e}"
 
     def detect(self, data):
         """Detect anomaly in the data"""
@@ -40,11 +29,9 @@ class Detector:
             if value is None:
                 value = 0
             features.append(float(value))
-        input = np.array(features)
+        _input = np.array(features)
         # Calculate reconstruction error
-        output = self.model(input)
-        reconstruction_error = self.loss_fn(input, output)  # reconstruction loss
-        reconstruction_error = torch.mean(input=reconstruction_error, dim=(1, 2))
+        reconstruction_error = self.loss_fn(_input, self.model(_input)).mean(dim=(1, 2))
         # Check if anomaly
         is_anomaly = reconstruction_error > self.threshold
 

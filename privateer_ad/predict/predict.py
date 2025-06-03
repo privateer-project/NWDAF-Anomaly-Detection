@@ -78,7 +78,7 @@ def make_predictions(
     model.eval()
 
     # Setup loss function
-    criterion_fn = getattr(nn, training_config.loss_fn)(reduction='none')
+    criterion_fn = getattr(nn, training_config.loss_fn_name)(reduction='none')
 
     # Collect predictions
     inputs = []
