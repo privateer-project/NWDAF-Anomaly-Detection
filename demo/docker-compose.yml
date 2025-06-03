@@ -2,18 +2,23 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: privateer_mlflow_server
-    restart: always
+    restart: unless-stopped
     ports:
       - "5050:5050"
     volumes:
       - ./mlruns:/mlruns
       - ./mlartifacts:/mlartifacts
-    command: mlflow server --host 0.0.0.0 --port 5050
+    command: mlflow server --host 0.0.0.0 --port 5050 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5050/health', timeout=5)"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     networks:
       - privateer-net
 
   # Kafka for event streaming
-
   kafka:
     image: bitnami/kafka:latest
     container_name: privateer-kafka
@@ -37,7 +42,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 10s
     networks:
       - privateer-net
 
@@ -58,6 +63,11 @@ services:
       - ../privateer_ad:/app/privateer_ad
       - ../data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "python -c \"import os; from privateer_ad.config.settings import PathConfig; paths = PathConfig(); assert os.path.exists(paths.raw_dataset), 'Dataset not found'; print('Files OK')\""]
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - privateer-net
 
@@ -79,17 +89,25 @@ services:
     volumes:
       - ../privateer_ad:/app/privateer_ad
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "python -c \"from kafka import KafkaProducer; import os; KafkaProducer(bootstrap_servers=os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'), request_timeout_ms=3000).close(); print('OK')\""]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 45s
     networks:
       - privateer-net
 
   # Anomaly Detector
   anomaly-detector:
     build:
-      context: .
-      dockerfile: Dockerfile.detector
+      context: ..
+      dockerfile: ./demo/Dockerfile.detector
     container_name: privateer-detector
     depends_on:
       kafka:
+        condition: service_healthy
+      mlflow:
         condition: service_healthy
       anonymizer:
         condition: service_started
@@ -97,11 +115,24 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=anonymized-data
       - ALERT_TOPIC=anomaly-alerts
-      - PRIVATEER_MLFLOW_TRACKING_URI=privateer_mlflow_server:5050
+      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5000
       - PRIVATEER_MODEL_MODEL_TYPE=TransformerAD_DP
+      # Additional configuration
+      - PRIVATEER_PATH_ROOT_DIR=/app
+      - PRIVATEER_DATA_BATCH_SIZE=1
+      - PRIVATEER_DATA_SEQ_LEN=12
+    volumes:
+      # Mount data directory for scalers and models if needed
+      - ../data:/app/data
+      - ../scalers:/app/scalers
     restart: unless-stopped
     networks:
       - privateer-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch; import privateer_ad; print('OK')"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
 
   # Alert Consumer (for monitoring)
   alert-monitor:
