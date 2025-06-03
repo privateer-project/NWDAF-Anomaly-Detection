@@ -1,5 +1,19 @@
 services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: privateer_mlflow_server
+    restart: always
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./mlruns:/mlruns
+      - ./mlartifacts:/mlartifacts
+    command: mlflow server --host 0.0.0.0 --port 5050
+    networks:
+      - privateer-net
+
   # Kafka for event streaming
+
   kafka:
     image: bitnami/kafka:latest
     container_name: privateer-kafka
@@ -50,8 +64,8 @@ services:
   # Anonymization Service
   anonymizer:
     build:
-      context: .
-      dockerfile: Dockerfile.anonymizer
+      context: ..
+      dockerfile: ./demo/Dockerfile.anonymizer
     container_name: privateer-anonymizer
     depends_on:
       kafka:
@@ -63,7 +77,7 @@ services:
       - INPUT_TOPIC=raw-network-data
       - OUTPUT_TOPIC=anonymized-data
     volumes:
-      - ./privateer_ad:/app/privateer_ad
+      - ../privateer_ad:/app/privateer_ad
     restart: unless-stopped
     networks:
       - privateer-net
@@ -83,12 +97,8 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=anonymized-data
       - ALERT_TOPIC=anomaly-alerts
-      - MLFLOW_TRACKING_URI=http://host.docker.internal:5001
-      - MODEL_NAME=TransformerAD_DP
-      - THRESHOLD=0.061
-    volumes:
-      - ./models:/app/models
-      - ./privateer_ad:/app/privateer_ad
+      - PRIVATEER_MLFLOW_TRACKING_URI=privateer_mlflow_server:5050
+      - PRIVATEER_MODEL_MODEL_TYPE=TransformerAD_DP
     restart: unless-stopped
     networks:
       - privateer-net

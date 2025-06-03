@@ -2,11 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Disable Python output buffering for Docker logs
+ENV PYTHONPATH="/app:${PYTHONPATH}"
+ENV PYTHONUNBUFFERED=1
+
 # Install dependencies
-RUN pip install --no-cache-dir kafka-python
+RUN pip install --no-cache-dir kafka-python==2.2.10
 
 # Copy the anonymizer script
-COPY anonymizer.py /app/
+COPY demo/anonymizer.py /app/anonymizer.py
 
 # Run the anonymizer
 CMD ["python", "/app/anonymizer.py"]
