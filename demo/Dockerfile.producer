@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir pandas==2.2.3 kafka-python
+
+# Copy the producer script
+COPY producer.py /app/
+
+# Run the producer
+CMD ["python", "/app/producer.py"]
