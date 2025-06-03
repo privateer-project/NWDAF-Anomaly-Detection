@@ -10,7 +10,6 @@ from pytorch_forecasting import TimeSeriesDataSet
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from flwr_datasets.partitioner import PathologicalPartitioner
-from torch.utils.data import DataLoader
 
 from privateer_ad.config import DataConfig, PathConfig, MetadataConfig
 from privateer_ad.etl.utils import get_dataset_path, check_existing_datasets
@@ -19,7 +18,7 @@ from privateer_ad.etl.utils import get_dataset_path, check_existing_datasets
 class DataProcessor:
     """Main class orchestrating data transform and loading."""
 
-    def __init__(self, data_config: DataConfig | None =None):
+    def __init__(self, data_config: DataConfig | None = None):
         """
         Initialize DataProcessor.
 
@@ -48,7 +47,7 @@ class DataProcessor:
 
         check_existing_datasets()
 
-        raw_df = self.read_csv(raw_dataset_path)
+        raw_df = self.read_ds(raw_dataset_path)
         logging.info(f'Loaded data from {raw_dataset_path}')
 
         # Use configuration for train size
@@ -68,7 +67,7 @@ class DataProcessor:
             processed_df.to_csv(save_path, index=False)
             logging.info(f'{k} saved at {save_path}')
 
-    def read_csv(self, path):
+    def read_ds(self, path):
         dtypes = deepcopy(self.features_dtypes)
         dtypes.pop('_time', None)
         try:
@@ -83,19 +82,20 @@ class DataProcessor:
         for device, device_info in self.metadata_config.devices.items():
             device_df = df.loc[df['imeisv'] == device_info.imeisv]
             logging.debug(f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
-                         f' benign samples - {len(device_df[device_df["attack"] == 0])}')
+                          f' benign samples - {len(device_df[device_df["attack"] == 0])}')
 
             device_in_attacks = device_df['attack_number'].isin(device_info.in_attacks)
             logging.debug(f'Sum  - {sum(device_in_attacks)} Len - {len(device_in_attacks)}')
             device_df.loc[device_in_attacks, 'attack'] = 1
             device_df.loc[~device_in_attacks, 'attack'] = 0
             logging.debug(f'After: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])} '
-                         f'benign samples - {len(device_df[device_df["attack"] == 0])}')
+                          f'benign samples - {len(device_df[device_df["attack"] == 0])}')
             device_train_df, df_tmp = train_test_split(device_df,
                                                        train_size=self.data_config.train_size,
                                                        stratify=device_df['attack_number'],
                                                        random_state=42)
-            device_val_df, device_test_df = train_test_split(df_tmp,  # Set is the rest percentage after getting train and val
+            device_val_df, device_test_df = train_test_split(df_tmp,
+                                                             # Test is the rest percentage after getting train and val
                                                              test_size=1. - self.data_config.train_size - self.data_config.val_size,
                                                              stratify=df_tmp['attack_number'],
                                                              random_state=42)
@@ -109,8 +109,8 @@ class DataProcessor:
 
         for k, df in datasets.items():
             logging.debug(f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
-                         f'benign length: {len(df[df["attack"] == 0])} '
-                         f'{k} shape: {df.shape}')
+                          f'benign length: {len(df[df["attack"] == 0])} '
+                          f'{k} shape: {df.shape}')
         return datasets
 
     def clean_data(self, df):
@@ -139,7 +139,7 @@ class DataProcessor:
         df.loc[:, self.input_features] = transformed
         return df
 
-    def preprocess_data(self, df, only_benign: bool=False) -> DataFrame:
+    def preprocess_data(self, df, only_benign: bool = False) -> DataFrame:
         df = self.get_partition(df)
         df = self.clean_data(df)
         df = self.apply_scale(df)
@@ -158,7 +158,8 @@ class DataProcessor:
             logging.info(f'No partitioning.')
             return df
         elif self.data_config.partition_id >= self.data_config.num_partitions:
-            raise ValueError(f'partition_id ({self.data_config.partition_id}) is greater than num_partitions ({self.data_config.num_partitions})')
+            raise ValueError(f'partition_id ({self.data_config.partition_id}) '
+                             f'is greater than num_partitions ({self.data_config.num_partitions})')
 
         # Set num_partitions as the number of unique values in partition_by column. E.g. partition_by='cell' will set num_partitions=3
         self.data_config.num_partitions = len(df[self.data_config.partition_by].unique())
@@ -175,55 +176,59 @@ class DataProcessor:
         partitioned_df = partitioner.load_partition(self.data_config.partition_id).to_pandas(batched=False)
         return partitioned_df[df.columns]
 
-    def get_dataloader(self, path, only_benign: bool =False) -> DataLoader:
+    def get_dataset(self, data_path, only_benign: bool = False) -> TimeSeriesDataSet:
+        preprocessed_ds = ['train', 'val', 'test']
+        if data_path not in preprocessed_ds:
+            logging.warning(f'Dataset {data_path} not in {preprocessed_ds}. Preprocessing will be applied.')
+            preprocess = True
+        else:
+            logging.warning(f'Dataset {data_path} already preprocessed. Skipping preprocessing.')
+            preprocess = False  # Already preprocessed
+
         if self.data_config.num_workers <= 1:
             self.data_config.prefetch_factor = None
             self.data_config.persistent_workers = False
 
-        dataloader_params = {
-            'train': path == 'train',
-            'batch_size': self.data_config.batch_size,
-            'num_workers': self.data_config.num_workers,
-            'pin_memory': self.data_config.pin_memory,
-            'prefetch_factor': self.data_config.prefetch_factor,
-            'persistent_workers': self.data_config.persistent_workers
-        }
+        logging.info(f'Get {data_path} dataloader with '
+                     f'batch_size: {self.data_config.batch_size}, '
+                     f'seq_len: {self.data_config.seq_len}, '
+                     f'partition_id: {self.data_config.partition_id},'
+                     f' only_benign: {only_benign}')
 
-        logging.info(f'Get {path} dataloader with '
-                    f'batch_size: {self.data_config.batch_size}, '
-                    f'seq_len: {self.data_config.seq_len}, '
-                    f'partition_id: {self.data_config.partition_id},'
-                    f' only_benign: {only_benign}')
-
-        logging.info(f'Loading {path} dataset...')
-        df = self.read_csv(path)
-        df = self.preprocess_data(df=df, only_benign=only_benign)
-
-
+        df = self.read_ds(data_path)
+        if preprocess:
+            df = self.preprocess_data(df=df, only_benign=only_benign)
         # Create time index for each device
         df['time_idx'] = df.groupby('imeisv')['_time'].cumcount()
 
-        dataloader = TimeSeriesDataSet(
-            data=df,
-            time_idx='time_idx',
-            target='attack',
-            group_ids=['imeisv'],
-            max_encoder_length=self.data_config.seq_len,
-            max_prediction_length=1,
-            time_varying_unknown_reals=self.input_features,
-            scalers=None,
-            target_normalizer=None,
-            allow_missing_timesteps=False,
-            predict_mode=False,
-        ).to_dataloader(**dataloader_params)
+        return TimeSeriesDataSet(data=df,
+                                 time_idx='time_idx',
+                                 target='attack',
+                                 group_ids=['imeisv'],
+                                 max_encoder_length=self.data_config.seq_len,
+                                 max_prediction_length=1,
+                                 time_varying_unknown_reals=self.input_features,
+                                 scalers=None,
+                                 target_normalizer=None,
+                                 allow_missing_timesteps=False,
+                                 predict_mode=False
+                                 )
 
-        return dataloader
-
+    def get_dataloader(self, path, only_benign: bool = False, train: bool = True):
+        # train=True Shuffles data
+        return self.get_dataset(path, only_benign).to_dataloader(
+            train=train,
+            batch_size=self.data_config.batch_size,
+            num_workers=self.data_config.num_workers,
+            pin_memory=self.data_config.pin_memory,
+            prefetch_factor=self.data_config.prefetch_factor,
+            persistent_workers=self.data_config.persistent_workers)
 
 if __name__ == '__main__':
     dp = DataProcessor()
-    dl = dp.get_dataloader('train')
-    # dp.prepare_datasets()
+    dp.prepare_datasets()
+
+    dl = dp.get_dataloader('train', train=False)
     for i, sample in enumerate(dl):
         print("i[0]['encoder_cont']", sample[0]['encoder_cont'])
         print("i[0]['encoder_cont']", sample[0]['encoder_cont'].shape)
