@@ -30,8 +30,8 @@ services:
   # Data Producer - Reads test dataset
   data-producer:
     build:
-      context: .
-      dockerfile: Dockerfile.producer
+      context: ..
+      dockerfile: ./demo/Dockerfile.producer
     container_name: privateer-producer
     depends_on:
       kafka:
@@ -39,11 +39,10 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - KAFKA_TOPIC=raw-network-data
-      - DATA_PATH=/app/data/amari_ue_data_merged_with_attack_number.csv
       - INTERVAL=0.5
     volumes:
-      - ./data:/app/data
-      - ./privateer_ad:/app/privateer_ad
+      - ../privateer_ad:/app/privateer_ad
+      - ../data:/app/data
     restart: unless-stopped
     networks:
       - privateer-net
