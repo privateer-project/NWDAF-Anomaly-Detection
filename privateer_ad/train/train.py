@@ -49,35 +49,33 @@ class TrainPipeline:
         logging.info(f'Using device: {self.device}')
 
         # Setup MLFlow
-        mlflow.set_tracking_uri(self.mlflow_config.server_address)
+        mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
         if mlflow.active_run():
             mlflow.end_run()
-        mlflow.start_run(run_id=self.mlflow_config.client_run_id, parent_run_id=self.mlflow_config.server_run_id)
-        self.mlflow_config.client_run_id = mlflow.active_run().info.run_id
+        mlflow.start_run(run_id=self.mlflow_config.child_run_id, parent_run_id=self.mlflow_config.parent_run_id)
+        self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
         logging.info(
-            f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.client_run_id})')
+            f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
         # Setup datasets
         logging.info('Setup dataloaders.')
-        self.data_processor = DataProcessor(data_config=self.data_config)
+
+        self.dp = DataProcessor(data_config=self.data_config)
 
         # Create dataloaders with configuration
-        self.train_dl = self.data_processor.get_dataloader('train', only_benign=True)
-        self.val_dl = self.data_processor.get_dataloader('val', only_benign=False)
-        self.test_dl = self.data_processor.get_dataloader('test', only_benign=False)
+        self.train_dl = self.dp.get_dataloader('train', only_benign=True, train=True)
+        self.val_dl = self.dp.get_dataloader('val', only_benign=False, train=False)
+        self.test_dl = self.dp.get_dataloader('test', only_benign=False, train=False)
 
         # Setup model and optimizer
         torch.serialization.add_safe_globals([TransformerAD])
         self.model_config.seq_len = self.data_config.seq_len
         # Create model instance
         self.model = TransformerAD(self.model_config)
-
-        model_summary = str(summary(model=self.model,
-                                    input_data=next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu'),
-                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')
-                                    )
-                            )
+        self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
+        model_summary = str(summary(model=self.model, input_data=self.sample,
+                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')))
         if self.privacy_config.dp_enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
@@ -111,7 +109,7 @@ class TrainPipeline:
                                     device=self.device,
                                     training_config=self.training_config)
 
-        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn, device=self.device)
+        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
 
         # Log configuration if MLFlow is enabled
         if mlflow.active_run():
@@ -130,7 +128,7 @@ class TrainPipeline:
         mlflow.pytorch.log_model(pytorch_model=self.model,
                                  artifact_path='model',
                                  registered_model_name='TransformerAD',
-                                 signature=get_signature(self.model, self.train_dl),
+                                 signature=get_signature(self.model, self.sample),
                                  pip_requirements=self.paths_config.requirements_file.as_posix()
                                  )
 
@@ -190,7 +188,7 @@ class TrainPipeline:
 
         log_model(model=self.model,
                   model_name=model_name,
-                  dataloader=self.train_dl,
+                  sample=self.sample,
                   direction=self.training_config.direction,
                   target_metric=self.training_config.target_metric,
                   current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
@@ -202,6 +200,7 @@ class TrainPipeline:
         # End parent run
         if mlflow.active_run():
             mlflow.end_run()
+
 
 def main():
     """Main function with Fire integration for CLI usage."""

@@ -16,7 +16,7 @@ from .metadata import MetadataConfig
 class PathConfig(BaseSettings):
     """All file and directory paths using package-based root resolution"""
     root_dir: Path = Field(default_factory=lambda: PathConfig._get_package_root())
-    data_url: str = "https://zenodo.org/api/records/13900057/files-archive"
+    data_url: str = Field(default="https://zenodo.org/api/records/13900057/files-archive", description="Data URL")
 
     model_config = {'env_prefix': 'PRIVATEER_PATH_',
                     'env_file': '.env',
@@ -45,6 +45,14 @@ class PathConfig(BaseSettings):
         return self.data_dir.joinpath('processed')
 
     @property
+    def raw_dataset(self) -> Path:
+        return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
+
+    @property
+    def zip_file(self) -> Path:
+        return self.raw_dir.joinpath('nwdaf-data.zip')
+
+    @property
     def experiments_dir(self) -> Path:
         return self.root_dir.joinpath('experiments')
 
@@ -59,10 +67,6 @@ class PathConfig(BaseSettings):
     @property
     def analysis_dir(self) -> Path:
         return self.root_dir.joinpath('analysis_results')
-
-    @property
-    def raw_dataset(self) -> Path:
-        return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
 
     @property
     def requirements_file(self) -> Path:
@@ -122,7 +126,7 @@ class TrainingConfig(BaseSettings):
     """Training process configuration"""
     learning_rate: float = Field(default=0.001, gt=0.0)
     epochs: int = Field(default=100, gt=0)
-    loss_fn: str = Field(default='L1Loss')
+    loss_fn_name: str = Field(default='L1Loss')
 
     # Early stopping
     early_stopping_enabled: bool = Field(default=True)
@@ -188,7 +192,7 @@ class FederatedLearningConfig(BaseSettings):
 class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
-    dp_enabled: bool = Field(default=False)
+    dp_enabled: bool = Field(default=True)
     target_epsilon: float = Field(default=0.3, gt=0.0)
     target_delta: float = Field(default=1e-8, gt=0.0)
     max_grad_norm: float = Field(default=.7, gt=0.0)
@@ -205,10 +209,10 @@ class PrivacyConfig(BaseSettings):
 class MLFlowConfig(BaseSettings):
     """MLFlow experiment tracking configuration"""
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
-    server_address: str = Field(default="http://localhost:5001", description="MLFlow server address")
+    tracking_uri: str = Field(default="http://localhost:5001", description="MLFlow server address")
     experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")
-    server_run_id: str | None = Field(default=None, description="Server run id")
-    client_run_id: str | None = Field(default=None, description="Client run id")
+    parent_run_id: str | None = Field(default=None, description="Parent run id")
+    child_run_id: str | None = Field(default=None, description="Client run id")
 
     model_config = {'env_prefix': 'PRIVATEER_MLFLOW_',
                     'env_file': '.env',

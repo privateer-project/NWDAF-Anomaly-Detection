@@ -53,19 +53,19 @@ class CustomStrategy(FedAvg):
         )
 
         if self.training_config.direction == 'maximize':
-            self.best_target_metric = -np.Inf
+            self.best_target_metric = -np.inf
         else:
-            self.best_target_metric = np.Inf
+            self.best_target_metric = np.inf
 
     def _fit_config_fn(self, server_round: int):
         """Generate fit configuration for each round."""
         return {'server_round': server_round,
-                'server_run_id': self.mlflow_config.server_run_id}
+                'server_run_id': self.mlflow_config.parent_run_id}
 
     def _evaluate_config_fn(self, server_round: int):
         """Generate evaluation configuration for each round."""
         return {'server_round': server_round,
-                'server_run_id': self.mlflow_config.server_run_id}
+                'server_run_id': self.mlflow_config.parent_run_id}
 
     def _is_better_metric(self, current_value: float) -> bool:
         """Check if current metric value is better than the best value."""

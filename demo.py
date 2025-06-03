@@ -1,54 +1,66 @@
+"""
+PRIVATEER Network Anomaly Detection Demo
+"""
 import time
 import threading
 import queue
+import logging
 
 from datetime import datetime
 
 import dash
 import dash_bootstrap_components as dbc
+import numpy as np
 import plotly.graph_objects as go
 import torch
 
 from dash import dcc, html, Input, Output, State
 
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import ModelConfig, MetadataConfig, MLFlowConfig, DataConfig, TrainingConfig
+from privateer_ad.config import DataConfig, MLFlowConfig, MetadataConfig
 from privateer_ad.utils import load_champion_model
 
+
 class PrivateerAnomalyDetector:
-    """Simplified anomaly detector using only PRIVATEER components"""
+    """Anomaly detector"""
 
-    def __init__(self):
+    def __init__(self,model_name :str = 'TransformerAD_DP'):
+        self.model_name = model_name
+
         self.data_config = DataConfig()
-        self.mlflow_config = MLFlowConfig()
-        self.metadata = MetadataConfig()
-        self.training_config = TrainingConfig()
-
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-        # Initialize DataProcessor
         self.data_config.num_workers = 0
         self.data_config.pin_memory = False
         self.data_config.batch_size = 1
-        self.data_processor = DataProcessor(self.data_config)
-        self.test_dataloader = self.data_processor.get_dataloader('test')
+        self.data_config.prefetch_factor = None
+        self.data_config.persistent_workers = False
+        self.mlflow_config = MLFlowConfig()
+        self.metadata = MetadataConfig()
 
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # Initialize DataProcessor with streaming config
+        self.data_processor = DataProcessor(self.data_config)
+        self.test_ds = self.data_processor.get_dataset('test', only_benign=False)
+        self.test_dl = self.data_processor.get_dataloader('test', only_benign=False, train=True)
         self.threshold = 0.061  # Default threshold
-        self.model = load_champion_model(self.mlflow_config.server_address, model_name='TransformerAD_DP')
+
+        # Load model
+        logging.info(f"Loading {self.model_name} model...")
+        self.model, self.threshold, self.loss_fn = load_champion_model(tracking_uri=self.mlflow_config.tracking_uri,
+                                                                       model_name=self.model_name)
         self.model.to(self.device)
         self.model.eval()
-        # Calculate reconstruction error (L1 loss)
-        self.loss_fn = getattr(torch.nn, self.training_config.loss_fn)(reduction='none')
 
         # Get input features from metadata
         self.input_features = self.metadata.get_input_features()
+        logging.info(f"input features: {self.input_features}")
 
     def detect_anomaly(self, input_batch):
         """
         Detect anomaly for a single batch from the dataloader
 
         Args:
-            input_batch: Batch from DataProcessor.get_dataloader()
+            input_batch:
 
         Returns:
             tuple: (is_anomaly, reconstruction_error, true_label)
@@ -69,44 +81,42 @@ class PrivateerAnomalyDetector:
                 return is_anomaly, reconstruction_error, true_label
 
         except Exception as e:
-            print(f"❌ Error in anomaly detection: {e}")
+            logging.error(f"❌ Error in anomaly detection: {e}")
             return False, 0.0, None
 
     def update_threshold(self, new_threshold):
         """Update the anomaly threshold"""
         self.threshold = new_threshold
-        print(f"🎯 Threshold updated to: {new_threshold:.6f}")
+        logging.info(f"🎯 Threshold updated to: {new_threshold:.6f}")
 
 
 class NetworkTrafficSimulator:
-    """Simplified traffic simulator using DataProcessor dataloader"""
+    """Traffic simulator using DataProcessor dataloader"""
 
     def __init__(self, detector):
         self.detector = detector
-        self.dataloader_iterator = None
         self.data_queue = queue.Queue()
         self.running = False
         self.thread = None
         self.current_sample_index = 0
+        self.dataloader_iterator = iter(self.detector.test_dl)
 
-        # Create iterator from dataloader
-        self._reset_iterator()
-
-    def _reset_iterator(self):
+    def reset_iterator(self):
         """Reset the dataloader iterator to start from beginning"""
+        self.dataloader_iterator = iter(self.detector.test_dl)
         self.current_sample_index = 0
-        print("🔄 Dataloader iterator reset to beginning")
+        logging.info("🔄 Dataloader iterator reset to beginning")
 
     def get_next_sample(self):
         """Get the next sample from the dataloader"""
         try:
-            sample = next(self.detector.test_dataloader)
+            sample = next(self.dataloader_iterator)
             self.current_sample_index += 1
             return sample
         except StopIteration:
             # End of dataset, restart from beginning
-            print("📄 End of dataset reached, restarting from beginning")
-            self._reset_iterator()
+            logging.warning("📄 End of dataset reached, restarting from beginning")
+            self.reset_iterator()
             return self.get_next_sample()
 
     def start_simulation(self, interval=0.1):
@@ -115,14 +125,14 @@ class NetworkTrafficSimulator:
         self.thread = threading.Thread(target=self._simulation_loop, args=(interval,))
         self.thread.daemon = True
         self.thread.start()
-        print(f"▶️ Simulation started with {interval}s interval")
+        logging.info(f"▶️ Simulation started with {interval}s interval")
 
     def stop_simulation(self):
         """Stop the data simulation"""
         self.running = False
         if self.thread:
             self.thread.join()
-        print("⏸️ Simulation stopped")
+        logging.warning("⏸️ Simulation stopped")
 
     def _simulation_loop(self, interval):
         """Main simulation loop"""
@@ -154,13 +164,30 @@ class NetworkTrafficSimulator:
                         if i < len(current_features):
                             result['feature_values'][feature_name] = float(current_features[i])
 
+                try:
+                    # The TimeSeriesDataSet groups by 'imeisv', so we can try to extract it
+                    # Check if there's group information in the sample
+                    device_id = self.detector.test_ds.transform_values('imeisv',
+                                                                       sample[0]["groups"],
+                                                                       inverse=True,
+                                                                       group_id=True)
+
+                except Exception as e:
+                    logging.error(f"Debug: Error extracting device ID: {e}")
+                    device_id = f"device_{(self.current_sample_index // 50) % 9}"
+
+                # Create anonymized device ID
+                if device_id:
+                    result['anonymized_device_id'] = f"anon-{hash(str(device_id)) % 10000}"
+                else:
+                    result['anonymized_device_id'] = f"anon-{(self.current_sample_index // 50) % 9}"
                 # Put result in queue
                 self.data_queue.put(result)
 
                 time.sleep(interval)
 
             except Exception as e:
-                print(f"❌ Error in simulation loop: {e}")
+                logging.error(f"❌ Error in simulation loop: {e}")
                 import traceback
                 traceback.print_exc()
                 time.sleep(interval)
@@ -177,7 +204,7 @@ class NetworkTrafficSimulator:
 
 
 # Initialize components
-print("🔄 Initializing PRIVATEER components...")
+logging.info("🔄 Initializing PRIVATEER components...")
 detector = PrivateerAnomalyDetector()
 simulator = NetworkTrafficSimulator(detector)
 
@@ -188,7 +215,8 @@ realtime_data = {
     'reconstruction_error': [],
     'is_anomaly': [],
     'true_label': [],
-    'feature_values': {}  # Will be populated with actual feature names
+    'anonymized_device_id': [],
+    'feature_values': {}
 }
 
 # Initialize feature storage
@@ -196,6 +224,9 @@ for feature in detector.input_features:
     realtime_data['feature_values'][feature] = []
 
 max_points = 200  # Keep last 200 points for display
+min_threshold = float(np.floor(detector.threshold * .1))
+max_threshold = float(np.ceil(detector.threshold * 10.))
+step_threshold = 0.0001
 
 # Create Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -207,7 +238,7 @@ app.layout = dbc.Container([
         dbc.Col([
             html.H1("🛡️ PRIVATEER Network Anomaly Detection Demo",
                     className="text-center mb-4"),
-            html.P("Using TransformerAD Model with DataProcessor Test Dataset",
+            html.P("Privacy-Preserving Anomaly Detection for 6G Networks",
                    className="text-center text-muted"),
             html.Hr(),
         ])
@@ -228,24 +259,21 @@ app.layout = dbc.Container([
                         html.Label("🎯 Anomaly Threshold:", className="form-label"),
                         dcc.Slider(
                             id='threshold-slider',
-                            min=0.01,
-                            max=0.1,
-                            step=0.001,
+                            min=min_threshold,
+                            max=max_threshold,
+                            step=step_threshold,
                             value=detector.threshold,
                             marks={
-                                0.01: '0.01',
-                                0.02: '0.02',
-                                0.03: '0.03',
-                                0.04: '0.04',
-                                0.05: '0.05',
-                                0.06: '0.06',
-                                0.07: '0.07',
-                                0.08: '0.08',
-                                0.09: '0.09',
-                            },
-                            tooltip={"placement": "bottom", "always_visible": True}
+                                value: f"{value:.3f}"
+                                for value in np.linspace(min_threshold, max_threshold, 10)
+                            },                            tooltip={"placement": "bottom", "always_visible": True}
                         )
                     ], className="mb-3"),
+                    html.Div([
+                        html.Label("🔐 Privacy Protection: ", className="form-label"),
+                        dbc.Badge("Anonymization Active", color="success", className="ms-2"),
+                        html.Small(" - Device IDs are anonymized", className="text-muted ms-2")
+                    ]),
                     html.Div(id="status-indicator", className="mt-3")
                 ])
             ])
@@ -256,7 +284,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("📊 Feature Values (Latest Sample)", className="card-title"),
+                    html.H4("📊 Network Feature Values (Privacy-Preserved)", className="card-title"),
                     dcc.Graph(id="feature-display", style={'height': '400px'})
                 ])
             ])
@@ -280,7 +308,16 @@ app.layout = dbc.Container([
                     html.Div(id="stats-display")
                 ])
             ])
-        ], width=12)
+        ], width=8),
+
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H4("🔒 Anonymized Devices", className="card-title"),
+                    html.Div(id="device-list", style={'max-height': '200px', 'overflow-y': 'auto'})
+                ])
+            ])
+        ], width=4)
     ]),
 
     # Interval component for real-time updates
@@ -305,8 +342,17 @@ app.layout = dbc.Container([
 )
 def update_threshold(threshold):
     detector.update_threshold(threshold)
-    return {'running': True}  # Just return current state
+    return dash.no_update
 
+def create_status_badge(text, color):
+    return dbc.Row([
+        dbc.Col([
+            dbc.Badge(f"Status: {text}", color=color, className="fs-6 me-2"),
+            dbc.Badge(f"Model: {detector.model_name}", color="info", className="fs-6"),
+            dbc.Badge(f"Device: {detector.device}", color="secondary", className="fs-6 ms-2"),
+            dbc.Badge(f"Sample: {simulator.current_sample_index}", color="secondary", className="fs-6 ms-2")
+        ])
+    ])
 
 @app.callback(
     [Output('simulation-state', 'data'),
@@ -326,7 +372,7 @@ def control_simulation(start_clicks, stop_clicks, reset_clicks, state):
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == 'start-btn' and start_clicks:
-        simulator.start_simulation(interval=0.5)  # 2 updates per second
+        simulator.start_simulation(interval=0.5)
         return {'running': True}, False, create_status_badge("Running", "success")
 
     elif button_id == 'stop-btn' and stop_clicks:
@@ -337,39 +383,34 @@ def control_simulation(start_clicks, stop_clicks, reset_clicks, state):
         simulator.stop_simulation()
         # Clear realtime data
         for key in realtime_data:
-            if key != 'feature_values':
+            if key not in ['feature_values', 'anonymized_device_id']:
                 realtime_data[key].clear()
-            else:
+            elif key == 'feature_values':
                 for feature in realtime_data['feature_values']:
                     realtime_data['feature_values'][feature].clear()
+            elif key == 'anonymized_device_id':
+                realtime_data[key].clear()
         # Reset dataloader iterator
-        simulator._reset_iterator()
+        simulator.reset_iterator()
         return {'running': False}, True, create_status_badge("Reset", "warning")
 
     return state, True, create_status_badge("Stopped", "danger")
 
 
-def create_status_badge(text, color):
-    return dbc.Row([
-        dbc.Col([
-            dbc.Badge(f"Status: {text}", color=color, className="fs-6 me-2"),
-            dbc.Badge("Model: TransformerAD + DataProcessor", color="info", className="fs-6"),
-            dbc.Badge(f"Sample: {simulator.current_sample_index}", color="secondary", className="fs-6 ms-2")
-        ])
-    ])
-
-
 @app.callback(
     [Output('feature-display', 'figure'),
      Output('anomaly-detection', 'figure'),
-     Output('stats-display', 'children')],
+     Output('stats-display', 'children'),
+     Output('device-list', 'children')],
     [Input('interval-component', 'n_intervals')],
     [State('simulation-state', 'data')]
 )
 def update_graphs(n, state):
     if not state.get('running', False):
-        return create_empty_figure("Simulation Stopped"), create_empty_figure("Simulation Stopped"), html.P(
-            "Start simulation to see statistics")
+        return (create_empty_figure("Simulation Stopped"),
+                create_empty_figure("Simulation Stopped"),
+                html.P("Start simulation to see statistics"),
+                html.P("No devices detected yet"))
 
     # Get new data
     new_data = simulator.get_latest_data()
@@ -381,6 +422,7 @@ def update_graphs(n, state):
         realtime_data['reconstruction_error'].append(data_point['reconstruction_error'])
         realtime_data['is_anomaly'].append(data_point['is_anomaly'])
         realtime_data['true_label'].append(data_point['true_label'])
+        realtime_data['anonymized_device_id'].append(data_point['anonymized_device_id'])
 
         # Add feature values
         for feature, value in data_point['feature_values'].items():
@@ -390,18 +432,32 @@ def update_graphs(n, state):
     # Limit data size
     if len(realtime_data['timestamp']) > max_points:
         for key in realtime_data:
-            if key != 'feature_values':
-                realtime_data[key] = realtime_data[key][-max_points:]
-            else:
+            if key == 'feature_values':
                 for feature in realtime_data['feature_values']:
                     realtime_data['feature_values'][feature] = realtime_data['feature_values'][feature][-max_points:]
+            else:
+                realtime_data[key] = realtime_data[key][-max_points:]
 
     # Create figures
     feature_fig = create_feature_figure()
     anomaly_fig = create_anomaly_figure()
     stats = create_statistics()
+    device_list = create_device_list()
 
-    return feature_fig, anomaly_fig, stats
+    return feature_fig, anomaly_fig, stats, device_list
+
+
+# Add this NEW callback just for updating the sample counter
+@app.callback(
+    Output('status-indicator', 'children', allow_duplicate=True),
+    [Input('interval-component', 'n_intervals')],
+    [State('simulation-state', 'data')],
+    prevent_initial_call=True
+)
+def update_sample_counter(n, state):
+    if state.get('running', False):
+        return create_status_badge("Running", "success")
+    return dash.no_update
 
 
 def create_empty_figure(title):
@@ -436,7 +492,7 @@ def create_feature_figure():
                 x=realtime_data['timestamp'],
                 y=realtime_data['feature_values'][feature],
                 mode='lines',
-                name=feature,
+                name=feature.replace('_', ' ').title(),
                 line=dict(color=colors[i % len(colors)])
             ))
 
@@ -448,23 +504,26 @@ def create_feature_figure():
         first_feature = feature_names[0]
         if first_feature in realtime_data['feature_values']:
             anomaly_values = [realtime_data['feature_values'][first_feature][i]
-                              for i, anomaly in enumerate(realtime_data['is_anomaly']) if anomaly]
+                              for i, anomaly in enumerate(realtime_data['is_anomaly'])
+                              if anomaly and i < len(realtime_data['feature_values'][first_feature])]
 
-            fig.add_trace(go.Scatter(
-                x=anomaly_times,
-                y=anomaly_values,
-                mode='markers',
-                name='Detected Anomalies',
-                marker=dict(color='red', size=10, symbol='x'),
-                showlegend=True
-            ))
+            if anomaly_values:
+                fig.add_trace(go.Scatter(
+                    x=anomaly_times[:len(anomaly_values)],
+                    y=anomaly_values,
+                    mode='markers',
+                    name='Detected Anomalies',
+                    marker=dict(color='red', size=10, symbol='x'),
+                    showlegend=True
+                ))
 
     fig.update_layout(
-        title="Network Feature Values (Preprocessed by DataProcessor)",
+        title="Network Feature Values (Normalized & Anonymized)",
         xaxis_title="Time",
-        yaxis_title="Feature Value (Normalized)",
+        yaxis_title="Feature Value",
         hovermode='x unified',
-        showlegend=True
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
     )
 
     return fig
@@ -513,7 +572,7 @@ def create_anomaly_figure():
         ))
 
     fig.update_layout(
-        title="TransformerAD Anomaly Detection Results",
+        title="TransformerAD Anomaly Detection (with Differential Privacy)",
         xaxis_title="Time",
         yaxis_title="Reconstruction Error (L1 Loss)",
         hovermode='x unified'
@@ -551,7 +610,7 @@ def create_statistics():
                     html.H3(f"{total_points}", className="text-primary")
                 ])
             ])
-        ], width=2),
+        ], width=3),
 
         dbc.Col([
             dbc.Card([
@@ -560,25 +619,7 @@ def create_statistics():
                     html.H3(f"{detected_anomalies}", className="text-danger")
                 ])
             ])
-        ], width=2),
-
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("🎯 True Attacks"),
-                    html.H3(f"{true_attacks}", className="text-warning")
-                ])
-            ])
-        ], width=2),
-
-        dbc.Col([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H5("✅ True Positives"),
-                    html.H3(f"{true_positives}", className="text-success")
-                ])
-            ])
-        ], width=2),
+        ], width=3),
 
         dbc.Col([
             dbc.Card([
@@ -587,7 +628,7 @@ def create_statistics():
                     html.H3(f"{true_positive_rate:.1f}%", className="text-success")
                 ])
             ])
-        ], width=2),
+        ], width=3),
 
         dbc.Col([
             dbc.Card([
@@ -596,26 +637,55 @@ def create_statistics():
                     html.H3(f"{false_positive_rate:.1f}%", className="text-info")
                 ])
             ])
-        ], width=2)
+        ], width=3)
     ])
 
 
-if __name__ == '__main__':
-    print("🛡️ PRIVATEER Network Anomaly Detection Demo")
-    print("=" * 50)
-    print("🤖 Using TransformerAD Model with DataProcessor")
-    print(f"📱 Device: {detector.device}")
-    print(f"🎯 Initial Threshold: {detector.threshold}")
-    print(f"📊 Input Features: {detector.input_features}")
-    try:
-        model_config = ModelConfig()
-        print(f"📏 Sequence Length: {model_config.seq_len}")
-    except:
-        print("📏 Sequence Length: 12 (default)")
-    print(f"📄 Test Dataset: Loaded via DataProcessor.get_dataloader('test')")
-    print("=" * 50)
-    print("Starting web server...")
-    print("Open your browser and go to: http://127.0.0.1:8050")
-    print("=" * 50)
+def create_device_list():
+    if not realtime_data['anonymized_device_id']:
+        return html.P("No devices detected yet", className="text-muted")
 
-    app.run_server(debug=True, host='127.0.0.1', port=8050)
+    # Get unique anonymized device IDs and their anomaly counts
+    device_counts = {}
+    for i, device_id in enumerate(realtime_data['anonymized_device_id']):
+        if device_id not in device_counts:
+            device_counts[device_id] = {'total': 0, 'anomalies': 0}
+        device_counts[device_id]['total'] += 1
+        if realtime_data['is_anomaly'][i]:
+            device_counts[device_id]['anomalies'] += 1
+
+    # Create list items
+    device_items = []
+    for device_id, counts in sorted(device_counts.items())[-10:]:  # Show last 10 devices
+        anomaly_rate = (counts['anomalies'] / counts['total']) * 100 if counts['total'] > 0 else 0
+        color = "danger" if anomaly_rate > 50 else "warning" if anomaly_rate > 20 else "success"
+
+        device_items.append(
+            dbc.ListGroupItem([
+                html.Div([
+                    html.Span(f"Device: {device_id}", className="fw-bold"),
+                    dbc.Badge(f"{anomaly_rate:.0f}%", color=color, className="float-end")
+                ]),
+                html.Small(f"Samples: {counts['total']}, Anomalies: {counts['anomalies']}",
+                           className="text-muted")
+            ])
+        )
+
+    return dbc.ListGroup(device_items, flush=True)
+
+
+if __name__ == '__main__':
+    logging.info("🛡️ PRIVATEER Network Anomaly Detection Demo")
+    logging.info("=" * 50)
+    logging.info("🤖 Using TransformerAD Model with Differential Privacy")
+    logging.info(f"📱 Device: {detector.device}")
+    logging.info(f"🎯 Initial Threshold: {detector.threshold}")
+    logging.info(f"📊 Input Features: {detector.input_features}")
+    logging.info(f"📄 Dataset: Loaded via DataProcessor.get_dataloader('test')")
+    logging.info("🔐 Privacy Protection: Anonymization Active")
+    logging.info("=" * 50)
+    logging.info("Starting web server...")
+    logging.info("Open your browser and go to: http://127.0.0.1:8050")
+    logging.info("=" * 50)
+
+    app.run(host='127.0.0.1', port=8050, debug=True)
