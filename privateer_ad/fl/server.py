@@ -45,15 +45,9 @@ def main(driver: Driver, context: Context) -> None:
     mlflow.log_params(fl_config.__dict__)
     mlflow.log_params({'session_type': 'federated_learning'})
 
-    data_processor = DataProcessor()
-    dataloader_params = {'train': False,
-                         'batch_size': data_processor.data_config.batch_size,
-                         'num_workers': data_processor.data_config.num_workers,
-                         'pin_memory': data_processor.data_config.pin_memory,
-                         'prefetch_factor': data_processor.data_config.prefetch_factor,
-                         'persistent_workers': data_processor.data_config.persistent_workers}
-    test_ds = data_processor.get_dataset('test', only_benign=False)  # Already preprocessed
-    test_dl = test_ds.to_dataloader(**dataloader_params)
+    dp = DataProcessor()
+
+    test_dl = dp.get_dataloader('test', only_benign=False, train=False)
     sample = next(iter(test_dl))[0]['encoder_cont'][:1].to('cpu')
     strategy = CustomStrategy(training_config=training_config, mlflow_config=mlflow_config)
 
