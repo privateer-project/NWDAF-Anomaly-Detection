@@ -1,27 +1,27 @@
-dash==2.18.2
-dash_bootstrap_components==1.7.1
-fire==0.7.0
-flwr[simulation]==1.16.0
-flwr-datasets==0.5.0
 hatchling==1.27.0
-matplotlib==3.10.1
-mlflow==2.20.4
-numpy==1.26.4
-optuna==4.2.1
-opacus==1.5.3
-pandas==2.2.3
-plotly==6.0.0
-python-dotenv==1.0.1
+fire==0.7.0
+mlflow==2.22.0
+optuna==4.3.0
+torch==2.7.0
 pytorch-forecasting==1.3.0
-PyYAML==6.0.2
-requests==2.32.3
+pandas==2.2.3
+opacus==1.5.4
 scikit-learn==1.6.1
 seaborn==0.13.2
-# For AMD GPU compatible with ROCm=6.2.4
-#torch @ https://download.pytorch.org/whl/rocm6.2.4/torch-2.6.0%2Brocm6.2.4-cp311-cp311-manylinux_2_28_x86_64.whl#sha256=e735d8c9bd19b7ed43274b921b23ca91887df78aa90cee7bfe295342572e4fc7
-# For CPU-only system
-#torch @ https://download.pytorch.org/whl/cpu-cxx11-abi/torch-2.5.1%2Bcpu.cxx11.abi-cp311-cp311-linux_x86_64.whl#sha256=05a962994d5e64832e6aff275a41cb12ead0a38632c4806b84de1b4f118d1a3b
-# For CUDA-enabled devices
-torch==2.6.0
 torchinfo==1.8.0
 tqdm==4.67.1
+requests==2.32.3
+PyYAML==6.0.2
+python-dotenv==1.1.0
+plotly==6.1.2
+matplotlib==3.10.3
+dash==3.0.4
+dash_bootstrap_components==2.0.3
+flwr[simulation]==1.18.0
+flwr-datasets==0.5.0
+datasets==3.1.0
+numpy==2.2.6
+pydantic==2.11.5
+pydantic-settings==2.9.1
+joblib==1.5.1
+kafka-python==2.2.10
