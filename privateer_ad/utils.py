@@ -3,7 +3,10 @@ import logging
 from pathlib import Path
 
 import mlflow
+import numpy as np
 import torch
+
+from privateer_ad.config import TrainingConfig
 
 def load_model_weights(model_path: str, paths_config) -> dict:
     """
@@ -55,10 +58,10 @@ def load_model_weights(model_path: str, paths_config) -> dict:
     raise FileNotFoundError(f'Could not find model file at any of: {[str(p) for p in possible_paths]}')
 
 
-def log_model(model, model_name, dataloader, direction, target_metric, current_target_metric, experiment_id, pip_requirements):
+def log_model(model, model_name, sample, direction, target_metric, current_target_metric, experiment_id, pip_requirements):
     """Log trained model to MLFlow with proper signature and champion tagging."""
     model.to('cpu')
-    signature = get_signature(model=model, dataloader=dataloader)
+    signature = get_signature(model=model, sample=sample)
 
     client = mlflow.tracking.MlflowClient()
 
@@ -85,11 +88,16 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
             else:
                 is_champion = current_target_metric <= best_target_metric
 
-            print(f'Previous best {target_metric}: {best_target_metric}')
-            print(f'Current {target_metric}: {current_target_metric}')
-            print(f'Is new champion: {is_champion}')
+            logging.info(f'Previous best {target_metric}: {best_target_metric}')
+            logging.info(f'Current {target_metric}: {current_target_metric}')
+            logging.info(f'Is new champion: {is_champion}')
         else:
-            print('Metric not found in best run. Skipping champion tagging.')
+            logging.warning('Metric not found in best run. Skipping champion tagging.')
+            if direction == 'maximize':
+                best_target_metric = - np.inf
+            else:
+                best_target_metric = np.inf
+
 
         # Find previous champion version to remove tag
         if is_champion:
@@ -101,12 +109,16 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
                         previous_champion_version = version.version
                         break
             except Exception as e:
-                print(f"No previous champion found or error accessing registry: {e}")
+                logging.error(f"No previous champion found or error accessing registry: {e}")
 
     except (IndexError, KeyError) as e:
-        print(f"No previous runs found or error accessing metrics: {e}")
+        logging.error(f"No previous runs found or error accessing metrics: {e}")
         # This is likely the first model, so it's automatically the champion
         is_champion = True
+        if direction == 'maximize':
+            best_target_metric = - np.inf
+        else:
+            best_target_metric = np.inf
 
     # Log the model
     model_info = mlflow.pytorch.log_model(
@@ -120,15 +132,15 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
 
     # Handle champion tagging
     if is_champion:
-        print(f"🏆 New champion model! Logging with champion tag.")
+        logging.info(f"🏆 New champion model! Logging with champion tag.")
 
         # Remove champion tag from previous version
         if previous_champion_version:
             try:
                 client.delete_model_version_tag(model_name, previous_champion_version, 'champion')
-                print(f"Removed champion tag from version {previous_champion_version}")
+                logging.warning(f"Removed champion tag from version {previous_champion_version}")
             except Exception as e:
-                print(f"Error removing champion tag from previous version: {e}")
+                logging.error(f"Error removing champion tag from previous version: {e}")
 
         try:
             client.set_model_version_tag(model_name, current_version, 'champion', 'true')
@@ -142,11 +154,11 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
                 datetime.datetime.now().isoformat()
             )
 
-            print(f"Added champion tag to version {current_version}")
+            logging.info(f"Added champion tag to version {current_version}")
         except Exception as e:
-            print(f"Error adding champion tag: {e}")
+            logging.error(f"Error adding champion tag: {e}")
     else:
-        print(f"Model performance ({current_target_metric}) did not exceed"
+        logging.info(f"Model performance ({current_target_metric}) did not exceed"
               f" previous best ({best_target_metric}). No champion tag added.")
 
     client.set_model_version_tag(
@@ -156,44 +168,93 @@ def log_model(model, model_name, dataloader, direction, target_metric, current_t
         str(current_target_metric)
     )
 
-def get_signature(model, dataloader):
-    _input = next(iter(dataloader))[0]['encoder_cont'][:1].to('cpu')
-    _output = model(_input)
+def get_signature(model, sample):
+    _output = model(sample)
 
     if isinstance(_output, dict):
         _output = {key: val.detach().numpy() for key, val in _output.items()}
     else:
         _output = _output.detach().numpy()
-    signature = mlflow.models.infer_signature(model_input=_input.detach().numpy(), model_output=_output)
+    signature = mlflow.models.infer_signature(model_input=sample.detach().numpy(), model_output=_output)
     return signature
 
 
 def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
-    """Simple function to load your champion model."""
-    "http://localhost:5001"
+    """
+    Load champion model with associated threshold and loss function.
+
+    Returns:
+        tuple: (model, threshold, loss_fn)
+    """
     mlflow.tracking.set_tracking_uri(tracking_uri)
     client = mlflow.tracking.MlflowClient()
 
-    # Get registered model
-    registered_model = client.get_registered_model(model_name)
+    try:
+        # Get registered model
+        registered_model = client.get_registered_model(model_name)
 
-    # Find champion version
-    for version in registered_model.latest_versions:
-        version_details = client.get_model_version(model_name, version.version)
-        if version_details.tags.get('champion') == 'true':
-            # Load the champion model
-            model_uri = f"models:/{model_name}/{version.version}"
-            model = mlflow.pytorch.load_model(model_uri)
-            print(f"🏆 Loaded champion model v{version.version}")
-            return model
+        champion_version = None
+        champion_run_id = None
 
-    # If no champion found, load latest
-    latest_version = registered_model.latest_versions[0].version
-    model_uri = f"models:/{model_name}/{latest_version}"
-    model = mlflow.pytorch.load_model(model_uri)
-    print(f"⚠️ No champion found, loaded latest v{latest_version}")
-    return model
+        # Find champion version
+        for version in registered_model.latest_versions:
+            version_details = client.get_model_version(model_name, version.version)
+            if version_details.tags.get('champion') == 'true':
+                champion_version = version.version
+                champion_run_id = version_details.run_id
+                break
 
-# Usage - this is all you need!
+        # If no champion found, use latest
+        if champion_version is None:
+            latest_version_details = client.get_model_version(model_name, registered_model.latest_versions[0].version)
+            champion_version = latest_version_details.version
+            champion_run_id = latest_version_details.run_id
+            logging.warning(f"⚠️ No champion found, using latest v{champion_version}")
+        else:
+            logging.info(f"🏆 Found champion model v{champion_version}")
+
+        # Load the model
+        model_uri = f"models:/{model_name}/{champion_version}"
+        model = mlflow.pytorch.load_model(model_uri)
+
+        # Get run details to extract threshold and loss_fn
+        run = client.get_run(champion_run_id)
+
+        # Extract threshold from metrics (try different possible names)
+        threshold = None
+        threshold_keys = [
+            'test_threshold', 'val_threshold', 'global_test_threshold',
+            'threshold', 'eval_threshold', 'validation_threshold'
+        ]
+
+        for key in threshold_keys:
+            if key in run.data.metrics:
+                threshold = run.data.metrics[key]
+                logging.info(f"📏 Found threshold: {threshold:.6f} (from metric: {key})")
+                break
+
+        if threshold is None:
+            logging.warning("⚠️ No threshold found in run metrics, using default: 0.5")
+            threshold = 0.5
+
+        # Extract loss_fn from parameters
+        loss_fn_name = run.data.params.get('loss_fn')
+        if loss_fn_name is None:
+            # Try alternative parameter names
+            loss_fn_name = run.data.params.get('training.loss_fn', TrainingConfig().loss_fn)
+        loss_fn = getattr(torch.nn, loss_fn_name)(reduction='none')
+        logging.info(f"✅ Successfully loaded:")
+        logging.info(f"🏆 Model: {model_name} v{champion_version}")
+        logging.info(f"📏 Threshold: {threshold}")
+        logging.info(f"📊 Loss function: {loss_fn_name}")
+
+        return model, threshold, loss_fn
+
+    except Exception as e:
+        logging.error(f"❌ Error loading champion model: {e}")
+        raise
+
+
+# Usage example:
 if __name__ == '__main__':
-    champion_model: torch.nn.Module = load_champion_model("TransformerAD")
+    model, threshold, loss_fn = load_champion_model("http://localhost:5001", "TransformerAD")
