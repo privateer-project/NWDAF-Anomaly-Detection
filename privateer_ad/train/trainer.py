@@ -11,7 +11,6 @@ import torch
 from tqdm import tqdm
 from sklearn.metrics import classification_report, roc_curve, roc_auc_score
 
-from privateer_ad import logger
 from privateer_ad.config import TrainingConfig
 
 
@@ -39,7 +38,7 @@ class ModelTrainer:
             optimizer: The optimizer used for training
             device: The device (CPU/GPU) where training will be performed
         """
-        logger.info('Instantiate ModelTrainer...')
+        logging.info('Instantiate ModelTrainer...')
 
         self.model = model
         self.optimizer = optimizer
@@ -263,7 +262,7 @@ class ModelTrainer:
 
         # Format and log to console
         formatted_metrics = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
-        logger.info(f'Metrics: {" ".join(formatted_metrics)}')
+        logging.info(f'Metrics: {" ".join(formatted_metrics)}')
 
     def _check_early_stopping(self, epoch: int, is_best: bool) -> bool:
         """
@@ -290,11 +289,11 @@ class ModelTrainer:
             self.es_not_improved_epochs += 1
 
             # Log early stopping status
-            logger.warning(
+            logging.warning(
                 f'{self.training_config.target_metric} has not improved for '
                 f'{self.es_not_improved_epochs} epochs.'
             )
-            logger.warning(
+            logging.warning(
                 f'{self.training_config.target_metric}: '
                 f'best={self.best_checkpoint['metrics'][self.training_config.target_metric]:.5f}'
                 f' - current={self.metrics[self.training_config.target_metric]:.5f}\n'
@@ -302,7 +301,7 @@ class ModelTrainer:
 
         # Check if patience limit reached
         if self.es_not_improved_epochs >= self.training_config.early_stopping_patience:
-            logger.warning(f'Early stopping triggered. No improvement for {self.es_not_improved_epochs} epochs.')
+            logging.warning(f'Early stopping triggered. No improvement for {self.es_not_improved_epochs} epochs.')
             return True
 
         return False

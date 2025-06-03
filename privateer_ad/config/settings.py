@@ -188,7 +188,7 @@ class FederatedLearningConfig(BaseSettings):
 class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
-    dp_enabled: bool = Field(default=False)
+    dp_enabled: bool = Field(default=True)
     target_epsilon: float = Field(default=0.3, gt=0.0)
     target_delta: float = Field(default=1e-8, gt=0.0)
     max_grad_norm: float = Field(default=.7, gt=0.0)
@@ -205,10 +205,10 @@ class PrivacyConfig(BaseSettings):
 class MLFlowConfig(BaseSettings):
     """MLFlow experiment tracking configuration"""
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
-    server_address: str = Field(default="http://localhost:5001", description="MLFlow server address")
+    tracking_uri: str = Field(default="http://localhost:5001", description="MLFlow server address")
     experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")
-    server_run_id: str | None = Field(default=None, description="Server run id")
-    client_run_id: str | None = Field(default=None, description="Client run id")
+    parent_run_id: str | None = Field(default=None, description="Parent run id")
+    child_run_id: str | None = Field(default=None, description="Client run id")
 
     model_config = {'env_prefix': 'PRIVATEER_MLFLOW_',
                     'env_file': '.env',
