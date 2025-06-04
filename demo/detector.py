@@ -15,12 +15,12 @@ from collections import defaultdict
 import dash
 import dash_bootstrap_components as dbc
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import torch
 import requests
 from dash import dcc, html, Input, Output, State
 from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import NoBrokersAvailable
 
 from privateer_ad.config import MLFlowConfig, MetadataConfig, ModelConfig, DataConfig
 from privateer_ad.utils import load_champion_model
@@ -39,7 +39,7 @@ logging.basicConfig(
 class AggregationManager:
     """Manages alert aggregation to prevent spam during attacks"""
 
-    def __init__(self, window_seconds=60, threshold_count=5):
+    def __init__(self, window_seconds=60, threshold_count=6):
         self.window_seconds = window_seconds
         self.threshold_count = threshold_count
         self.device_alerts = defaultdict(list)
@@ -99,12 +99,11 @@ class DetectorWithUI:
         self.model_name = self.model_config.model_type
         self.seq_len = self.data_config.seq_len  # 12 timesteps
 
-        # Sliding window buffer for each device
+        # Sliding window buffer for each device (stores DataFrames)
         self.device_windows = defaultdict(list)
 
-        # Data preprocessing
+        # Data preprocessing - Initialize DataProcessor
         self.dp = DataProcessor(self.data_config)
-        self.scaler = self.dp.load_scaler()
 
         # Kafka setup
         self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
@@ -178,28 +177,39 @@ class DetectorWithUI:
                 else:
                     return False
 
+    def prepare_sample_dataframe(self, data):
+        """Prepare a single sample as a DataFrame with proper structure"""
+        # Create a single-row DataFrame with current timestamp
+        sample_df = pd.DataFrame([{
+            '_time': datetime.now(),
+            'imeisv': data.get('imeisv', 'unknown'),
+            'cell': data.get('cell', '1'),  # Default cell if missing
+            'attack': data.get('attack', 0),
+            'malicious': data.get('malicious', 0),
+            'attack_number': data.get('attack_number', 0),
+            **{feature: data.get(feature, 0.0) for feature in self.feature_list}
+        }])
+
+        # Ensure proper data types
+        for feature in self.feature_list:
+            sample_df[feature] = pd.to_numeric(sample_df[feature], errors='coerce').fillna(0.0)
+
+        sample_df['attack'] = sample_df['attack'].astype(int)
+        sample_df['malicious'] = sample_df['malicious'].astype(int)
+        sample_df['attack_number'] = sample_df['attack_number'].astype(int)
+
+        return sample_df
+
     def detect_anomaly(self, data):
-        """Detect anomaly using sliding window of samples"""
+        """Detect anomaly using sliding window of properly preprocessed samples"""
         try:
             device_id = data.get('imeisv', 'unknown')
 
-            # Extract features for current sample
-            features = []
-            feature_values = {}
-
-            for feature in self.feature_list:
-                value = data.get(feature, 0)
-                if value is None or value == '' or (isinstance(value, str) and value.lower() == 'nan'):
-                    value = 0
-                try:
-                    value = float(value)
-                except (ValueError, TypeError):
-                    value = 0.0
-                features.append(value)
-                feature_values[feature] = value
+            # Prepare current sample as DataFrame
+            current_sample = self.prepare_sample_dataframe(data)
 
             # Add to device's sliding window
-            self.device_windows[device_id].append(features)
+            self.device_windows[device_id].append(current_sample)
 
             # Keep only the last seq_len samples
             if len(self.device_windows[device_id]) > self.seq_len:
@@ -210,14 +220,32 @@ class DetectorWithUI:
                 logging.debug(f"Device {device_id}: {len(self.device_windows[device_id])}/{self.seq_len} samples collected")
                 return None
 
-            # Apply scaling to the window
-            window_array = np.array(self.device_windows[device_id])
-            scaled_window = self.scaler.transform(window_array)
+            # Combine samples into a sequence DataFrame
+            sequence_df = pd.concat(self.device_windows[device_id], ignore_index=True)
+            sequence_df = sequence_df.sort_values(by=['_time']).reset_index(drop=True)
+            sequence_df['time_idx'] = range(len(sequence_df))
+
+            # Apply DataProcessor preprocessing (this handles scaling properly)
+            try:
+                # Use the clean_data method to prepare the data
+                cleaned_df = self.dp.clean_data(sequence_df.copy())
+
+                # Apply scaling using the DataProcessor's method
+                preprocessed_df = self.dp.apply_scale(cleaned_df.copy())
+
+                # Extract the scaled feature values
+                scaled_features = preprocessed_df[self.feature_list].values
+
+            except Exception as e:
+                logging.error(f"Preprocessing error: {e}")
+                # Fallback: use manual scaling if DataProcessor fails
+                feature_values = sequence_df[self.feature_list].values
+                scaled_features = self.dp.load_scaler().transform(feature_values)
 
             # Create sequence tensor [batch_size=1, seq_len=12, features]
-            sequence = torch.tensor(scaled_window, dtype=torch.float32)
-            sequence_tensor = sequence.unsqueeze(0).to(self.device)
-
+            sequence_tensor = torch.tensor(scaled_features, dtype=torch.float32)
+            sequence_tensor = sequence_tensor.unsqueeze(0).to(self.device)
+            logging.warning(f'{sequence_tensor.shape}')
             # Run inference on the full sequence
             with torch.no_grad():
                 output = self.model(sequence_tensor)
@@ -227,6 +255,9 @@ class DetectorWithUI:
             # Check if anomaly
             is_anomaly = reconstruction_error > self.threshold
 
+            # Get current sample's feature values for display (unscaled)
+            current_features = current_sample[self.feature_list].iloc[0].to_dict()
+
             return {
                 'is_anomaly': bool(is_anomaly),
                 'reconstruction_error': float(reconstruction_error),
@@ -235,7 +266,7 @@ class DetectorWithUI:
                 'device_id': device_id,
                 'anonymized_device_id': f"anon-{hash(str(device_id)) % 10000}",
                 'true_label': data.get('attack', None),
-                'feature_values': feature_values,  # Latest sample's features (unscaled for display)
+                'feature_values': current_features,
                 'sample_index': self.current_sample_index,
                 'window_size': len(self.device_windows[device_id])
             }
@@ -269,9 +300,34 @@ class DetectorWithUI:
         except Exception as e:
             logging.error(f"❌ Failed to send alert to endpoint: {e}")
 
+    def wait_for_kafka(self, max_retries=30):
+        """Wait for Kafka to be available"""
+        for i in range(max_retries):
+            try:
+                # Test connection
+                test_producer = KafkaProducer(
+                    bootstrap_servers=self.bootstrap_servers,
+                    request_timeout_ms=5000,
+                    retries=1
+                )
+                test_producer.close()
+                logging.info(f"✅ Connected to Kafka at {self.bootstrap_servers}")
+                return True
+            except Exception as e:
+                logging.info(f"⏳ Waiting for Kafka... attempt {i+1}/{max_retries}")
+                time.sleep(2)
+
+        logging.error(f"❌ Failed to connect to Kafka after {max_retries} attempts")
+        return False
+
     def kafka_consumer_loop(self):
         """Main Kafka consumer loop"""
         try:
+            # Wait for Kafka to be available
+            if not self.wait_for_kafka():
+                logging.error("❌ Cannot start consumer - Kafka unavailable")
+                return
+
             self.consumer = KafkaConsumer(
                 self.input_topic,
                 bootstrap_servers=self.bootstrap_servers,
@@ -324,6 +380,7 @@ class DetectorWithUI:
                                         }
 
                                         # Send to endpoint
+                                        self.stats['alerts_sent'] += 1
                                         self.send_to_endpoint(alert_data)
                                     else:
                                         self.stats['alerts_aggregated'] += 1
@@ -408,22 +465,6 @@ def wait_for_services():
         except:
             logging.info(f"⏳ Waiting for MLflow... {i+1}/{max_retries}")
             time.sleep(5)
-
-    # Wait for Kafka
-    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-    for i in range(max_retries):
-        try:
-            test_producer = KafkaProducer(
-                bootstrap_servers=bootstrap_servers,
-                request_timeout_ms=5000,
-                retries=1
-            )
-            test_producer.close()
-            logging.info(f"✅ Kafka is available")
-            break
-        except:
-            logging.info(f"⏳ Waiting for Kafka... {i+1}/{max_retries}")
-            time.sleep(2)
 
 
 # Create Dash app

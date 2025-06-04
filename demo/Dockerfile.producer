@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir \
     pydantic-settings==2.9.1
 
 # Copy the producer script
-COPY demo/producer.py producer.py
+COPY demo/producer.py /app/producer.py
 
 # Run the producer
 CMD ["python", "/app/producer.py"]
