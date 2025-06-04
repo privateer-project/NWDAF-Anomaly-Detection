@@ -4,13 +4,13 @@ services:
     container_name: privateer_mlflow_server
     restart: unless-stopped
     ports:
-      - "5050:5050"
+      - "5001:5001"
     volumes:
       - ./mlruns:/mlruns
       - ./mlartifacts:/mlartifacts
-    command: mlflow server --host 0.0.0.0 --port 5050 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
+    command: mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5050/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health', timeout=5)"]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -115,7 +115,7 @@ services:
       anonymizer:
         condition: service_started
     ports:
-      - "8050:8050"  # Expose Dash UI port
+      - "8090:8090"  # Expose Dash UI port
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=anonymized-data
@@ -145,7 +145,7 @@ services:
     networks:
       - privateer-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8050/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8090/"]
       interval: 30s
       timeout: 15s
       retries: 3

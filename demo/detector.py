@@ -104,7 +104,12 @@ class DetectorWithUI:
 
         # Data preprocessing - Initialize DataProcessor
         self.dp = DataProcessor(self.data_config)
-
+        try:
+            test_scaler = self.dp.load_scaler()
+            logging.info(f"✅ DataProcessor ready: {test_scaler.n_features_in_} features")
+        except Exception as e:
+            logging.error(f"❌ DataProcessor scaler failed: {e}")
+            raise
         # Kafka setup
         self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
         self.input_topic = os.environ.get('INPUT_TOPIC', 'anonymized-data')
@@ -214,77 +219,55 @@ class DetectorWithUI:
         return df
 
     def detect_anomaly(self, data):
-        """Detect anomaly using temporally-ordered sliding window with proper DataProcessor preprocessing"""
+        """Use DataProcessor.preprocess_data() for proper pipeline"""
         try:
             device_id = data.get('imeisv', 'unknown')
-
-            # Parse timestamp
             timestamp_str = data.get('_time') or data.get('original_time')
-            if timestamp_str:
-                try:
-                    if isinstance(timestamp_str, str):
-                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                    else:
-                        timestamp = timestamp_str
-                except:
-                    timestamp = datetime.now()
-            else:
-                timestamp = datetime.now()
+            timestamp = self._parse_timestamp(timestamp_str)
 
-            # Create properly formatted DataFrame for this sample
-            sample_df = self.create_sample_dataframe(data, timestamp)
+            # Create DataFrame row (same format as training)
+            sample_df = pd.DataFrame([{
+                '_time': timestamp,
+                'imeisv': device_id,
+                'cell': data.get('cell', '1'),
+                'attack': data.get('attack', 0),
+                'malicious': data.get('malicious', 0),
+                'attack_number': data.get('attack_number', 0),
+                **{feature: data.get(feature, 0.0) for feature in self.dp.input_features}
+            }])
 
-            # Initialize device window if needed
+            # Add to device window
             if device_id not in self.device_windows:
                 self.device_windows[device_id] = []
 
-            # Add to device's window
             self.device_windows[device_id].append(sample_df)
-
-            # Sort by timestamp to maintain temporal order
             self.device_windows[device_id].sort(key=lambda df: df['_time'].iloc[0])
 
-            # Keep only the last seq_len samples
+            # Keep last seq_len samples
             if len(self.device_windows[device_id]) > self.seq_len:
                 self.device_windows[device_id] = self.device_windows[device_id][-self.seq_len:]
 
-            # Only detect if we have enough samples
             if len(self.device_windows[device_id]) < self.seq_len:
-                logging.debug(
-                    f"Device {device_id}: {len(self.device_windows[device_id])}/{self.seq_len} samples collected")
                 return None
 
-            # Combine window DataFrames into a single DataFrame
+            # PROPER PREPROCESSING: Use DataProcessor method
             window_df = pd.concat(self.device_windows[device_id], ignore_index=True)
 
-            # Apply DataProcessor preprocessing (this handles scaling properly)
-            try:
-                # Clean and preprocess the data using DataProcessor
-                processed_window_df = self.dp.clean_data(window_df.copy())
-                processed_window_df = self.dp.apply_scale(processed_window_df)
+            # Apply EXACT same preprocessing as training
+            processed_df = self.dp.preprocess_data(window_df, only_benign=False)
 
-                # Extract the scaled feature values in the correct order
-                scaled_features = processed_window_df[self.feature_list].values
+            # Extract scaled features: [seq_len, features]
+            scaled_features = processed_df[self.dp.input_features].values
 
-            except Exception as e:
-                logging.error(f"❌ Error in preprocessing: {e}")
-                return None
-
-            # Create sequence tensor [batch_size=1, seq_len, features]
+            # Create tensor: [1, seq_len, features]
             sequence_tensor = torch.tensor(scaled_features, dtype=torch.float32).unsqueeze(0).to(self.device)
 
-            # Run inference on the full sequence
+            # Run inference
             with torch.no_grad():
                 output = self.model(sequence_tensor)
-                # Calculate reconstruction error - mean over sequence and features dimensions
                 reconstruction_error = self.loss_fn(sequence_tensor, output).mean(dim=(1, 2)).item()
 
-            # Check if anomaly
             is_anomaly = reconstruction_error > self.threshold
-
-            # Extract feature values from the latest (unscaled) sample for display
-            latest_sample_df = self.device_windows[device_id][-1]
-            feature_values = {feature: float(latest_sample_df[feature].iloc[0]) for feature in self.feature_list}
 
             return {
                 'is_anomaly': bool(is_anomaly),
@@ -293,18 +276,28 @@ class DetectorWithUI:
                 'timestamp': timestamp,
                 'device_id': device_id,
                 'anonymized_device_id': f"anon-{hash(str(device_id)) % 10000}",
-                'true_label': int(latest_sample_df['attack'].iloc[0]),
-                'feature_values': feature_values,
+                'true_label': data.get('attack', None),
+                'feature_values': {f: data.get(f, 0.0) for f in self.dp.input_features},
                 'sample_index': self.current_sample_index,
-                'window_size': len(self.device_windows[device_id]),
-                'temporal_span': (window_df['_time'].iloc[-1] - window_df['_time'].iloc[0]).total_seconds()
+                'window_size': len(self.device_windows[device_id])
             }
 
         except Exception as e:
-            logging.error(f"❌ Error in anomaly detection: {e}")
+            logging.error(f"❌ Anomaly detection failed: {e}")
             import traceback
             traceback.print_exc()
             return None
+
+    def _parse_timestamp(self, timestamp_str):
+        """Parse timestamp consistently"""
+        if timestamp_str:
+            try:
+                if isinstance(timestamp_str, str):
+                    return datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                return timestamp_str
+            except:
+                pass
+        return datetime.now()
 
     def send_to_endpoint(self, alert_data):
         """Placeholder for sending alerts to external endpoint"""
@@ -474,6 +467,11 @@ class DetectorWithUI:
                 break
         return data
 
+    def update_threshold(self, new_threshold):
+        """Update the anomaly threshold"""
+        self.threshold = float(new_threshold)
+        logging.info(f"🎯 Threshold updated to: {self.threshold:.6f}")
+
 
 # Global detector instance
 detector = None
@@ -519,7 +517,8 @@ app.layout = dbc.Container([
                     html.H4("🎮 Detection Controls", className="card-title"),
                     dbc.ButtonGroup([
                         dbc.Button("▶️ Start Detection", id="start-btn", color="success", className="me-2"),
-                        dbc.Button("⏸️ Stop Detection", id="stop-btn", color="danger")
+                        dbc.Button("⏸️ Stop Detection", id="stop-btn", color="danger"),
+                        dbc.Button("🔄 Reset Data", id="reset-btn", color="warning")  # NEW RESET BUTTON
                     ], className="mb-3"),
                     html.Div(id="status-indicator", className="mb-3"),
                     html.Hr(),
@@ -625,34 +624,35 @@ def control_detector(start_clicks, stop_clicks, state):
 
     ctx = dash.callback_context
     if not ctx.triggered:
-        return state, False, True  # Initial state: start enabled, stop disabled
+        return state, False, True
 
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     if button_id == 'start-btn' and start_clicks:
         if detector and not detector.running:
             detector.start_kafka_consumer()
-            logging.info("▶️ Detector started via UI")
-        return {'running': True}, True, False  # Start disabled, stop enabled
+            logging.info("▶️ Detection started")
+        return {'running': True}, True, False
 
     elif button_id == 'stop-btn' and stop_clicks:
         if detector and detector.running:
             detector.stop_kafka_consumer()
-            logging.info("⏸️ Detector stopped via UI")
-        return {'running': False}, False, True  # Start enabled, stop disabled
+            logging.info("⏸️ Detection stopped")
+        return {'running': False}, False, True
 
     return state, state.get('running', False), not state.get('running', False)
 
 
 @app.callback(
-    Output('threshold-slider', 'value'),
-    Input('interval-component', 'n_intervals')
+    Output('status-indicator', 'children', allow_duplicate=True),
+    Input('threshold-slider', 'value'),
+    prevent_initial_call=True
 )
-def update_threshold_from_model(n):
+def update_detector_threshold(threshold_value):
     global detector
-    if detector and detector.threshold:
-        return detector.threshold
-    return 0.061
+    if detector and threshold_value is not None:
+        detector.update_threshold(threshold_value)
+    return create_status_badge()
 
 
 @app.callback(
@@ -720,6 +720,73 @@ def update_graphs(n, state):
 
     return feature_fig, anomaly_fig, stats, device_list, create_status_badge()
 
+@app.callback(
+    [Output('detector-state', 'data', allow_duplicate=True),
+     Output('start-btn', 'disabled', allow_duplicate=True),
+     Output('stop-btn', 'disabled', allow_duplicate=True)],
+    [Input('reset-btn', 'n_clicks')],
+    [State('detector-state', 'data')],
+    prevent_initial_call=True
+)
+def reset_detector(reset_clicks, state):
+    global detector
+
+    if reset_clicks and detector:
+        # Stop detection if running
+        if detector.running:
+            detector.stop_kafka_consumer()
+
+        # Clear all data
+        detector.realtime_data = {
+            'timestamp': [],
+            'sample_index': [],
+            'reconstruction_error': [],
+            'is_anomaly': [],
+            'true_label': [],
+            'anonymized_device_id': [],
+            'feature_values': {}
+        }
+
+        # Initialize feature storage
+        for feature in detector.feature_list:
+            detector.realtime_data['feature_values'][feature] = []
+
+        # Clear device windows
+        detector.device_windows.clear()
+
+        # Reset statistics
+        detector.stats = {
+            'total': 0,
+            'anomalies': 0,
+            'true_positives': 0,
+            'false_positives': 0,
+            'true_negatives': 0,
+            'false_negatives': 0,
+            'alerts_sent': 0,
+            'alerts_aggregated': 0
+        }
+
+        # Reset sample counter
+        detector.current_sample_index = 0
+
+        # Clear aggregation manager state
+        detector.aggregation_manager.device_alerts.clear()
+        detector.aggregation_manager.last_alert_sent.clear()
+        detector.aggregation_manager.alert_windows.clear()
+        detector.aggregation_manager.backoff_level.clear()
+
+        # Clear data queue
+        while not detector.data_queue.empty():
+            try:
+                detector.data_queue.get_nowait()
+            except:
+                break
+
+        logging.info("🔄 Detector data reset")
+
+        return {'running': False}, False, True  # Start enabled, stop disabled
+
+    return dash.no_update, dash.no_update, dash.no_update
 
 def create_feature_figure():
     global detector
@@ -931,8 +998,18 @@ def create_empty_figure(title):
         text=title,
         xref="paper", yref="paper",
         x=0.5, y=0.5, xanchor='center', yanchor='middle',
-        showarrow=False, font=dict(size=20)
+        showarrow=False, font=dict(size=18)
     )
+
+    # Add reset instruction for empty state
+    if "Reset" in title or "No Data" in title:
+        fig.add_annotation(
+            text="Click 'Reset Data' to clear all data, then 'Start Detection'",
+            xref="paper", yref="paper",
+            x=0.5, y=0.4, xanchor='center', yanchor='middle',
+            showarrow=False, font=dict(size=12, color="gray")
+        )
+
     fig.update_layout(
         xaxis=dict(visible=False),
         yaxis=dict(visible=False),
@@ -971,11 +1048,11 @@ if __name__ == '__main__':
                 f"{detector.aggregation_manager.threshold_count} alert threshold")
     logging.info("=" * 50)
     logging.info("Starting web server...")
-    logging.info("Open your browser and go to: http://0.0.0.0:8050")
+    logging.info("Open your browser and go to: http://0.0.0.0:8090")
     logging.info("=" * 50)
 
     try:
-        app.run(host='0.0.0.0', port=8050)
+        app.run(host='0.0.0.0', port=8090)
     finally:
         if detector and detector.running:
             detector.stop_kafka_consumer()
