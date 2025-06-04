@@ -1,0 +1,101 @@
+<div class="container">
+  <h1 class="title">⚙️ Settings</h1>
+
+  <div class="description">
+    <div class="explanation-text">
+      <!-- Descrição não deve desaparecer -->
+      This page allows you to generate graphics based on preloaded models, datasets, and instance values. By default,
+      the model and dataset are cached, and the instance is set to 0. You can directly generate graphics by clicking the
+      <strong>"Generate Graphics"</strong> button. If you want to generate graphics for a different instance, enter a
+      value greater than 0 in the <strong>Instance</strong> field, click <strong>"Load Instance"</strong>, and wait for
+      the feedback confirming the instance has been loaded. Afterward, click <strong>"Generate Graphics"</strong> to
+      create the graphics for the selected instance.
+      <br><br>
+      If you need to change the dataset or model, click <strong>"Fetch Datasets"</strong> to retrieve available
+      datasets, select the desired one, and do the same for models by clicking <strong>"Fetch Models"</strong>. After
+      selecting both, click <strong>"Load Data"</strong> to load the new configuration and wait for confirmation that
+      the data has been loaded. Then, you can proceed by selecting the desired instance value and generating the
+      graphics as described earlier.
+      <br><br>
+      This straightforward process ensures you can seamlessly switch datasets, models, and instance values while
+      generating the necessary visualizations.
+    </div>
+  </div>
+
+
+
+
+  <!-- Input Fields and Buttons -->
+  <div class="single-column">
+    <!-- Dataset Name -->
+    <label class="instance-label" for="dataset-name">📂 Dataset Name</label>
+    @if (dbNames.length > 0) {
+    <select id="dataset-name" [(ngModel)]="datasetName">
+      @for (db of dbNames; track db) {
+      <option [value]="db">{{ db }}</option>
+      }
+    </select>
+    }
+    <!-- Fetch Datasets Button -->
+    <!-- <button (click)="fetchDbNames()">🔄 Fetch Datasets</button> -->
+    <div>
+      <label for="">Load CSV data file</label>
+      <input type="file" (change)="onDataFileSelected($event)">
+      <button (click)="submitDataFile()">Upload</button>
+    </div>
+
+    <div>
+      <label for="">Model File</label>
+      <input type="file" (change)="onModelFileSelected($event)">
+      <button (click)="submitModelFile()">Upload</button>
+    </div>
+
+    <!-- Model Name -->
+    <label class="instance-label" for="model-name">📊 Model Name</label>
+    @if (modelNames.length > 0) {
+    <select id="model-name" [(ngModel)]="modelName">
+      @for (model of modelNames; track model) {
+      <option [value]="model">{{ model }}</option>
+      }
+    </select>
+    }
+
+    <!-- Fetch Models Button -->
+    <button (click)="fetchModelNames()">🔄 Fetch Models</button>
+
+
+    <!-- Load Data Button -->
+    <button (click)="loadAllData()">⚡ Load Data</button>
+    <!-- Feedback Message -->
+    @if (loadDataSateMessage) {
+    <div class="feedback-message">
+      {{ loadDataSateMessage }}
+    </div>
+    }
+
+
+    <!-- Instance -->
+    <label class="instance-label" for="instance">🔢 Instance</label>
+    <input id="instance" type="number" placeholder="Enter Instance Number" [(ngModel)]="instance" />
+
+    <!-- Load Instance Button -->
+    <button (click)="loadInstance()">🚀 Load Instance</button>
+    <!-- Feedback Message -->
+    @if (performCalculationMessage) {
+    <div class="feedback-message">
+      {{performCalculationMessage}}
+    </div>
+    }
+
+    <!-- Generate Graphics Button -->
+    <button (click)="generateAllGraphics()">📈 Generate Graphics</button>
+    <!-- Feedback Message -->
+    @if (genereateReportsMessage)
+    {
+      <div class="feedback-message">
+        {{genereateReportsMessage}}
+      </div>
+    }
+  </div>
+
+</div>

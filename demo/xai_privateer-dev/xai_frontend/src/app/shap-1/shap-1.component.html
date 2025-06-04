@@ -1,0 +1,69 @@
+<div class="container">
+  <!-- Título -->
+  <h1 class="title">Graphics - SHAP - Time Series</h1>
+
+  <!-- Descrição -->
+  <div class="description">
+    <div class="explanation-text">
+      SHAP **Time Series** plots help identify how different variables influence a model's predictions over time. They highlight the most problematic time windows, meaning periods when the model shows higher error or uncertainty. These plots show how **features** affect the model's prediction at specific moments, allowing for the observation of fluctuations in their importance throughout the time series. The features are represented by their contributions, which can be positive or negative, and show whether the impact of a variable is constant or changes over time. Additionally, it is possible to see how the interaction between different features influences the model’s predictions, providing better insight into the model's behavior and key variables.
+    </div>
+  </div>
+
+  <!-- Exibição dos gráficos -->
+  <div class="graphics-container">
+
+    <!-- Mensagem de erro acima dos gráficos -->
+    @if (noGraphicsMessage) {
+      <div class="error-message">
+        {{ noGraphicsMessage }}
+      </div>
+    }
+
+    @for (graphicUrl of graphicsUrls; track graphicUrl) {
+      <div class="graphic-item">
+        <a [href]="graphicUrl" target="_blank">
+          <img [src]="graphicUrl" alt="SHAP Graphic" class="graphic-image zoomable" />
+        </a>
+      </div>
+    }
+    @if (graphicsUrls.length === 0 && !noGraphicsMessage) {
+      <p>No graphics available</p>
+    }
+  </div>
+
+  <!-- Seção para selecionar parâmetros -->
+  <div class="parameter-section mt-5">
+    <!-- Selecionar Feature -->
+    <div class="form-group">
+      <label class="instance-label" for="graphic-type">🖼️ Graphic Type</label>
+      @if (modelNames.length > 0) {
+        <select
+          id="graphic-type"
+          [(ngModel)]="featureName"
+          class="form-control"
+          >
+          @for (model of modelNames; track model) {
+            <option [value]="model">{{ model }}</option>
+          }
+        </select>
+      }
+
+    </div>
+
+    <!-- Digitar o valor da instância -->
+    <div class="form-group">
+      <label class="instance-label" for="instance-value">🔢 Instance Value</label>
+      <input
+        type="number"
+        id="instance-value"
+        class="form-control"
+        [(ngModel)]="featureValue"
+        min="0"
+        placeholder="Enter instance value"
+        />
+      </div>
+
+      <!-- Botão para atualizar gráficos -->
+      <button class="btn btn-primary mt-3" (click)="fetchGraphics()">Update Graphics</button>
+    </div>
+  </div>

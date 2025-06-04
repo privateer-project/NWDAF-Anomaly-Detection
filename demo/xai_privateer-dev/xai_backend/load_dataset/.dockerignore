@@ -1,0 +1,55 @@
+# Python virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Python bytecode and cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Local development files
+.git
+.gitignore
+README.md
+LICENSE
+
+# Editor and IDE files
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files and logs
+*.log
+*.pid
+*.seed
+tmp/
+temp/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files (optional, include if sensitive data should not be copied)
+.env
+.env.local
+.env.*.local
+
+# Test-related files (optional, exclude if not needed in the container)
+tests/
+test/
+*.test.py
+*.spec.py
+pytest.ini
+tox.ini
+coverage/
+.coverage
+
+# Build and distribution files
+dist/
+build/
+*.egg-info/

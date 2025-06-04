@@ -1,0 +1,77 @@
+<div class="flex-container">
+      <h1 class="flex-item-all">Feature influence across time series data</h1>
+
+      <div class="flex-item-left" >
+            <div>
+                  <h2>Feature influence SHAP</h2>
+                  <div style="width: 400px;">
+                        <app-heatmap [data]="data" [columnLabels]="columnLabels" [colors]="colors"
+                              [threshold]="threshold">
+                        </app-heatmap>
+                  </div>
+            </div>
+      </div>
+      <div class="flex-item-right">
+            <div>
+                  <h2>Feature influence LIME</h2>
+                  <div style="width: 400px;">
+                        <app-heatmap [data]="limeFeaturesData" [columnLabels]="columnLabels" [colors]="colors"
+                              [threshold]="threshold">
+                        </app-heatmap>
+                  </div>
+            </div>
+      </div>
+
+      <h1 class="flex-item-all">Graphs</h1>
+      <div class="flex-item-all">
+            <h2>Shap Graphs</h2>
+            @for (graphicUrl of graphicsUrls; track graphicUrl) {
+      <div class="graphic-item">
+        <a [href]="graphicUrl" target="_blank">
+          <img [src]="graphicUrl" alt="SHAP Graphic" class="graphic-image zoomable" />
+        </a>
+      </div>
+    }
+        <!-- SHAP HTML Interactive Explanation -->
+<div *ngIf="shapHtmlUrlSafe" class="graphic-item">
+  <iframe
+    [src]="shapHtmlUrlSafe"
+    width="100%"
+    height="500px"
+    style="border: 1px solid #ccc; border-radius: 8px;">
+  </iframe>
+</div>
+
+    @if (graphicsUrls.length === 0 && !noGraphicsMessage) {
+      <p>No graphics available</p>
+    }
+            <h2>Lime Graphs</h2>
+
+        <div *ngIf="limeGraphicsUrls.length > 0; else noLimeGraphics">
+  <div *ngFor="let url of limeGraphicsUrls">
+    <div class="graphic-item">
+      <a [href]="url" target="_blank">
+        <img [src]="url" alt="LIME Graphic" class="graphic-image zoomable" />
+      </a>
+    </div>
+  </div>
+</div>
+
+        <!-- LIME HTML Interactive Explanation -->
+<div *ngIf="limeHtmlUrlSafe" class="graphic-item">
+ <!-- <h3>🔍 Interactive Explanation</h3>-->
+  <iframe
+    [src]="limeHtmlUrlSafe"
+    width="100%"
+    height="500px"
+    style="border: 1px solid #ccc; border-radius: 8px;">
+  </iframe>
+</div>
+
+
+<ng-template #noLimeGraphics>
+  <p>No LIME graphics available for the current instance.</p>
+</ng-template>
+      </div>
+
+</div>

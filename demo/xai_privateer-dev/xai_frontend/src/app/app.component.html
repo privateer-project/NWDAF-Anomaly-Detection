@@ -1,0 +1,40 @@
+<div class="layout">
+  <!-- Menu lateral -->
+  <div class="side-menu">
+    <!-- Logotipo -->
+    <div class="logo">
+      <img src="assets/logos/LOGO.png" alt="Logo">
+    </div>
+
+    <!-- Texto Menu -->
+    <p class="menu-title">XAI Dashboard</p>
+
+    <!-- Botões principais -->
+    <button routerLink="/home" class="menu-button">Home</button>
+
+    <p class="sub-submenu">Data Analysis</p>
+    <button routerLink="/settings" class="menu-button">Load Data</button>
+    <!-- <button routerLink="/home" class="menu-button">Data Ingestion</button> -->
+    <button routerLink="/instance_analysis" class="menu-button">Classification Ouput</button>
+
+    <p class="sub-submenu">XAI Analysis</p>
+    <button routerLink="/xai/timeseries" class="menu-button">Time Series</button>
+    <button routerLink="/xai/features" class="menu-button">Feature</button>
+    <button routerLink="/xai/window" class="menu-button">Window</button>
+
+    <!-- Submenu -->
+    <!-- <p class="submenu">Settings</p> -->
+    
+
+    <!-- Submenu -->
+    <!-- <p class="submenu-title">Old</p>
+     <button routerLink="/shap1" class="menu-button">Time Series</button>
+    <button routerLink="/shap8" class="menu-button">Feature</button> -->
+
+  </div>
+
+  <!-- Área de conteúdo -->
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

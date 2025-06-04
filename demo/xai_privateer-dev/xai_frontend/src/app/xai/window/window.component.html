@@ -1,0 +1,45 @@
+<div class="flex-container">
+      <h1 class="flex-item-all">Window contribution to Decision</h1>
+      <div class="flex-item-left">
+            <div>
+                  <h2>Time Windows SHAP</h2>
+                  <canvas baseChart [data]="barChartDataShap" [options]="barChartOptions" [type]="barChartType"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+                  </canvas>
+            </div>
+      </div>
+
+      <div class="flex-item-right">
+            <div style="width: 400px;">
+                  <h2>Time Window Data LIME</h2>
+                  <canvas baseChart [data]="barChartDataLime" [options]="barChartOptions" [type]="barChartType"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+                  </canvas>
+            </div>
+      </div>
+
+      <h1 class="flex-item-all">Window evolution</h1>
+      <div class="flex-item-left">
+
+            <div style="width: 400px;">
+                  @for(chartDatas of windowChartDataShap; track chartDatas.features; let window = $index  ){
+                  <h2>Window #{{window+1}}</h2>
+                  <canvas baseChart [data]="chartDatas.data" [options]="barChartOptions" [type]="barChartType"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+                  </canvas>
+                  }
+            </div>
+      </div>
+
+      <div class="flex-item-right">
+            <div style="width: 400px;">
+                  @for(chartDatas of windowChartDataLime; track $index; let window = $index ){
+                  <h2>Window #{{window+1}}</h2>
+                  <canvas baseChart [data]="chartDatas.data" [options]="barChartOptions" [type]="barChartType"
+                        (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+                  </canvas>
+                  }
+            </div>
+      </div>
+</div>
+

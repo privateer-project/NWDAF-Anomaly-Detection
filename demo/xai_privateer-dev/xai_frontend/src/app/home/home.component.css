@@ -1,0 +1,51 @@
+/* Main container */
+.container {
+    font-family: 'Arial', sans-serif;
+    margin: 30px auto;
+    padding: 20px;
+    max-width: 1200px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
+
+    /* Title */
+    .title {
+        text-align: center;
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      
+  /* Description Section */
+  .description {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .explanation-text {
+    width: 100%;
+    height: auto; /* Removei o tamanho fixo para o texto */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    color: #555;
+    background-color: #f7f7f7;
+    text-align: justify; /* Justifica o texto */
+    line-height: 1.6; /* Adiciona altura de linha para melhor legibilidade */
+    overflow-y: auto; /* Permite rolagem caso o texto ultrapasse a altura disponível */
+  }

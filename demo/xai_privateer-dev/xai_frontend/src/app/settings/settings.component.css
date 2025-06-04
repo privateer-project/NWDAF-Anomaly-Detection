@@ -1,0 +1,128 @@
+/* Main Container */
+.container {
+  font-family: 'Arial', sans-serif;
+  margin: 30px auto;
+  padding: 20px;
+  max-width: 1200px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Title */
+.title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #444;
+  margin-bottom: 20px;
+}
+
+/* Description */
+.description {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.explanation-text {
+  width: 100%;
+  height: auto; /* Removei o tamanho fixo para o texto */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  color: #555;
+  background-color: #f7f7f7;
+  text-align: justify; /* Justifica o texto */
+  line-height: 1.6; /* Adiciona altura de linha para melhor legibilidade */
+  overflow-y: auto; /* Permite rolagem caso o texto ultrapasse a altura disponível */
+}
+
+/* Single Column Layout */
+.single-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Instance Label */
+.instance-label {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 5px;
+}
+
+/* Input Fields */
+input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input:focus {
+  box-shadow: 0 0 5px #007bff;
+  outline: none;
+}
+
+/* Buttons */
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+}
+
+button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Feedback Message */
+.feedback-message {
+  margin-top: 20px;
+  padding: 10px;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.justified-text {
+  text-align: justify; /* Justifica o texto */
+  font-size: 16px; /* Ajuste o tamanho da fonte conforme necessário */
+  line-height: 1.5; /* Ajuste a altura da linha para melhorar a legibilidade */
+}
+
+/* Adicionando estilos para o select */
+select {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+select:focus {
+  box-shadow: 0 0 5px #007bff;
+  outline: none;
+}

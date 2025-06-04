@@ -1,0 +1,64 @@
+services:
+  manage_datasets:
+    build:
+      context: ./xai_backend
+      dockerfile: ./load_dataset/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    networks:
+      - app-network
+  
+  manage_models:
+    build:
+      context: ./xai_backend
+      dockerfile: ./load_models/Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    networks:
+      - app-network
+    
+  xai_shap:
+    build:
+      context: ./xai_backend
+      dockerfile: ./xAI_shap/Dockerfile
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    networks:
+      - app-network
+
+  xai_lime:
+    build:
+      context: ./xai_backend
+      dockerfile: ./xAI_lime/Dockerfile
+    ports:
+      - "5003:5003"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    networks:
+      - app-network
+  
+
+  frontend:
+    build:
+      context: ./xai_frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    networks:
+      - app-network
+    # depends_on:
+    #   - backend
+
+networks:
+  app-network:
+    driver: bridge

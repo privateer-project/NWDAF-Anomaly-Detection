@@ -1,0 +1,107 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+downloads/
+eggs/
+*.egg-info/
+*.egg
+*.dist-info/
+wheels/
+*.whl
+pip-wheel-metadata/
+sdist/
+bdist/
+*.egg-info
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+virtualenv/
+ENV/
+
+# Dependency lock files (if not needed in repo)
+Pipfile.lock
+poetry.lock
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Testing frameworks
+.pytest_cache/
+.coverage
+coverage.xml
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+*.lcov
+
+# Linting and formatting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.flake8
+.pylintrc
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Environment variable files
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local
+
+# Dependency directories
+site-packages/
+lib/
+lib64/
+
+# Miscellaneous
+*.swp
+*.bak
+*.tmp
+
+# Project-specific directories (add your own as needed)
+#saved_models/
+data/
+#*.csv
+*.json
+*.sqlite
+*.db
+
+# If you want to include specific files from ignored directories, use ! to negate
+# e.g., !data/important_file.csv

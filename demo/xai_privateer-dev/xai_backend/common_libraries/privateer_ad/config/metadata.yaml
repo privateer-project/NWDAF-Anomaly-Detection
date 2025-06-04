@@ -1,0 +1,313 @@
+#file: noinspection YAMLSchemaValidation
+devices:
+  '1':
+    imeisv: '8642840401612300'
+    ip: '10.20.10.2'
+    type: 'raspberry'
+    malicious: true
+    in_attacks: [ 1, 2, 3, 4, 5 ] # [ 1, 2, 3, 4 ] #
+  '2':
+    imeisv: '8642840401624200'
+    ip: '10.20.10.4'
+    type: 'raspberry'
+    malicious: true
+    in_attacks: [  1, 2, 3, 4, 5 ] # [ 1, 2, 3 ] #
+  '3':
+    imeisv: '8642840401594200'
+    ip: '10.20.10.6'
+    type: 'waveshare_5g_cpe_box'
+    malicious: true
+    in_attacks: [ 5 ]
+  '4':
+    imeisv: '8677660403123800'
+    ip: '10.20.10.8'
+    type: 'waveshare_industrial_5g_router'
+    malicious: true
+    in_attacks: [ 5 ]
+  '5':
+    imeisv: '3557821101183501'
+    ip: '10.20.10.10'
+    type: 'dwr_2101_5g'
+    malicious: true
+    in_attacks: [ 5 ]
+  '6':
+    imeisv: '8628490433231158'
+    ip: '10.20.10.12'
+    type: 'huawei_p40'
+    malicious: false
+    in_attacks: [ 1, 2, 3, 4, 5 ] # [ 1, 2, 3, 4 ]
+  '7':
+    imeisv: '8609960480859058'
+    ip: '10.20.10.16'
+    type: 'huawei_p40'
+    malicious: false
+    in_attacks: [ 1, 2, 3, 4, 5 ] # [ 1, 4, 5 ]
+  '8':
+    imeisv: '8609960480666910'
+    ip: '10.20.10.18'
+    type: 'huawei_p40'
+    malicious: false
+    in_attacks: [ 1, 2, 3, 4, 5 ] # [ 1, 2, 3, 4 ]
+  '9':
+    imeisv: '8609960468879057'
+    ip: '10.20.10.20'
+    type: 'huawei_p40'
+    malicious: false
+    in_attacks: [ 1, 2, 3, 4, 5 ] # [ 1, 2, 3, 5 ]
+attacks:
+  1:
+    start: '2024-08-18 07:00:00.000'
+    stop: '2024-08-18 08:00:00.000'
+  2:
+    start: '2024-08-19 07:00:00.000'
+    stop: '2024-08-19 09:41:00.000'
+  3:
+    start: '2024-08-19 17:00:00.000'
+    stop: '2024-08-19 18:00:00.000'
+  4:
+    start: '2024-08-21 12:00:00.000'
+    stop: '2024-08-21 13:00:00.000'
+  5:
+    start: '2024-08-21 17:00:00.000'
+    stop: '2024-08-21 18:00:00.000'
+
+features:
+  _time:
+    dtype: 'string'
+    drop: false
+    is_input: false
+  bearer_0_dl_total_bytes:
+    dtype: 'float'
+    drop: true
+    is_input: false
+    process:
+      - delta
+  bearer_0_ul_total_bytes:
+    dtype: 'float'
+    drop: true
+    is_input: false
+    process:
+      - delta
+  bearer_1_dl_total_bytes:
+    dtype: 'float'
+    drop: true # many nans device 8609960468879057
+    is_input: false
+    process:
+      - delta
+  bearer_1_ul_total_bytes:
+    dtype: 'float'
+    drop: true # many nans device 8609960468879057
+    is_input: false
+    process:
+      - delta
+  dl_bitrate:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  dl_err:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  dl_mcs:
+    dtype: 'float'
+    drop: false
+    is_input: false # true
+  dl_retx:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  dl_tx:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  ul_bitrate:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  ul_err:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  ul_mcs:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  ul_path_loss:
+    dtype: 'float'
+    drop: false
+    is_input: false # true
+  ul_phr:
+    dtype: 'float'
+    drop: false
+    is_input: false # true
+  ul_retx:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  ul_tx:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  cqi:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  epre:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  initial_ta:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  p_ue:
+    dtype: 'float'
+    drop: false
+    is_input: false # true
+  pusch_snr:
+    dtype: 'float'
+    drop: false
+    is_input: false # true
+  turbo_decoder_avg:
+    dtype: 'float'
+    drop: false
+    is_input: true
+  attack:
+    dtype: 'int'
+    drop: false
+    is_input: false
+  malicious:
+    dtype: 'int'
+    drop: false
+    is_input: false
+  attack_number:
+    dtype: 'int'
+    drop: false
+    is_input: false
+  imeisv:
+    dtype: 'string'
+    drop: false
+    is_input: false
+  5g_tmsi:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  amf_ue_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_apn:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_ip:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_ipv6:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_pdu_session_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_qos_flow_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_0_sst:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_apn:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_ip:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_ipv6:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_pdu_session_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_qos_flow_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  bearer_1_sst:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  ran_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  ran_plmn:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  ran_ue_id:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  registered:
+    dtype: 'bool'
+    drop: true
+    is_input: false
+  rnti:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  t3512:
+    dtype: 'int'
+    drop: true
+    is_input: false
+  tac:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  tac_plmn:
+    dtype: 'string'
+    drop: true
+    is_input: false
+  ue_aggregate_max_bitrate_dl:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  ue_aggregate_max_bitrate_ul:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  cell:
+    dtype: 'string'
+    drop: false
+    is_input: false
+  ul_n_layer:
+    drop: true
+    is_input: false
+  ul_rank:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  ri:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  turbo_decoder_max:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  turbo_decoder_min:
+    dtype: 'float'
+    drop: true
+    is_input: false
+  cell_id:
+    dtype: 'string'
+    drop: true
+    is_input: false

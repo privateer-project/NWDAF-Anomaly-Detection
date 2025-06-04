@@ -1,0 +1,64 @@
+/* Layout geral */
+.layout {
+  display: flex;
+  height: 100vh; /* Ocupa a altura total da tela */
+  margin: 0;
+}
+
+/* Menu lateral */
+.side-menu {
+  width: 250px;
+  background-color: #2c3e50; /* Cor do menu */
+  color: #ecf0f1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Logotipo */
+.logo img {
+  width: 120px;
+  margin-bottom: 20px;
+}
+
+/* Títulos */
+.menu-title,
+.submenu-title {
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 20px 0 10px;
+  text-align: center;
+}
+
+
+/* Botões do menu */
+.menu-button {
+  width: 90%;
+  padding: 10px;
+  margin: 5px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #34495e;
+  color: #ecf0f1;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.menu-button:hover {
+  background-color: #1abc9c;
+}
+
+/* Área de conteúdo */
+.content {
+  flex: 1; /* Ocupa o espaço restante */
+  background-color: #f4f4f4;
+  padding: 20px;
+  overflow-y: auto; /* Adiciona rolagem caso o conteúdo seja maior que a tela */
+}
+
+

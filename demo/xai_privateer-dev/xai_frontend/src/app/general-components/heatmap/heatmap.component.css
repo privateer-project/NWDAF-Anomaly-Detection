@@ -1,0 +1,36 @@
+.heatmap-grid {
+  display: grid;
+  gap: 2px;
+}
+
+.empty-cell {
+  visibility: hidden;
+}
+
+.legend-item {
+  text-align: center;
+  justify-self: center;
+  align-self: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.column-legend {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  
+}
+
+.row-container {
+  display: contents;
+}
+
+.heatmap-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 1;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px;
+}
