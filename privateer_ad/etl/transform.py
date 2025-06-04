@@ -4,7 +4,6 @@ from copy import deepcopy
 import joblib
 import pandas as pd
 
-from pandas import DataFrame
 from datasets import Dataset
 from pytorch_forecasting import TimeSeriesDataSet
 from sklearn.preprocessing import StandardScaler
@@ -139,7 +138,7 @@ class DataProcessor:
         df.loc[:, self.input_features] = transformed
         return df
 
-    def preprocess_data(self, df, only_benign: bool = False) -> DataFrame:
+    def preprocess_data(self, df, only_benign: bool = False) -> pd.DataFrame:
         df = self.get_partition(df)
         df = self.clean_data(df)
         df = self.apply_scale(df)
@@ -152,7 +151,7 @@ class DataProcessor:
                 logging.warning('Cannot get benign data. No column named `attack` in dataset.')
         return df
 
-    def get_partition(self, df: DataFrame) -> DataFrame:
+    def get_partition(self, df: pd.DataFrame) -> pd.DataFrame:
         """Partition data."""
         if self.data_config.partition_id == -1:
             logging.info(f'No partitioning.')

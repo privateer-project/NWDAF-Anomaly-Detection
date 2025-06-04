@@ -98,7 +98,7 @@ services:
     networks:
       - privateer-net
 
-  # Anomaly Detector
+# Anomaly Detector with Web UI
   anomaly-detector:
     build:
       context: ..
@@ -111,25 +111,38 @@ services:
         condition: service_healthy
       anonymizer:
         condition: service_started
+    ports:
+      - "8050:8050"  # Expose Dash UI port
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=anonymized-data
-      - ALERT_TOPIC=anomaly-alerts
-      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5050
       - PRIVATEER_MODEL_MODEL_TYPE=TransformerAD_DP
+
+      # Aggregation settings
+      - AGGREGATION_WINDOW=60  # 60 second window for alert aggregation
+      - AGGREGATION_THRESHOLD=5  # Send alert after 5 occurrences or window expiry
+
+      # Endpoint settings (placeholder)
+      - ENABLE_ENDPOINT=false  # Set to true when endpoint is ready
+      - ALERT_ENDPOINT_URL=http://your-alert-endpoint:8080/alerts  # Replace with actual endpoint
+
       # Additional configuration
       - PRIVATEER_PATH_ROOT_DIR=/app
       - PRIVATEER_DATA_BATCH_SIZE=1
       - PRIVATEER_DATA_SEQ_LEN=12
+      - PRIVATEER_DATA_NUM_WORKERS=0
+      - PRIVATEER_DATA_PIN_MEMORY=false
     volumes:
       # Mount data directory for scalers and models if needed
       - ../data:/app/data
       - ../scalers:/app/scalers
+      - ../privateer_ad:/app/privateer_ad
     restart: unless-stopped
     networks:
       - privateer-net
     healthcheck:
-      test: ["CMD", "python", "-c", "import torch; import privateer_ad; print('OK')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8050/"]
       interval: 30s
       timeout: 15s
       retries: 3

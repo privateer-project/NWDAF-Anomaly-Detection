@@ -215,7 +215,11 @@ def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
 
         # Load the model
         model_uri = f"models:/{model_name}/{champion_version}"
-        model = mlflow.pytorch.load_model(model_uri)
+        if not torch.cuda.is_available():
+            load_conf = {'map_location': torch.device('cpu')}
+        else:
+            load_conf = {'map_location': torch.device('cuda')}
+        model = mlflow.pytorch.load_model(model_uri=model_uri, **load_conf)
 
         # Get run details to extract threshold and loss_fn
         run = client.get_run(champion_run_id)
