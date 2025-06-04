@@ -4,7 +4,7 @@ import mlflow
 import torch
 
 from flwr.common import Context
-from flwr.server import Driver, LegacyContext, ServerApp, ServerConfig
+from flwr.server import Grid, LegacyContext, ServerApp, ServerConfig
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
 from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig, TrainingConfig
@@ -17,12 +17,12 @@ from privateer_ad.utils import log_model
 app = ServerApp()
 
 @app.main()
-def main(driver: Driver, context: Context) -> None:
+def main(grid: Grid, context: Context) -> None:
     """
     Main server application.
 
     Args:
-        driver: Flower driver instance
+        grid: Flower Grid instance
         context: Flower context containing run configuration
     """
     mlflow_config = MLFlowConfig()
@@ -72,7 +72,7 @@ def main(driver: Driver, context: Context) -> None:
     try:
         logging.info('Starting federated learning...')
         logging.info(f'Server Context:\n{server_context}')
-        workflow(driver, server_context)
+        workflow(grid, server_context)
         logging.info('Federated learning completed')
     finally:
         logging.info("Performing final evaluation on the global test set...")
