@@ -227,7 +227,7 @@ class ModelTrainer:
                                                                'loss': torch.mean(losses).item()}
 
         report_dict = {f'val_' + k: v for k, v in report_dict.items()}
-        report_dict['threshold'] = threshold
+        report_dict['threshold'] = float(threshold)
         return report_dict
 
     def _is_best_checkpoint(self) -> bool:
