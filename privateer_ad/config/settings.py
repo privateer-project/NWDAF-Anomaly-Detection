@@ -193,8 +193,8 @@ class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
     dp_enabled: bool = Field(default=True)
-    target_epsilon: float = Field(default=0.5, gt=0.0)
-    target_delta: float = Field(default=1e-9, gt=0.0)
+    target_epsilon: float = Field(default=0.7, gt=0.0)
+    target_delta: float = Field(default=1e-6, gt=0.0)
     max_grad_norm: float = Field(default=.3, gt=0.0)
     secure_mode: bool = Field(default=True)
 

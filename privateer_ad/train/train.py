@@ -54,7 +54,8 @@ class TrainPipeline:
         if mlflow.active_run():
             mlflow.end_run()
         mlflow.start_run(run_id=self.mlflow_config.child_run_id, parent_run_id=self.mlflow_config.parent_run_id)
-        self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
+        if not self.mlflow_config.child_run_id:
+            self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
         logging.info(
             f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
@@ -118,8 +119,7 @@ class TrainPipeline:
             mlflow.log_params(self.data_config.model_dump())
             mlflow.log_params(self.model_config.model_dump())
             mlflow.log_params(self.privacy_config.model_dump())
-            mlflow.log_text(model_summary,
-                            'model_summary.txt')
+            mlflow.log_text(model_summary, 'model_summary.txt')
 
     def _log_model(self):
         """Log trained model to MLFlow with proper signature and champion tagging."""
