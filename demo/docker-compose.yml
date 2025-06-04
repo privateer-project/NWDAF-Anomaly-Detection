@@ -47,6 +47,7 @@ services:
       - privateer-net
 
   # Data Producer - Reads test dataset
+# Data Producer - Reads test dataset with temporal ordering
   data-producer:
     build:
       context: ..
@@ -58,7 +59,8 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - KAFKA_TOPIC=raw-network-data
-      - INTERVAL=1.0
+      - INTERVAL=0.1  # Minimum interval between messages
+      - TIME_ACCELERATION=10.0  # 10x speed for demo (adjust as needed)
       - DEMO_MODE=true
     volumes:
       - ../privateer_ad:/app/privateer_ad

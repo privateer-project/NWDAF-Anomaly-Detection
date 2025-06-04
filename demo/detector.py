@@ -201,15 +201,54 @@ class DetectorWithUI:
         return sample_df
 
     def detect_anomaly(self, data):
-        """Detect anomaly using sliding window of properly preprocessed samples"""
+        """Detect anomaly using temporally-ordered sliding window of samples"""
         try:
             device_id = data.get('imeisv', 'unknown')
 
-            # Prepare current sample as DataFrame
-            current_sample = self.prepare_sample_dataframe(data)
+            # Parse timestamp
+            timestamp_str = data.get('_time') or data.get('original_time')
+            if timestamp_str:
+                try:
+                    if isinstance(timestamp_str, str):
+                        timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                    else:
+                        timestamp = timestamp_str
+                except:
+                    timestamp = datetime.now()
+            else:
+                timestamp = datetime.now()
 
-            # Add to device's sliding window
-            self.device_windows[device_id].append(current_sample)
+            # Extract features for current sample
+            features = []
+            feature_values = {}
+
+            for feature in self.feature_list:
+                value = data.get(feature, 0)
+                if value is None or value == '' or (isinstance(value, str) and value.lower() == 'nan'):
+                    value = 0
+                try:
+                    value = float(value)
+                except (ValueError, TypeError):
+                    value = 0.0
+                features.append(value)
+                feature_values[feature] = value
+
+            # Create sample with timestamp
+            sample = {
+                'timestamp': timestamp,
+                'features': features,
+                'data': data
+            }
+
+            # Initialize device window if needed
+            if device_id not in self.device_windows:
+                self.device_windows[device_id] = []
+
+            # Add to device's window
+            self.device_windows[device_id].append(sample)
+
+            # Sort by timestamp to maintain temporal order
+            self.device_windows[device_id].sort(key=lambda x: x['timestamp'])
 
             # Keep only the last seq_len samples
             if len(self.device_windows[device_id]) > self.seq_len:
@@ -217,35 +256,21 @@ class DetectorWithUI:
 
             # Only detect if we have enough samples
             if len(self.device_windows[device_id]) < self.seq_len:
-                logging.debug(f"Device {device_id}: {len(self.device_windows[device_id])}/{self.seq_len} samples collected")
+                logging.debug(
+                    f"Device {device_id}: {len(self.device_windows[device_id])}/{self.seq_len} samples collected")
                 return None
 
-            # Combine samples into a sequence DataFrame
-            sequence_df = pd.concat(self.device_windows[device_id], ignore_index=True)
-            sequence_df = sequence_df.sort_values(by=['_time']).reset_index(drop=True)
-            sequence_df['time_idx'] = range(len(sequence_df))
+            # Extract features in temporal order
+            window_features = [sample['features'] for sample in self.device_windows[device_id]]
 
-            # Apply DataProcessor preprocessing (this handles scaling properly)
-            try:
-                # Use the clean_data method to prepare the data
-                cleaned_df = self.dp.clean_data(sequence_df.copy())
-
-                # Apply scaling using the DataProcessor's method
-                preprocessed_df = self.dp.apply_scale(cleaned_df.copy())
-
-                # Extract the scaled feature values
-                scaled_features = preprocessed_df[self.feature_list].values
-
-            except Exception as e:
-                logging.error(f"Preprocessing error: {e}")
-                # Fallback: use manual scaling if DataProcessor fails
-                feature_values = sequence_df[self.feature_list].values
-                scaled_features = self.dp.load_scaler().transform(feature_values)
+            # Apply scaling to the window
+            window_array = np.array(window_features)
+            scaled_window = self.scaler.transform(window_array)
 
             # Create sequence tensor [batch_size=1, seq_len=12, features]
-            sequence_tensor = torch.tensor(scaled_features, dtype=torch.float32)
-            sequence_tensor = sequence_tensor.unsqueeze(0).to(self.device)
-            logging.warning(f'{sequence_tensor.shape}')
+            sequence = torch.tensor(scaled_window, dtype=torch.float32)
+            sequence_tensor = sequence.unsqueeze(0).to(self.device)
+
             # Run inference on the full sequence
             with torch.no_grad():
                 output = self.model(sequence_tensor)
@@ -255,20 +280,22 @@ class DetectorWithUI:
             # Check if anomaly
             is_anomaly = reconstruction_error > self.threshold
 
-            # Get current sample's feature values for display (unscaled)
-            current_features = current_sample[self.feature_list].iloc[0].to_dict()
+            # Get latest sample info for return
+            latest_sample = self.device_windows[device_id][-1]
 
             return {
                 'is_anomaly': bool(is_anomaly),
                 'reconstruction_error': float(reconstruction_error),
                 'threshold': float(self.threshold),
-                'timestamp': datetime.now(),
+                'timestamp': timestamp,
                 'device_id': device_id,
                 'anonymized_device_id': f"anon-{hash(str(device_id)) % 10000}",
                 'true_label': data.get('attack', None),
-                'feature_values': current_features,
+                'feature_values': feature_values,  # Latest sample's features (unscaled for display)
                 'sample_index': self.current_sample_index,
-                'window_size': len(self.device_windows[device_id])
+                'window_size': len(self.device_windows[device_id]),
+                'temporal_span': (self.device_windows[device_id][-1]['timestamp'] -
+                                  self.device_windows[device_id][0]['timestamp']).total_seconds()
             }
 
         except Exception as e:
@@ -287,6 +314,7 @@ class DetectorWithUI:
             # For now, just log that we would send
             logging.info(f"📤 Would send alert to endpoint: {self.endpoint_url}")
             logging.info(f"   Alert data: {json.dumps(alert_data, default=str)[:100]}...")
+            self.stats['alerts_sent'] += 1
 
             # Example implementation:
             # response = requests.post(
