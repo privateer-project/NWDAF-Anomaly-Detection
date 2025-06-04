@@ -20,23 +20,24 @@ class SecAggFlowerClient(NumPyClient):
         self.train_conf = TrainingConfig()
         self.data_conf = DataConfig()
 
-        if 'run_ids' not in self.client_state.configs_records:
-            self.client_state.configs_records['run_ids'] = ConfigRecord()
+        if 'run_ids' not in self.client_state.config_records:
+            self.client_state.config_records['run_ids'] = ConfigRecord()
 
         self.train_conf.epochs = int(context.run_config.get('epochs'))
         self.data_conf.partition_id = context.node_config['partition-id']
+        self.data_conf.num_partitions = context.node_config['num-partitions']
         logging.info(f'Client {self.data_conf.partition_id} initialized')
 
     def fit(self, parameters, config):
         """Train model."""
         server_round = config.get('server_round')
-        self.client_state.configs_records['run_ids'].update({'server_run_id': config.get('server_run_id', None)})
-        self.mlflow_conf.parent_run_id = self.client_state.configs_records['run_ids'].get('server_run_id', None)
-        self.mlflow_conf.child_run_id = self.client_state.configs_records['run_ids'].get('client_run_id', None)
+        self.client_state.config_records['run_ids'].update({'server_run_id': config.get('server_run_id', None)})
+        self.mlflow_conf.parent_run_id = self.client_state.config_records['run_ids'].get('server_run_id', None)
         logging.info(f'Server run id {self.mlflow_conf.parent_run_id}')
 
         train_pln = TrainPipeline(data_config=self.data_conf, training_config=self.train_conf, mlflow_config=self.mlflow_conf)
-        self.client_state.configs_records['run_ids'].update({'client_run_id': train_pln.mlflow_config.child_run_id})
+        self.mlflow_conf.child_run_id = train_pln.mlflow_config.child_run_id
+        self.client_state.config_records['run_ids'].update({'client_run_id': self.mlflow_conf.child_run_id})
 
         logging.info(f'Round {server_round} '
                     f'- Client {train_pln.data_config.partition_id} '
@@ -56,28 +57,27 @@ class SecAggFlowerClient(NumPyClient):
         """Evaluate model."""
         server_round = config.get('server_round')
         server_run_id = config.get('server_run_id')
-        run_ids = self.client_state.configs_records['run_ids']
+        run_ids = self.client_state.config_records['run_ids']
         if 'server_run_id' not in run_ids:
             run_ids['server_run_id'] = server_run_id
 
         logging.info(f'Client {self.data_conf.partition_id} - Evaluation Round {server_round}')
-        self.client_state.configs_records['run_ids'].update({'server_run_id': config.get('server_run_id', None)})
-        self.mlflow_conf.parent_run_id = self.client_state.configs_records['run_ids'].get('server_run_id', None)
-        self.mlflow_conf.child_run_id = self.client_state.configs_records['run_ids'].get('client_run_id', None)
-
         train_pln = TrainPipeline(data_config=self.data_conf, training_config=self.train_conf, mlflow_config=self.mlflow_conf)
-        self.client_state.configs_records['run_ids'].update({'client_run_id': train_pln.mlflow_config.child_run_id})
+        self.client_state.config_records['run_ids'].update({'client_run_id': train_pln.mlflow_config.child_run_id})
 
         set_weights(train_pln.model, parameters)
         metrics, figs = train_pln.evaluate_model(step=server_round)
         num_examples = sum(len(batch[0]['encoder_cont']) for batch in train_pln.test_dl)
 
         loss = metrics.pop('test_loss')
+        print('loss', loss)
+        print('float(loss)', float(loss))
+        print('metrics', metrics)
         return float(loss), num_examples, metrics
 
 def client_fn(context: Context):
     """Create client."""
-    logging.info(f'Client Context:\n{context}.')
+    logging.info(f'Client run config:\n{context.run_config}.')
     return SecAggFlowerClient(context).to_client()
 
 
