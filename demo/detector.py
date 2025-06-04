@@ -177,31 +177,44 @@ class DetectorWithUI:
                 else:
                     return False
 
-    def prepare_sample_dataframe(self, data):
-        """Prepare a single sample as a DataFrame with proper structure"""
-        # Create a single-row DataFrame with current timestamp
-        sample_df = pd.DataFrame([{
-            '_time': datetime.now(),
+    def create_sample_dataframe(self, data, timestamp):
+        """Create a properly formatted DataFrame from incoming data"""
+        # Create single-row DataFrame with all required columns
+        sample_data = {
+            '_time': timestamp,
             'imeisv': data.get('imeisv', 'unknown'),
-            'cell': data.get('cell', '1'),  # Default cell if missing
-            'attack': data.get('attack', 0),
-            'malicious': data.get('malicious', 0),
-            'attack_number': data.get('attack_number', 0),
-            **{feature: data.get(feature, 0.0) for feature in self.feature_list}
-        }])
+            'cell': data.get('cell', '1'),
+            'attack': int(data.get('attack', 0)),
+            'malicious': int(data.get('malicious', 0)),
+            'attack_number': int(data.get('attack_number', 0)),
+        }
+
+        # Add all input features
+        for feature in self.feature_list:
+            value = data.get(feature, 0.0)
+            if value is None or value == '' or (isinstance(value, str) and value.lower() == 'nan'):
+                value = 0.0
+            try:
+                sample_data[feature] = float(value)
+            except (ValueError, TypeError):
+                sample_data[feature] = 0.0
+
+        # Create DataFrame
+        df = pd.DataFrame([sample_data])
 
         # Ensure proper data types
+        df['_time'] = pd.to_datetime(df['_time'])
+        df['attack'] = df['attack'].astype(int)
+        df['malicious'] = df['malicious'].astype(int)
+        df['attack_number'] = df['attack_number'].astype(int)
+
         for feature in self.feature_list:
-            sample_df[feature] = pd.to_numeric(sample_df[feature], errors='coerce').fillna(0.0)
+            df[feature] = pd.to_numeric(df[feature], errors='coerce').fillna(0.0)
 
-        sample_df['attack'] = sample_df['attack'].astype(int)
-        sample_df['malicious'] = sample_df['malicious'].astype(int)
-        sample_df['attack_number'] = sample_df['attack_number'].astype(int)
-
-        return sample_df
+        return df
 
     def detect_anomaly(self, data):
-        """Detect anomaly using temporally-ordered sliding window of samples"""
+        """Detect anomaly using temporally-ordered sliding window with proper DataProcessor preprocessing"""
         try:
             device_id = data.get('imeisv', 'unknown')
 
@@ -218,37 +231,18 @@ class DetectorWithUI:
             else:
                 timestamp = datetime.now()
 
-            # Extract features for current sample
-            features = []
-            feature_values = {}
-
-            for feature in self.feature_list:
-                value = data.get(feature, 0)
-                if value is None or value == '' or (isinstance(value, str) and value.lower() == 'nan'):
-                    value = 0
-                try:
-                    value = float(value)
-                except (ValueError, TypeError):
-                    value = 0.0
-                features.append(value)
-                feature_values[feature] = value
-
-            # Create sample with timestamp
-            sample = {
-                'timestamp': timestamp,
-                'features': features,
-                'data': data
-            }
+            # Create properly formatted DataFrame for this sample
+            sample_df = self.create_sample_dataframe(data, timestamp)
 
             # Initialize device window if needed
             if device_id not in self.device_windows:
                 self.device_windows[device_id] = []
 
             # Add to device's window
-            self.device_windows[device_id].append(sample)
+            self.device_windows[device_id].append(sample_df)
 
             # Sort by timestamp to maintain temporal order
-            self.device_windows[device_id].sort(key=lambda x: x['timestamp'])
+            self.device_windows[device_id].sort(key=lambda df: df['_time'].iloc[0])
 
             # Keep only the last seq_len samples
             if len(self.device_windows[device_id]) > self.seq_len:
@@ -260,16 +254,24 @@ class DetectorWithUI:
                     f"Device {device_id}: {len(self.device_windows[device_id])}/{self.seq_len} samples collected")
                 return None
 
-            # Extract features in temporal order
-            window_features = [sample['features'] for sample in self.device_windows[device_id]]
+            # Combine window DataFrames into a single DataFrame
+            window_df = pd.concat(self.device_windows[device_id], ignore_index=True)
 
-            # Apply scaling to the window
-            window_array = np.array(window_features)
-            scaled_window = self.scaler.transform(window_array)
+            # Apply DataProcessor preprocessing (this handles scaling properly)
+            try:
+                # Clean and preprocess the data using DataProcessor
+                processed_window_df = self.dp.clean_data(window_df.copy())
+                processed_window_df = self.dp.apply_scale(processed_window_df)
 
-            # Create sequence tensor [batch_size=1, seq_len=12, features]
-            sequence = torch.tensor(scaled_window, dtype=torch.float32)
-            sequence_tensor = sequence.unsqueeze(0).to(self.device)
+                # Extract the scaled feature values in the correct order
+                scaled_features = processed_window_df[self.feature_list].values
+
+            except Exception as e:
+                logging.error(f"❌ Error in preprocessing: {e}")
+                return None
+
+            # Create sequence tensor [batch_size=1, seq_len, features]
+            sequence_tensor = torch.tensor(scaled_features, dtype=torch.float32).unsqueeze(0).to(self.device)
 
             # Run inference on the full sequence
             with torch.no_grad():
@@ -280,8 +282,9 @@ class DetectorWithUI:
             # Check if anomaly
             is_anomaly = reconstruction_error > self.threshold
 
-            # Get latest sample info for return
-            latest_sample = self.device_windows[device_id][-1]
+            # Extract feature values from the latest (unscaled) sample for display
+            latest_sample_df = self.device_windows[device_id][-1]
+            feature_values = {feature: float(latest_sample_df[feature].iloc[0]) for feature in self.feature_list}
 
             return {
                 'is_anomaly': bool(is_anomaly),
@@ -290,12 +293,11 @@ class DetectorWithUI:
                 'timestamp': timestamp,
                 'device_id': device_id,
                 'anonymized_device_id': f"anon-{hash(str(device_id)) % 10000}",
-                'true_label': data.get('attack', None),
-                'feature_values': feature_values,  # Latest sample's features (unscaled for display)
+                'true_label': int(latest_sample_df['attack'].iloc[0]),
+                'feature_values': feature_values,
                 'sample_index': self.current_sample_index,
                 'window_size': len(self.device_windows[device_id]),
-                'temporal_span': (self.device_windows[device_id][-1]['timestamp'] -
-                                  self.device_windows[device_id][0]['timestamp']).total_seconds()
+                'temporal_span': (window_df['_time'].iloc[-1] - window_df['_time'].iloc[0]).total_seconds()
             }
 
         except Exception as e:
