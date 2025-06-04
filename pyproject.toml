@@ -45,8 +45,8 @@ train-ad = "privateer_ad.train.train:main"
 eval-ad = "privateer_ad.evaluate.evaluate:main"
 predict-ad = "privateer_ad.predict.predict:main"
 autotune-ad = "privateer_ad.train.autotune:main"
-server-app = "privateer_ad.fl.server_app:app"
-client-app = "privateer_ad.fl.client_app:app"
+server-app = "privateer_ad.fl.server:app"
+client-app = "privateer_ad.fl.client:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]

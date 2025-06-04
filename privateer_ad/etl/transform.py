@@ -139,8 +139,6 @@ class DataProcessor:
         return df
 
     def preprocess_data(self, df, only_benign: bool = False) -> pd.DataFrame:
-        df = self.get_partition(df)
-        df = self.clean_data(df)
         df = self.apply_scale(df)
         df = df.sort_values(by=['_time']).reset_index(drop=True)
         if only_benign:
@@ -195,6 +193,8 @@ class DataProcessor:
                      f' only_benign: {only_benign}')
 
         df = self.read_ds(data_path)
+        df = self.get_partition(df)
+        df = self.clean_data(df)
         if preprocess:
             df = self.preprocess_data(df=df, only_benign=only_benign)
         # Create time index for each device

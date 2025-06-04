@@ -294,9 +294,9 @@ class ModelTrainer:
                 f'{self.es_not_improved_epochs} epochs.'
             )
             logging.warning(
-                f'{self.training_config.target_metric}: '
-                f'best={self.best_checkpoint['metrics'][self.training_config.target_metric]:.5f}'
-                f' - current={self.metrics[self.training_config.target_metric]:.5f}\n'
+                f"{self.training_config.target_metric}: "
+                f"best={self.best_checkpoint['metrics'][self.training_config.target_metric]:.5f}"
+                f" - current={self.metrics[self.training_config.target_metric]:.5f}\n"
             )
 
         # Check if patience limit reached
