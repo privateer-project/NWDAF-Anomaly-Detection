@@ -64,8 +64,7 @@ class CustomStrategy(FedAvg):
 
     def _evaluate_config_fn(self, server_round: int):
         """Generate evaluation configuration for each round."""
-        return {'server_round': server_round,
-                'server_run_id': self.mlflow_config.parent_run_id}
+        return {'server_round': server_round}
 
     def _is_better_metric(self, current_value: float) -> bool:
         """Check if current metric value is better than the best value."""
