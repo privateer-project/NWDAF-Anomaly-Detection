@@ -2,7 +2,7 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: privateer_mlflow_server
-    restart: unless-stopped
+    restart: always
     ports:
       - "5001:5001"
     volumes:
