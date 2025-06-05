@@ -1,5 +1,5 @@
 """
-PRIVATEER Anomaly Detector Service with Web UI
+PRIVATEER Anomaly Detector Service
 Combines Kafka consumption with real-time Dash visualization
 """
 import os
@@ -480,8 +480,9 @@ detector = None
 def wait_for_services():
     """Wait for required services to be available"""
     # Wait for MLflow
+    logging.info(os.environ)
     mlflow_uri = os.environ.get('PRIVATEER_MLFLOW_TRACKING_URI', 'http://localhost:5001')
-    mlflow_health_url = mlflow_uri.replace(':5001', ':5050') + '/health'
+    mlflow_health_url = mlflow_uri + '/health'
 
     max_retries = 20
     for i in range(max_retries):
@@ -1019,7 +1020,7 @@ def create_empty_figure(title):
 
 
 if __name__ == '__main__':
-    logging.info("🛡️ PRIVATEER Network Anomaly Detection Service with UI")
+    logging.info("🛡️ PRIVATEER Network Anomaly Detection Service")
     logging.info("=" * 50)
 
     # Wait for services
