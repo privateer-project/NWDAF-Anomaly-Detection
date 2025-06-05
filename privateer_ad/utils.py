@@ -150,7 +150,7 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
         logging.info(f"Model performance ({current_target_metric}) did not exceed"
               f" previous best ({best_target_metric}). No champion tag added.")
 
-    client.set_model_version_tag(model_name, current_version, target_metric, str(current_metrics))
+    client.set_model_version_tag(model_name, current_version, target_metric, str(current_target_metric))
 
 def get_signature(model, sample):
     _output = model(sample)
@@ -200,7 +200,7 @@ def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
         # Load the model
         model_uri = f"models:/{model_name}/{champion_version}"
         load_conf = {'map_location': torch.device('cpu')}
-        model = mlflow.pytorch.load_model(model_uri=model_uri)
+        model = mlflow.pytorch.load_model(model_uri=model_uri, **load_conf)
 
         # Get run details to extract threshold and loss_fn
         run = client.get_run(champion_run_id)

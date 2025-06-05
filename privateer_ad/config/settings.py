@@ -123,7 +123,7 @@ class ModelConfig(BaseSettings):
 
 class TrainingConfig(BaseSettings):
     """Training process configuration"""
-    learning_rate: float = Field(default=0.001, gt=0.0)
+    learning_rate: float = Field(default=0.0001, gt=0.0)
     epochs: int = Field(default=100, gt=0)
     loss_fn_name: str = Field(default='L1Loss')
 
