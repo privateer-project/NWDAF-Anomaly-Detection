@@ -2,13 +2,16 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: privateer_mlflow_server
-    restart: unless-stopped
+    restart: always
     ports:
       - "5001:5001"
     volumes:
       - ./mlruns:/mlruns
       - ./mlartifacts:/mlartifacts
-    command: mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5001
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health', timeout=5)"]
       interval: 5s

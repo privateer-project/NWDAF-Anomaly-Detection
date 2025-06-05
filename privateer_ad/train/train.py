@@ -103,7 +103,7 @@ class TrainPipeline:
                 target_delta=self.privacy_config.target_delta,
                 max_grad_norm=self.privacy_config.max_grad_norm
             )
-        if self.training_config.early_stopping_enabled:
+        if self.training_config.es_enabled:
             logging.info('Early stopping enabled.')
         self.trainer = ModelTrainer(model=self.model,
                                     optimizer=self.optimizer,
@@ -191,7 +191,7 @@ class TrainPipeline:
                   sample=self.sample,
                   direction=self.training_config.direction,
                   target_metric=self.training_config.target_metric,
-                  current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
+                  current_metrics=best_checkpoint['metrics'],
                   experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
                   pip_requirements=self.paths_config.requirements_file.as_posix())
         return metrics, figures

@@ -58,11 +58,10 @@ def load_model_weights(model_path: str, paths_config) -> dict:
     raise FileNotFoundError(f'Could not find model file at any of: {[str(p) for p in possible_paths]}')
 
 
-def log_model(model, model_name, sample, direction, target_metric, current_target_metric, experiment_id, pip_requirements):
+def log_model(model, model_name, sample, direction, target_metric, current_metrics, experiment_id, pip_requirements):
     """Log trained model to MLFlow with proper signature and champion tagging."""
     model.to('cpu')
     signature = get_signature(model=model, sample=sample)
-
     client = mlflow.tracking.MlflowClient()
 
     # Determine sort direction for finding best run
@@ -71,33 +70,23 @@ def log_model(model, model_name, sample, direction, target_metric, current_targe
     else:
         sorting = 'ASC'
 
-    # Check if this is a new champion
-    is_champion = True
     previous_champion_version = None
+    current_target_metric = current_metrics[target_metric]
 
     try:
         # Find the best run across all experiments
         best_run = client.search_runs(experiment_id, order_by=[f'metrics.`{target_metric}` {sorting}'], max_results=1)[0]
+        best_target_metric = best_run.data.metrics[target_metric]
 
-        if target_metric in best_run.data.metrics:
-            best_target_metric = best_run.data.metrics[target_metric]
-
-            # Compare with previous best
-            if direction == 'maximize':
-                is_champion = current_target_metric >= best_target_metric
-            else:
-                is_champion = current_target_metric <= best_target_metric
-
-            logging.info(f'Previous best {target_metric}: {best_target_metric}')
-            logging.info(f'Current {target_metric}: {current_target_metric}')
-            logging.info(f'Is new champion: {is_champion}')
+        # Compare with previous best
+        if direction == 'maximize':
+            is_champion = current_target_metric >= best_target_metric
         else:
-            logging.warning('Metric not found in best run. Skipping champion tagging.')
-            if direction == 'maximize':
-                best_target_metric = - np.inf
-            else:
-                best_target_metric = np.inf
+            is_champion = current_target_metric <= best_target_metric
 
+        logging.info(f'Previous best {target_metric}: {best_target_metric}')
+        logging.info(f'Current {target_metric}: {current_target_metric}')
+        logging.info(f'Is new champion: {is_champion}')
 
         # Find previous champion version to remove tag
         if is_champion:
@@ -161,12 +150,7 @@ def log_model(model, model_name, sample, direction, target_metric, current_targe
         logging.info(f"Model performance ({current_target_metric}) did not exceed"
               f" previous best ({best_target_metric}). No champion tag added.")
 
-    client.set_model_version_tag(
-        model_name,
-        current_version,
-        target_metric,
-        str(current_target_metric)
-    )
+    client.set_model_version_tag(model_name, current_version, target_metric, str(current_metrics))
 
 def get_signature(model, sample):
     _output = model(sample)
@@ -215,11 +199,8 @@ def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
 
         # Load the model
         model_uri = f"models:/{model_name}/{champion_version}"
-        if not torch.cuda.is_available():
-            load_conf = {'map_location': torch.device('cpu')}
-        else:
-            load_conf = {'map_location': torch.device('cuda')}
-        model = mlflow.pytorch.load_model(model_uri=model_uri, **load_conf)
+        load_conf = {'map_location': torch.device('cpu')}
+        model = mlflow.pytorch.load_model(model_uri=model_uri)
 
         # Get run details to extract threshold and loss_fn
         run = client.get_run(champion_run_id)
