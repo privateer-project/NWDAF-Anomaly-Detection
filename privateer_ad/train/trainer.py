@@ -237,11 +237,12 @@ class ModelTrainer:
         Determine if the current metrics represent the best checkpoint so far.
 
         Returns:
-            bool: True if current checkpoint is the best
+            bool: True if current checkpoint is the best 'metrics'
         """
         current_value = self.metrics[self.training_config.target_metric]
         best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
-                                                         np.inf if self.training_config.direction == 'minimize' else -np.inf)
+                                                         -np.inf if self.training_config.direction == 'maximize'
+                                                         else np.inf)
 
         if self.training_config.direction == 'maximize':
             return current_value > best_value

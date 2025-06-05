@@ -25,4 +25,3 @@ COPY anonymizer.py /app/anonymizer.py
 
 # Run the anonymizer
 CMD ["python", "/app/anonymizer.py"]
-

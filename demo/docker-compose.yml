@@ -1,6 +1,3 @@
-# demo/docker-compose.yml
-version: '3.8'
-
 services:
   # Kafka for event streaming
   kafka:
@@ -12,11 +9,14 @@ services:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     restart: unless-stopped
+    networks:
+      - privateer-net
 
   # MLflow for model registry
   mlflow:
@@ -27,6 +27,8 @@ services:
     volumes:
       - ./mlruns:/mlruns
     command: mlflow server --host 0.0.0.0 --port 5001
+    networks:
+      - privateer-net
 
   # Data Producer
   data-producer:
@@ -44,6 +46,8 @@ services:
     volumes:
       - ../data:/app/data:ro
     restart: unless-stopped
+    networks:
+      - privateer-net
 
   # Anonymization & Preprocessing Service
   anonymizer:
@@ -61,6 +65,8 @@ services:
       - ../privateer_ad:/app/privateer_ad:ro
       - ../scalers:/app/scalers:ro
     restart: unless-stopped
+    networks:
+      - privateer-net
 
 # demo/docker-compose.yml - detector service update
   anomaly-detector:
@@ -72,18 +78,20 @@ services:
       - kafka
       - mlflow
     ports:
-      - "8050:8050"  # Expose Dash UI port
+      - "8050:8050"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=preprocessed-data
       - ALERT_TOPIC=anomaly-alerts
-      - MLFLOW_TRACKING_URI=http://mlflow:5001
+      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5001
     volumes:
       - ../privateer_ad:/app/privateer_ad:ro
+      - ../demo:/app/demo:ro
       - ../models:/app/models:ro
       - ../scalers:/app/scalers:ro
     restart: unless-stopped
-
+    networks:
+      - privateer-net
   # Alert Monitor (for testing)
   alert-monitor:
     build:
@@ -96,3 +104,9 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - ALERT_TOPIC=anomaly-alerts
     restart: unless-stopped
+    networks:
+      - privateer-net
+
+networks:
+  privateer-net:
+    driver: bridge

@@ -31,8 +31,6 @@ RUN pip install --no-cache-dir \
     dash \
     dash-bootstrap-components
 
-# Copy the detector script
-COPY detector.py /app/detector.py
 
 # Expose port for Dash UI
 EXPOSE 8050
@@ -42,4 +40,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8050/ || exit 1
 
 # Run the detector
-CMD ["python", "/app/detector.py"]
+CMD ["python", "/app/demo/detector.py"]

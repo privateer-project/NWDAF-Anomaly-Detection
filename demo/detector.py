@@ -1,4 +1,3 @@
-# demo/detector.py
 """
 PRIVATEER Anomaly Detector Service with Web UI
 Combines Kafka consumption with real-time Dash visualization
@@ -26,14 +25,13 @@ from privateer_ad.config import MLFlowConfig, MetadataConfig
 
 
 class AnomalyDetectorWithUI:
-    def __init__(self):
+    def __init__(self, model_name='TransformerAD'):
         # Load model
-        mlflow_config = MLFlowConfig()
         self.metadata = MetadataConfig()
 
         self.model, self.threshold, self.loss_fn = load_champion_model(
-            mlflow_config.tracking_uri,
-            model_name='TransformerAD_DP'
+            tracking_uri=MLFlowConfig().tracking_uri,
+            model_name=model_name
         )
         self.model.eval()
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -131,7 +129,8 @@ class AnomalyDetectorWithUI:
             self.input_topic,
             bootstrap_servers=self.bootstrap_servers,
             value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            auto_offset_reset='latest'
+            auto_offset_reset='earliest',
+            group_id='anomaly-detector-group'
         )
 
         self.producer = KafkaProducer(
@@ -386,6 +385,19 @@ def control_detector(start_clicks, stop_clicks, state):
 
     return state, state.get('running', False), not state.get('running', False)
 
+@app.callback(
+    Output('status-indicator', 'children'),
+    [Input('threshold-slider', 'value'),
+     Input('detector-state', 'data')]
+)
+def update_status_indicator(threshold, state):
+    detector.update_threshold(threshold)
+    running = state.get('running', False)
+    status_text = "Running" if running else "Stopped"
+    return html.Div([
+        dbc.Badge(f"Threshold: {threshold:.3f}", color="info", className="me-2"),
+        dbc.Badge(f"Status: {status_text}", color="success" if running else "secondary")
+    ])
 
 @app.callback(
     Output('status-indicator', 'children'),

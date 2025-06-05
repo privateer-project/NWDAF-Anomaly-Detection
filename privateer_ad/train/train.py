@@ -181,13 +181,13 @@ class TrainPipeline:
         """
         best_checkpoint = self.train_model(start_epoch=start_epoch)
         metrics, figures = self.evaluate_model(step=start_epoch)
-        model_name = 'TransformerAD'
+
         if self.privacy_config.dp_enabled:
             metrics['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
-            model_name += '_DP'
+            self.model_config.model_name += '_DP'
 
         log_model(model=self.model,
-                  model_name=model_name,
+                  model_name=self.model_config.model_name,
                   sample=self.sample,
                   direction=self.training_config.direction,
                   target_metric=self.training_config.target_metric,
