@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir \
     dash-bootstrap-components
 
 # Copy the detector script
-COPY demo/detector.py /app/detector.py
+COPY detector.py /app/detector.py
 
 # Expose port for Dash UI
 EXPOSE 8050
