@@ -8,7 +8,10 @@ services:
     volumes:
       - ./mlruns:/mlruns
       - ./mlartifacts:/mlartifacts
-    command: mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5001
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health', timeout=5)"]
       interval: 5s
@@ -119,7 +122,7 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=anonymized-data
-      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5050
+      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5001
       - PRIVATEER_MODEL_MODEL_TYPE=TransformerAD_DP
 
       # Aggregation settings

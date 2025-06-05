@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies including Dash UI components
+RUN pip install --upgrade pip
+
 RUN pip install --no-cache-dir \
     torch==2.7.0 \
     numpy==2.2.6 \
@@ -33,9 +35,6 @@ RUN pip install --no-cache-dir \
 
 # Copy the detector script
 COPY demo/detector.py /app/detector.py
-
-# Create directories for models and scalers
-RUN mkdir -p /app/models /app/scalers
 
 # Expose port for Dash UI
 EXPOSE 8050

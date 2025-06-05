@@ -35,7 +35,6 @@ def main(grid: Grid, context: Context) -> None:
 
     # Get run parameters from context
     fl_config.n_clients = context.run_config.get('n-clients', fl_config.n_clients)
-    fl_config.num_rounds = context.run_config.get('num-server-rounds', fl_config.num_rounds)
 
     logging.info(f'Federated Learning will run for {fl_config.num_rounds} rounds on {fl_config.n_clients} clients')
     logging.info(f'Secure aggregation: {fl_config.secure_aggregation_enabled}')
@@ -88,7 +87,7 @@ def main(grid: Grid, context: Context) -> None:
                   sample=sample,
                   direction=strategy.training_config.direction,
                   target_metric=strategy.training_config.target_metric,
-                  current_target_metric=metrics[strategy.training_config.target_metric],
+                  current_metrics=strategy.best_metrics,
                   experiment_id=mlflow.get_experiment_by_name(mlflow_config.experiment_name).experiment_id,
                   pip_requirements=PathConfig().requirements_file.as_posix())
 
