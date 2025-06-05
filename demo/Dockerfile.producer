@@ -7,12 +7,11 @@ ENV PYTHONPATH="/app:${PYTHONPATH}"
 # Install dependencies
 RUN pip install --no-cache-dir \
     pandas==2.2.3 \
-    kafka-python==2.2.10 \
-    pydantic==2.11.5 \
-    pydantic-settings==2.9.1
+    kafka-python==2.2.10
 
 # Copy the producer script
-COPY demo/producer.py /app/producer.py
+COPY producer.py /app/producer.py
 
 # Run the producer
 CMD ["python", "/app/producer.py"]
+
