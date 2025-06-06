@@ -86,8 +86,8 @@ class DataConfig(BaseSettings):
     batch_size: int = Field(default=4096, gt=0)
     seq_len: int = Field(default=12, ge=1)
 
-    num_workers: int = Field(default=4, ge=0)
-    prefetch_factor: int | None = Field(default=4, ge=1)
+    num_workers: int = Field(default=2, ge=0)
+    prefetch_factor: int | None = Field(default=2, ge=1)
     persistent_workers: bool = Field(default=True)
     pin_memory: bool = Field(default=True)
 
