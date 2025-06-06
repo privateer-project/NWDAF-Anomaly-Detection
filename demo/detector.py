@@ -4,10 +4,14 @@ Combines Kafka consumption with real-time Dash visualization
 """
 import os
 import json
+from copy import deepcopy
+
+import pandas as pd
 import torch
 import numpy as np
 import threading
 import queue
+import logging
 from kafka import KafkaConsumer, KafkaProducer
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -23,87 +27,224 @@ import plotly.graph_objects as go
 from privateer_ad.utils import load_champion_model
 from privateer_ad.config import MLFlowConfig, MetadataConfig
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
 
 class AnomalyDetectorWithUI:
-    def __init__(self, model_name='TransformerAD'):
-        # Load model
-        self.metadata = MetadataConfig()
+    def __init__(self):
+        try:
+            # Load model with error handling
+            self.metadata = MetadataConfig()
+            self.mlflow_config = MLFlowConfig()
 
-        self.model, self.threshold, self.loss_fn = load_champion_model(
-            tracking_uri=MLFlowConfig().tracking_uri,
-            model_name=model_name
-        )
-        self.model.eval()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
+            # Try multiple model names
+            model_names = ['TransformerAD', 'TransformerAD_DP', 'global_TransformerAD']
+            self.model = None
 
-        # Get input features for display
-        self.input_features = self.metadata.get_input_features()
+            for model_name in model_names:
+                try:
+                    self.model, self.threshold, self.loss_fn = load_champion_model(
+                        tracking_uri=self.mlflow_config.tracking_uri,
+                        model_name=model_name
+                    )
+                    self.model_name = model_name
+                    logging.info(f"Successfully loaded model: {model_name}")
+                    break
+                except Exception as e:
+                    logging.warning(f"Failed to load {model_name}: {e}")
+                    continue
 
-        # Alert aggregation
-        self.alert_window = timedelta(minutes=5)
-        self.device_alerts = defaultdict(list)
-        self.alert_threshold = 5
+            if self.model is None:
+                raise ValueError("No model could be loaded. Check MLflow registry.")
 
-        # Kafka setup
-        self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-        self.input_topic = os.environ.get('INPUT_TOPIC', 'preprocessed-data')
-        self.alert_topic = os.environ.get('ALERT_TOPIC', 'anomaly-alerts')
+            self.model.eval()
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.model.to(self.device)
 
-        self.consumer = None
-        self.producer = None
-        self.running = False
-        self.consumer_thread = None
+            # Get input features for display
+            self.input_features = self.metadata.get_input_features()
 
-        # Data queue for UI updates
-        self.data_queue = queue.Queue(maxsize=1000)
+            # Alert aggregation
+            self.alert_window = timedelta(minutes=5)
+            self.device_alerts = defaultdict(list)
+            self.alert_threshold = 5
 
-        # Storage for real-time data (similar to demo.py)
-        self.realtime_data = {
-            'timestamp': [],
-            'sample_index': [],
-            'reconstruction_error': [],
-            'is_anomaly': [],
-            'true_label': [],
-            'anonymized_device_id': [],
-            'feature_values': {}
-        }
+            # Kafka setup
+            self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+            self.input_topic = os.environ.get('INPUT_TOPIC', 'anonymized-data')
+            self.alert_topic = os.environ.get('ALERT_TOPIC', 'anomaly-alerts')
 
-        # Initialize feature storage
-        for feature in self.input_features:
-            self.realtime_data['feature_values'][feature] = []
+            self.consumer = None
+            self.producer = None
+            self.running = False
+            self.consumer_thread = None
 
-        self.max_points = 200  # Keep last 200 points
-        self.sample_count = 0
+            # Data queue for UI updates
+            self.ui_data_queue = queue.Queue(maxsize=1000)
 
-        # Statistics
-        self.stats = {
-            'total': 0,
-            'anomalies': 0,
-            'true_positives': 0,
-            'false_positives': 0,
-            'alerts_sent': 0
-        }
+            # Storage for real-time data
+            self.realtime_data = {
+                'timestamp': [],
+                'sample_index': [],
+                'reconstruction_error': [],
+                'is_anomaly': [],
+                'true_label': [],
+                'device_id': [],
+                'feature_values': {}
+            }
 
-    def detect_anomaly(self, tensor_data):
-        """Run anomaly detection on preprocessed tensor"""
-        tensor = torch.tensor(tensor_data, dtype=torch.float32).to(self.device)
+            # Initialize feature storage
+            for feature in self.input_features:
+                self.realtime_data['feature_values'][feature] = []
 
-        with torch.no_grad():
-            output = self.model(tensor)
-            reconstruction_error = self.loss_fn(tensor, output).mean().item()
+            self.max_points = 200
+            self.sample_count = 0
 
-        is_anomaly = reconstruction_error > self.threshold
+            # Statistics
+            self.stats = {
+                'total': 0,
+                'anomalies': 0,
+                'true_positives': 0,
+                'false_positives': 0,
+                'alerts_sent': 0
+            }
 
-        return {
-            'is_anomaly': is_anomaly,
-            'reconstruction_error': reconstruction_error,
-            'threshold': self.threshold
-        }
+            logging.info("AnomalyDetectorWithUI initialized successfully")
+
+        except Exception as e:
+            logging.error(f"Failed to initialize detector: {e}")
+            raise
+
+    def kafka_consumer_loop(self):
+        """Main Kafka consumer loop running in background"""
+        try:
+            self.consumer = KafkaConsumer(
+                self.input_topic,
+                bootstrap_servers=self.bootstrap_servers,
+                value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+                auto_offset_reset='latest',
+                group_id='anomaly-detector-group'
+            )
+
+            self.producer = KafkaProducer(
+                bootstrap_servers=self.bootstrap_servers,
+                value_serializer=lambda v: json.dumps(v).encode('utf-8')
+            )
+
+            logging.info("Kafka consumer started")
+
+            while self.running:
+                try:
+                    messages = self.consumer.poll(timeout_ms=1000)
+
+                    for topic_partition, records in messages.items():
+                        for message in records:
+                            self.process_message(message.value)
+
+                except Exception as e:
+                    logging.error(f"Error in consumer loop: {e}")
+                    continue
+
+        except Exception as e:
+            logging.error(f"Failed to start Kafka consumer: {e}")
+        finally:
+            if self.consumer:
+                self.consumer.close()
+            if self.producer:
+                self.producer.close()
+            logging.info("Kafka consumer stopped")
+
+    def process_message(self, input_data):
+        """Process a single message from Kafka"""
+        try:
+            # Detect anomaly
+            input_features = pd.DataFrame(input_data['feature_values'])
+            input_tensor = torch.tensor(input_features.values, dtype=torch.float32).to(self.device)
+            input_tensor = input_tensor.reshape(1, len(input_features), len(input_features.columns))
+
+            detection_results = self.detect_anomaly(input_tensor)
+            if detection_results is None:
+                return
+            # Update statistics
+            self.sample_count += 1
+            self.stats['total'] += 1
+
+            if detection_results['is_anomaly']:
+                self.stats['anomalies'] += 1
+
+                # Check ground truth
+                if input_data['metadata'].get('malicious') == 1:
+                    self.stats['true_positives'] += 1
+                else:
+                    self.stats['false_positives'] += 1
+
+                # Check if we should send alert
+                should_alert, count = self.should_send_alert(input_data['device_id'],
+                                                             input_data['timestamp'])
+
+                if should_alert:
+                    alert = {
+                        'alert_id': f"alert-{datetime.now().timestamp()}",
+                        'device_id': input_data['device_id'],
+                        'cell': input_data['metadata']['cell'],
+                        'feature_values': input_data['feature_values'],
+                        'timestamp': input_data['timestamp'],
+                        'reconstruction_error': detection_results['reconstruction_error'],
+                        'threshold': self.threshold,
+                        'anomaly_count': count,
+                        'window_seconds': self.alert_window.seconds,
+                        'data': input_data
+                    }
+
+                    self.producer.send(self.alert_topic, value=alert)
+                    self.stats['alerts_sent'] += 1
+                    logging.info(f"ALERT sent for device {input_data['device_id']}")
+
+            # Create feature dictionary
+            # Queue data for UI update
+            ui_data = {
+                'timestamp': input_data['timestamp'],
+                'sample_index': self.sample_count,
+                'reconstruction_error': detection_results['reconstruction_error'],
+                'is_anomaly': detection_results['is_anomaly'],
+                'true_label': input_data['metadata']['attack'],
+                'device_id': input_data['device_id'],
+                'feature_values': {k: v[-1] for k, v in input_data['feature_values'].items()}
+            }
+
+            # Non-blocking put
+            try:
+                self.ui_data_queue.put_nowait(ui_data)
+            except queue.Full:
+                self.ui_data_queue.get()
+                self.ui_data_queue.put_nowait(ui_data)
+
+        except Exception as e:
+            logging.error(f"Error processing message: {e}")
+
+    def detect_anomaly(self, input_tensor):
+        """Run anomaly detection on incoming data"""
+        try:
+            # Extract features from data
+            with torch.no_grad():
+                output = self.model(input_tensor)
+                reconstruction_error = self.loss_fn(input_tensor, output)
+                reconstruction_error = reconstruction_error.mean().item()
+            is_anomaly = reconstruction_error > self.threshold
+            detection_results = {'is_anomaly': is_anomaly,
+                                 'reconstruction_error': reconstruction_error,
+                                 'input_tensor': input_tensor
+                                 }
+            return detection_results
+
+        except Exception as e:
+            logging.error(f"Error in anomaly detection: {e}")
+            return None
 
     def should_send_alert(self, device_id, timestamp):
         """Aggregate alerts to prevent spam"""
-        current_time = datetime.fromisoformat(timestamp)
+        current_time = datetime.fromisoformat(timestamp) if isinstance(timestamp, str) else timestamp
 
         # Clean old alerts
         cutoff_time = current_time - self.alert_window
@@ -123,147 +264,51 @@ class AnomalyDetectorWithUI:
 
         return False, alert_count
 
-    def kafka_consumer_loop(self):
-        """Main Kafka consumer loop running in background"""
-        self.consumer = KafkaConsumer(
-            self.input_topic,
-            bootstrap_servers=self.bootstrap_servers,
-            value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            auto_offset_reset='earliest',
-            group_id='anomaly-detector-group'
-        )
-
-        self.producer = KafkaProducer(
-            bootstrap_servers=self.bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
-        )
-
-        print("Kafka consumer started")
-
-        while self.running:
-            try:
-                # Poll with timeout to allow checking self.running
-                messages = self.consumer.poll(timeout_ms=1000)
-
-                for topic_partition, records in messages.items():
-                    for message in records:
-                        self.process_message(message.value)
-
-            except Exception as e:
-                print(f"Error in consumer loop: {e}")
-                continue
-
-        self.consumer.close()
-        self.producer.close()
-        print("Kafka consumer stopped")
-
-    def process_message(self, data):
-        """Process a single message from Kafka"""
-        try:
-            # Detect anomaly
-            result = self.detect_anomaly(data['tensor'])
-
-            # Update statistics
-            self.sample_count += 1
-            self.stats['total'] += 1
-
-            if result['is_anomaly']:
-                self.stats['anomalies'] += 1
-
-                # Check ground truth
-                if data['metadata']['attack'] == 1:
-                    self.stats['true_positives'] += 1
-                else:
-                    self.stats['false_positives'] += 1
-
-                # Check if we should send alert
-                device_id = data['device_id']
-                timestamp = data['timestamp']
-                should_alert, count = self.should_send_alert(device_id, timestamp)
-
-                if should_alert:
-                    alert = {
-                        'alert_id': f"alert-{datetime.now().timestamp()}",
-                        'device_id': device_id,
-                        'timestamp': timestamp,
-                        'reconstruction_error': result['reconstruction_error'],
-                        'threshold': result['threshold'],
-                        'anomaly_count': count,
-                        'window_minutes': self.alert_window.seconds // 60,
-                        'metadata': data['metadata']
-                    }
-
-                    self.producer.send(self.alert_topic, value=alert)
-                    self.stats['alerts_sent'] += 1
-                    print(f"ALERT sent for device {device_id}")
-
-            # Extract feature values from tensor for visualization
-            # Take the last timestep from the sequence [1, seq_len, features]
-            last_features = data['tensor'][0][-1]  # Last timestep
-            feature_dict = {
-                feature: last_features[i]
-                for i, feature in enumerate(self.input_features)
-            }
-
-            # Queue data for UI update
-            ui_data = {
-                'timestamp': datetime.fromisoformat(data['timestamp']),
-                'sample_index': self.sample_count,
-                'reconstruction_error': result['reconstruction_error'],
-                'is_anomaly': result['is_anomaly'],
-                'true_label': data['metadata']['attack'],
-                'anonymized_device_id': data['device_id'],
-                'feature_values': feature_dict
-            }
-
-            # Non-blocking put
-            try:
-                self.data_queue.put_nowait(ui_data)
-            except queue.Full:
-                # Remove oldest item and retry
-                self.data_queue.get()
-                self.data_queue.put_nowait(ui_data)
-
-        except Exception as e:
-            print(f"Error processing message: {e}")
-
     def start_consumer(self):
         """Start Kafka consumer in background thread"""
-        self.running = True
-        self.consumer_thread = threading.Thread(target=self.kafka_consumer_loop)
-        self.consumer_thread.daemon = True
-        self.consumer_thread.start()
+        if not self.running:
+            self.running = True
+            self.consumer_thread = threading.Thread(target=self.kafka_consumer_loop)
+            self.consumer_thread.daemon = True
+            self.consumer_thread.start()
+            logging.info("Started Kafka consumer")
 
     def stop_consumer(self):
         """Stop Kafka consumer"""
-        self.running = False
-        if self.consumer_thread:
-            self.consumer_thread.join(timeout=5)
+        if self.running:
+            self.running = False
+            if self.consumer_thread:
+                self.consumer_thread.join(timeout=5)
+            logging.info("Stopped Kafka consumer")
 
     def get_latest_data(self):
         """Get all available data from queue"""
         data = []
-        while not self.data_queue.empty():
+        while not self.ui_data_queue.empty():
             try:
-                data.append(self.data_queue.get_nowait())
+                data.append(self.ui_data_queue.get_nowait())
             except queue.Empty:
                 break
         return data
 
     def update_threshold(self, new_threshold):
         """Update the anomaly threshold"""
-        self.threshold = new_threshold
-        print(f"Threshold updated to: {new_threshold}")
+        self.threshold = float(new_threshold)
+        logging.info(f"Threshold updated to: {new_threshold}")
 
 
-# Global detector instance
-detector = AnomalyDetectorWithUI()
+# Initialize detector
+try:
+    detector = AnomalyDetectorWithUI()
+except Exception as e:
+    logging.error(f"Failed to initialize detector: {e}")
+    exit(1)
 
 # Create Dash app
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "PRIVATEER - Network Anomaly Detection"
 
-# App layout (similar to demo.py)
+# App layout
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
@@ -288,8 +333,8 @@ app.layout = dbc.Container([
                         html.Label("🎯 Anomaly Threshold:", className="form-label"),
                         dcc.Slider(
                             id='threshold-slider',
-                            min=0.001,
-                            max=0.5,
+                            min=deepcopy(detector.threshold) - (0.5 * deepcopy(detector.threshold)),
+                            max=deepcopy(detector.threshold) + (0.5 * deepcopy(detector.threshold)),
                             step=0.001,
                             value=detector.threshold,
                             marks={v: f"{v:.3f}" for v in np.linspace(0.001, 0.5, 10)},
@@ -311,7 +356,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("📊 Network Feature Values (Privacy-Preserved)", className="card-title"),
+                    html.H4("📊 Network Feature Values", className="card-title"),
                     dcc.Graph(id="feature-display", style={'height': '400px'})
                 ])
             ])
@@ -347,14 +392,7 @@ app.layout = dbc.Container([
         ], width=4)
     ]),
 
-    # Interval component for real-time updates
-    dcc.Interval(
-        id='interval-component',
-        interval=1000,  # Update every second
-        n_intervals=0
-    ),
-
-    # Store for detector state
+    dcc.Interval(id='interval-component', interval=1000, n_intervals=0),
     dcc.Store(id='detector-state', data={'running': False})
 ], fluid=True)
 
@@ -378,12 +416,12 @@ def control_detector(start_clicks, stop_clicks, state):
     if button_id == 'start-btn' and start_clicks:
         detector.start_consumer()
         return {'running': True}, True, False
-
     elif button_id == 'stop-btn' and stop_clicks:
         detector.stop_consumer()
         return {'running': False}, False, True
 
     return state, state.get('running', False), not state.get('running', False)
+
 
 @app.callback(
     Output('status-indicator', 'children'),
@@ -391,21 +429,17 @@ def control_detector(start_clicks, stop_clicks, state):
      Input('detector-state', 'data')]
 )
 def update_status_indicator(threshold, state):
-    detector.update_threshold(threshold)
+    if threshold:
+        detector.update_threshold(threshold)
     running = state.get('running', False)
     status_text = "Running" if running else "Stopped"
+    status_color = "success" if running else "secondary"
+
     return html.Div([
         dbc.Badge(f"Threshold: {threshold:.3f}", color="info", className="me-2"),
-        dbc.Badge(f"Status: {status_text}", color="success" if running else "secondary")
+        dbc.Badge(f"Status: {status_text}", color=status_color),
+        dbc.Badge(f"Model: {detector.model_name}", color="primary", className="ms-2")
     ])
-
-@app.callback(
-    Output('status-indicator', 'children'),
-    Input('threshold-slider', 'value')
-)
-def update_threshold(threshold):
-    detector.update_threshold(threshold)
-    return dbc.Badge(f"Threshold: {threshold:.3f}", color="info")
 
 
 @app.callback(
@@ -422,39 +456,31 @@ def update_graphs(n, state):
         return empty_fig, empty_fig, html.P("Start detection to see statistics"), html.P("No devices yet")
 
     # Get new data
-    new_data = detector.get_latest_data()
-
+    latest_data = detector.get_latest_data()
     # Add new data to realtime storage
-    for data_point in new_data:
+    for data_point in latest_data:
         detector.realtime_data['timestamp'].append(data_point['timestamp'])
         detector.realtime_data['sample_index'].append(data_point['sample_index'])
         detector.realtime_data['reconstruction_error'].append(data_point['reconstruction_error'])
         detector.realtime_data['is_anomaly'].append(data_point['is_anomaly'])
         detector.realtime_data['true_label'].append(data_point['true_label'])
-        detector.realtime_data['anonymized_device_id'].append(data_point['anonymized_device_id'])
+        detector.realtime_data['device_id'].append(data_point['device_id'])
 
         # Add feature values
-        for feature, value in data_point['feature_values'].items():
+        for feature, values in data_point['feature_values'].items():
             if feature in detector.realtime_data['feature_values']:
-                detector.realtime_data['feature_values'][feature].append(value)
+                detector.realtime_data['feature_values'][feature].append(data_point['feature_values'][feature])
 
     # Limit data size
     if len(detector.realtime_data['timestamp']) > detector.max_points:
         for key in detector.realtime_data:
-            if key == 'feature_values':
-                for feature in detector.realtime_data['feature_values']:
-                    detector.realtime_data['feature_values'][feature] = \
-                        detector.realtime_data['feature_values'][feature][-detector.max_points:]
-            else:
+            if key != 'feature_values':
                 detector.realtime_data[key] = detector.realtime_data[key][-detector.max_points:]
-
-    # Create figures
-    feature_fig = create_feature_figure()
-    anomaly_fig = create_anomaly_figure()
-    stats = create_statistics()
-    device_list = create_device_list()
-
-    return feature_fig, anomaly_fig, stats, device_list
+            else:
+                for feature in detector.realtime_data[key]:
+                    detector.realtime_data[key][feature] = \
+                        detector.realtime_data[key][feature][-detector.max_points:]
+    return create_feature_figure(), create_anomaly_figure(), create_statistics(), create_device_list()
 
 
 def create_feature_figure():
@@ -462,13 +488,11 @@ def create_feature_figure():
         return create_empty_figure("No Data Available")
 
     fig = go.Figure()
-
-    # Plot the most important features
-    colors = ['blue', 'green', 'orange', 'red', 'purple', 'brown', 'pink', 'gray']
+    colors = ['blue', 'green', 'orange', 'red', 'purple', 'brown']
     feature_names = list(detector.realtime_data['feature_values'].keys())[:6]
 
     for i, feature in enumerate(feature_names):
-        if feature in detector.realtime_data['feature_values'] and detector.realtime_data['feature_values'][feature]:
+        if feature in detector.realtime_data['feature_values']:
             fig.add_trace(go.Scatter(
                 x=detector.realtime_data['timestamp'],
                 y=detector.realtime_data['feature_values'][feature],
@@ -477,36 +501,12 @@ def create_feature_figure():
                 line=dict(color=colors[i % len(colors)])
             ))
 
-    # Highlight anomalies
-    anomaly_times = [detector.realtime_data['timestamp'][i]
-                     for i, anomaly in enumerate(detector.realtime_data['is_anomaly']) if anomaly]
-
-    if anomaly_times and feature_names:
-        first_feature = feature_names[0]
-        if first_feature in detector.realtime_data['feature_values']:
-            anomaly_values = [detector.realtime_data['feature_values'][first_feature][i]
-                              for i, anomaly in enumerate(detector.realtime_data['is_anomaly'])
-                              if anomaly and i < len(detector.realtime_data['feature_values'][first_feature])]
-
-            if anomaly_values:
-                fig.add_trace(go.Scatter(
-                    x=anomaly_times[:len(anomaly_values)],
-                    y=anomaly_values,
-                    mode='markers',
-                    name='Detected Anomalies',
-                    marker=dict(color='red', size=10, symbol='x'),
-                    showlegend=True
-                ))
-
     fig.update_layout(
-        title="Network Feature Values (from Kafka Stream)",
+        title="Network Feature Values",
         xaxis_title="Time",
         yaxis_title="Feature Value",
-        hovermode='x unified',
-        showlegend=True,
-        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5)
+        hovermode='x unified'
     )
-
     return fig
 
 
@@ -515,8 +515,6 @@ def create_anomaly_figure():
         return create_empty_figure("No Data Available")
 
     fig = go.Figure()
-
-    # Add reconstruction errors
     colors = ['red' if anomaly else 'blue' for anomaly in detector.realtime_data['is_anomaly']]
 
     fig.add_trace(go.Scatter(
@@ -528,7 +526,6 @@ def create_anomaly_figure():
         line=dict(color='gray', width=1)
     ))
 
-    # Add threshold line
     fig.add_hline(
         y=detector.threshold,
         line_dash="dash",
@@ -536,29 +533,12 @@ def create_anomaly_figure():
         annotation_text=f"Threshold ({detector.threshold:.6f})"
     )
 
-    # Add ground truth markers
-    true_anomaly_times = [detector.realtime_data['timestamp'][i]
-                          for i, label in enumerate(detector.realtime_data['true_label']) if label == 1]
-    true_anomaly_scores = [detector.realtime_data['reconstruction_error'][i]
-                           for i, label in enumerate(detector.realtime_data['true_label']) if label == 1]
-
-    if true_anomaly_times:
-        fig.add_trace(go.Scatter(
-            x=true_anomaly_times,
-            y=true_anomaly_scores,
-            mode='markers',
-            name='True Attacks',
-            marker=dict(color='orange', size=8, symbol='diamond'),
-            showlegend=True
-        ))
-
     fig.update_layout(
-        title="TransformerAD Anomaly Detection (Real-time Kafka Stream)",
+        title=f"{detector.model_name} Anomaly Detection",
         xaxis_title="Time",
-        yaxis_title="Reconstruction Error (L1 Loss)",
+        yaxis_title="Reconstruction Error",
         hovermode='x unified'
     )
-
     return fig
 
 
@@ -566,45 +546,35 @@ def create_statistics():
     if detector.stats['total'] == 0:
         return html.P("No data processed yet")
 
-    # Calculate rates
-    tpr = (detector.stats['true_positives'] / detector.stats['anomalies'] * 100
-           if detector.stats['anomalies'] > 0 else 0)
-
-    fpr = (detector.stats['false_positives'] / detector.stats['anomalies'] * 100
-           if detector.stats['anomalies'] > 0 else 0)
-
     return dbc.Row([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("📊 Total Samples"),
+                    html.H5("📊 Total"),
                     html.H3(f"{detector.stats['total']}", className="text-primary")
                 ])
             ])
         ], width=3),
-
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("🚨 Detected"),
+                    html.H5("🚨 Anomalies"),
                     html.H3(f"{detector.stats['anomalies']}", className="text-danger")
                 ])
             ])
         ], width=3),
-
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("✅ TPR"),
-                    html.H3(f"{tpr:.1f}%", className="text-success")
+                    html.H5("✅ True Positives"),
+                    html.H3(f"{detector.stats['true_positives']}", className="text-success")
                 ])
             ])
         ], width=3),
-
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("📤 Alerts Sent"),
+                    html.H5("📤 Alerts"),
                     html.H3(f"{detector.stats['alerts_sent']}", className="text-warning")
                 ])
             ])
@@ -613,19 +583,18 @@ def create_statistics():
 
 
 def create_device_list():
-    if not detector.realtime_data['anonymized_device_id']:
+    logging.warning(f"detector.realtime_data: {detector.realtime_data}")
+    if not detector.realtime_data['device_id']:
         return html.P("No devices detected yet", className="text-muted")
 
-    # Get unique device IDs and their anomaly counts
     device_counts = {}
-    for i, device_id in enumerate(detector.realtime_data['anonymized_device_id']):
+    for i, device_id in enumerate(detector.realtime_data['device_id']):
         if device_id not in device_counts:
             device_counts[device_id] = {'total': 0, 'anomalies': 0}
         device_counts[device_id]['total'] += 1
         if detector.realtime_data['is_anomaly'][i]:
             device_counts[device_id]['anomalies'] += 1
 
-    # Create list items
     device_items = []
     for device_id, counts in sorted(device_counts.items())[-10:]:
         anomaly_rate = (counts['anomalies'] / counts['total']) * 100 if counts['total'] > 0 else 0
@@ -637,8 +606,7 @@ def create_device_list():
                     html.Span(f"Device: {device_id}", className="fw-bold"),
                     dbc.Badge(f"{anomaly_rate:.0f}%", color=color, className="float-end")
                 ]),
-                html.Small(f"Samples: {counts['total']}, Anomalies: {counts['anomalies']}",
-                           className="text-muted")
+                html.Small(f"Samples: {counts['total']}, Anomalies: {counts['anomalies']}")
             ])
         )
 
@@ -661,19 +629,8 @@ def create_empty_figure(title):
     return fig
 
 
-# Main
 if __name__ == '__main__':
-    print("🛡️ PRIVATEER Network Anomaly Detection Service with UI")
-    print("=" * 50)
-    print(f"🤖 Using TransformerAD Model")
-    print(f"📱 Device: {detector.device}")
-    print(f"🎯 Threshold: {detector.threshold}")
-    print(f"📊 Input Features: {detector.input_features}")
-    print(f"📥 Kafka Topic: {detector.input_topic}")
-    print(f"🔐 Privacy Protection: Anonymization Active")
-    print("=" * 50)
-    print("Starting web server...")
-    print("Open your browser and go to: http://0.0.0.0:8050")
-    print("=" * 50)
-
+    logging.info("🛡️ PRIVATEER Network Anomaly Detection Service")
+    logging.info(f"📱 Device: {detector.device}")
+    logging.info(f"📥 Kafka Topic: {detector.input_topic}")
     app.run(host='0.0.0.0', port=8050, debug=False)
