@@ -88,17 +88,14 @@ class AnonymizerPreprocessor:
                 df_processed = self.data_processor.preprocess_data(df_cleaned, only_benign=False)
 
                 # Extract processed features in correct order
-                feature_matrix = df_processed[self.data_processor.input_features].values
-
                 # Create tensor format [1, seq_len, features]
-                tensor = feature_matrix.reshape(1, self.data_config.seq_len, len(self.data_processor.input_features))
-
+                feature_values = df_processed[self.data_processor.input_features].to_dict(orient='list')
                 # Get metadata from the last sample
                 last_sample = self.device_buffers[device_id][-1]
 
                 return {
                     'device_id': last_sample['imeisv'],  # Use anonymized ID
-                    'tensor': tensor.tolist(),  # Convert to list for JSON
+                    'feature_values': feature_values,
                     'timestamp': last_sample.get('_timestamp', datetime.now().isoformat()),
                     'metadata': {
                         'attack': int(last_sample.get('attack', 0)),

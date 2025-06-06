@@ -192,16 +192,12 @@ def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
 
         # Load the model
         logging.info(f"Loading model from: {source}")
-
         load_conf = {'map_location': torch.device('cuda' if torch.cuda.is_available() else 'cpu')}
-        logging.info(f"load_conf: {load_conf}")
         model = mlflow.pytorch.load_model(model_uri=source, **load_conf)
         logging.info(f"Model loaded!")
 
         # Get run details to extract threshold and loss_fn
         run = client.get_run(run_id)
-        logging.info(f"run: {run}")
-
         # Extract threshold from metrics
         threshold = None
         threshold_keys = ['global_test_threshold', 'val_threshold', 'test_threshold', 'threshold']
