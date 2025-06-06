@@ -1,28 +1,23 @@
 """
 PRIVATEER Anomaly Detector Service with Web UI
-Combines Kafka consumption with real-time Dash visualization
 """
 import os
 import json
-from copy import deepcopy
-
-import pandas as pd
-import torch
-import numpy as np
-import threading
 import queue
 import logging
-from kafka import KafkaConsumer, KafkaProducer
+import threading
+
 from collections import defaultdict
 from datetime import datetime, timedelta
-import sys
 
-sys.path.append('/app')
-
+import torch
+import pandas as pd
 import dash
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Input, Output, State
 import plotly.graph_objects as go
+
+from kafka import KafkaConsumer, KafkaProducer
+from dash import dcc, html, Input, Output, State
 
 from privateer_ad.utils import load_champion_model
 from privateer_ad.config import MLFlowConfig, MetadataConfig
@@ -62,6 +57,9 @@ class AnomalyDetectorWithUI:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             self.model.to(self.device)
 
+            # Store initial threshold for slider limits
+            self.initial_threshold = self.threshold
+
             # Get input features for display
             self.input_features = self.metadata.get_input_features()
 
@@ -72,7 +70,7 @@ class AnomalyDetectorWithUI:
 
             # Kafka setup
             self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-            self.input_topic = os.environ.get('INPUT_TOPIC', 'anonymized-data')
+            self.input_topic = os.environ.get('INPUT_TOPIC', 'preprocessed-data')
             self.alert_topic = os.environ.get('ALERT_TOPIC', 'anomaly-alerts')
 
             self.consumer = None
@@ -101,12 +99,14 @@ class AnomalyDetectorWithUI:
             self.max_points = 200
             self.sample_count = 0
 
-            # Statistics
             self.stats = {
                 'total': 0,
-                'anomalies': 0,
+                'anomalies_detected': 0,
+                'true_attacks': 0,
                 'true_positives': 0,
+                'true_negatives': 0,
                 'false_positives': 0,
+                'false_negatives': 0,
                 'alerts_sent': 0
             }
 
@@ -166,18 +166,28 @@ class AnomalyDetectorWithUI:
             detection_results = self.detect_anomaly(input_tensor)
             if detection_results is None:
                 return
-            # Update statistics
+
+            # Statistics tracking
             self.sample_count += 1
             self.stats['total'] += 1
 
-            if detection_results['is_anomaly']:
-                self.stats['anomalies'] += 1
+            is_anomaly_detected = detection_results['is_anomaly']
+            true_label = input_data['metadata'].get('attack', 0)  # 1 for attack, 0 for benign
 
-                # Check ground truth
-                if input_data['metadata'].get('malicious') == 1:
+            # Update confusion matrix components
+            if true_label == 1:
+                self.stats['true_attacks'] += 1
+                if is_anomaly_detected:
                     self.stats['true_positives'] += 1
                 else:
+                    self.stats['false_negatives'] += 1
+            else:  # true_label == 0 (benign)
+                if not is_anomaly_detected:
+                    self.stats['true_negatives'] += 1
+                else:
                     self.stats['false_positives'] += 1
+            if is_anomaly_detected:
+                self.stats['anomalies_detected'] += 1
 
                 # Check if we should send alert
                 should_alert, count = self.should_send_alert(input_data['device_id'],
@@ -201,14 +211,13 @@ class AnomalyDetectorWithUI:
                     self.stats['alerts_sent'] += 1
                     logging.info(f"ALERT sent for device {input_data['device_id']}")
 
-            # Create feature dictionary
             # Queue data for UI update
             ui_data = {
                 'timestamp': input_data['timestamp'],
                 'sample_index': self.sample_count,
                 'reconstruction_error': detection_results['reconstruction_error'],
-                'is_anomaly': detection_results['is_anomaly'],
-                'true_label': input_data['metadata']['attack'],
+                'is_anomaly': is_anomaly_detected,
+                'true_label': true_label,
                 'device_id': input_data['device_id'],
                 'feature_values': {k: v[-1] for k, v in input_data['feature_values'].items()}
             }
@@ -226,17 +235,17 @@ class AnomalyDetectorWithUI:
     def detect_anomaly(self, input_tensor):
         """Run anomaly detection on incoming data"""
         try:
-            # Extract features from data
             with torch.no_grad():
                 output = self.model(input_tensor)
                 reconstruction_error = self.loss_fn(input_tensor, output)
                 reconstruction_error = reconstruction_error.mean().item()
             is_anomaly = reconstruction_error > self.threshold
-            detection_results = {'is_anomaly': is_anomaly,
-                                 'reconstruction_error': reconstruction_error,
-                                 'input_tensor': input_tensor
-                                 }
-            return detection_results
+
+            return {
+                'is_anomaly': is_anomaly,
+                'reconstruction_error': reconstruction_error,
+                'input_tensor': input_tensor
+            }
 
         except Exception as e:
             logging.error(f"Error in anomaly detection: {e}")
@@ -296,6 +305,21 @@ class AnomalyDetectorWithUI:
         self.threshold = float(new_threshold)
         logging.info(f"Threshold updated to: {new_threshold}")
 
+    def calculate_tpr_fpr(self):
+        """Calculate True Positive Rate and False Positive Rate"""
+        if self.stats['true_attacks'] > 0:
+            tpr = (self.stats['true_positives'] / self.stats['true_attacks']) * 100
+        else:
+            tpr = 0.0
+
+        benign_samples = self.stats['total'] - self.stats['true_attacks']
+        if benign_samples > 0:
+            fpr = (self.stats['false_positives'] / benign_samples) * 100
+        else:
+            fpr = 0.0
+
+        return tpr, fpr
+
 
 # Initialize detector
 try:
@@ -333,11 +357,15 @@ app.layout = dbc.Container([
                         html.Label("🎯 Anomaly Threshold:", className="form-label"),
                         dcc.Slider(
                             id='threshold-slider',
-                            min=deepcopy(detector.threshold) - (0.5 * deepcopy(detector.threshold)),
-                            max=deepcopy(detector.threshold) + (0.5 * deepcopy(detector.threshold)),
+                            min=detector.initial_threshold * 0.5,
+                            max=detector.initial_threshold * 1.5,
                             step=0.001,
                             value=detector.threshold,
-                            marks={v: f"{v:.3f}" for v in np.linspace(0.001, 0.5, 10)},
+                            marks={
+                                detector.initial_threshold * 0.5: f"{detector.initial_threshold * 0.5:.3f}",
+                                detector.initial_threshold: f"{detector.initial_threshold:.3f}",
+                                detector.initial_threshold * 1.5: f"{detector.initial_threshold * 1.5:.3f}"
+                            },
                             tooltip={"placement": "bottom", "always_visible": True}
                         )
                     ], className="mb-3"),
@@ -515,36 +543,144 @@ def create_anomaly_figure():
         return create_empty_figure("No Data Available")
 
     fig = go.Figure()
-    colors = ['red' if anomaly else 'blue' for anomaly in detector.realtime_data['is_anomaly']]
 
+    # Categorize points by TP, TN, FP, FN
+    timestamps = detector.realtime_data['timestamp']
+    errors = detector.realtime_data['reconstruction_error']
+    predictions = detector.realtime_data['is_anomaly']
+    true_labels = detector.realtime_data['true_label']
+
+    # Create lists for each category
+    tp_times, tp_errors = [], []
+    tn_times, tn_errors = [], []
+    fp_times, fp_errors = [], []
+    fn_times, fn_errors = [], []
+
+    for i in range(len(timestamps)):
+        is_anomaly = predictions[i]
+        actual_label = true_labels[i]
+
+        if is_anomaly and actual_label == 1:  # True Positive
+            tp_times.append(timestamps[i])
+            tp_errors.append(errors[i])
+        elif not is_anomaly and actual_label == 0:  # True Negative
+            tn_times.append(timestamps[i])
+            tn_errors.append(errors[i])
+        elif is_anomaly and actual_label == 0:  # False Positive
+            fp_times.append(timestamps[i])
+            fp_errors.append(errors[i])
+        elif not is_anomaly and actual_label == 1:  # False Negative
+            fn_times.append(timestamps[i])
+            fn_errors.append(errors[i])
+
+    # Add baseline line connecting all points
     fig.add_trace(go.Scatter(
-        x=detector.realtime_data['timestamp'],
-        y=detector.realtime_data['reconstruction_error'],
-        mode='markers+lines',
+        x=timestamps,
+        y=errors,
+        mode='lines',
         name='Reconstruction Error',
-        marker=dict(color=colors, size=6),
-        line=dict(color='gray', width=1)
+        line=dict(color='lightgray', width=1),
+        showlegend=False,
+        hoverinfo='skip'
     ))
 
+    # Add True Positives (Correctly detected attacks)
+    if tp_times:
+        fig.add_trace(go.Scatter(
+            x=tp_times,
+            y=tp_errors,
+            mode='markers',
+            name='True Positive (TP)',
+            marker=dict(color='green', size=8, symbol='circle'),
+            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add True Negatives (Correctly identified benign)
+    if tn_times:
+        fig.add_trace(go.Scatter(
+            x=tn_times,
+            y=tn_errors,
+            mode='markers',
+            name='True Negative (TN)',
+            marker=dict(color='blue', size=6, symbol='circle'),
+            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add False Positives (Incorrectly flagged as attacks)
+    if fp_times:
+        fig.add_trace(go.Scatter(
+            x=fp_times,
+            y=fp_errors,
+            mode='markers',
+            name='False Positive (FP)',
+            marker=dict(color='orange', size=8, symbol='triangle-up'),
+            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add False Negatives (Missed attacks)
+    if fn_times:
+        fig.add_trace(go.Scatter(
+            x=fn_times,
+            y=fn_errors,
+            mode='markers',
+            name='False Negative (FN)',
+            marker=dict(color='red', size=8, symbol='triangle-down'),
+            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add threshold line
     fig.add_hline(
         y=detector.threshold,
         line_dash="dash",
-        line_color="red",
-        annotation_text=f"Threshold ({detector.threshold:.6f})"
+        line_color="black",
+        line_width=2,
+        annotation_text=f"Threshold ({detector.threshold:.6f})",
+        annotation_position="top right"
     )
 
+    # Update layout
     fig.update_layout(
-        title=f"{detector.model_name} Anomaly Detection",
+        title=f"{detector.model_name} Anomaly Detection - Confusion Matrix View",
         xaxis_title="Time",
         yaxis_title="Reconstruction Error",
-        hovermode='x unified'
+        hovermode='closest',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.3,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(b=100)  # Extra space for legend
     )
+
+    # Add performance summary as annotation
+    total_points = len(timestamps)
+    if total_points > 0:
+        summary_text = (f"Points: TP={len(tp_times)} TN={len(tn_times)} "
+                       f"FP={len(fp_times)} FN={len(fn_times)}")
+        fig.add_annotation(
+            text=summary_text,
+            xref="paper", yref="paper",
+            x=0.02, y=0.98,
+            xanchor='left', yanchor='top',
+            showarrow=False,
+            font=dict(size=10, color="black"),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="gray",
+            borderwidth=1
+        )
+
     return fig
 
 
 def create_statistics():
+    """FIXED: Proper TPR/FPR calculation and display"""
     if detector.stats['total'] == 0:
         return html.P("No data processed yet")
+
+    # Calculate TPR and FPR
+    tpr, fpr = detector.calculate_tpr_fpr()
 
     return dbc.Row([
         dbc.Col([
@@ -554,36 +690,53 @@ def create_statistics():
                     html.H3(f"{detector.stats['total']}", className="text-primary")
                 ])
             ])
-        ], width=3),
+        ], width=2),
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("🚨 Anomalies"),
-                    html.H3(f"{detector.stats['anomalies']}", className="text-danger")
+                    html.H5("🚨 Detected"),
+                    html.H3(f"{detector.stats['anomalies_detected']}", className="text-danger")
                 ])
             ])
-        ], width=3),
+        ], width=2),
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H5("✅ True Positives"),
-                    html.H3(f"{detector.stats['true_positives']}", className="text-success")
+                    html.H5("✅ TPR"),
+                    html.H3(f"{tpr:.1f}%", className="text-success"),
+                    html.Small(f"TP: {detector.stats['true_positives']}")
                 ])
             ])
-        ], width=3),
+        ], width=2),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("❌ FPR"),
+                    html.H3(f"{fpr:.1f}%", className="text-warning"),
+                    html.Small(f"FP: {detector.stats['false_positives']}")
+                ])
+            ])
+        ], width=2),
+        dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("🎯 Attacks"),
+                    html.H3(f"{detector.stats['true_attacks']}", className="text-info")
+                ])
+            ])
+        ], width=2),
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
                     html.H5("📤 Alerts"),
-                    html.H3(f"{detector.stats['alerts_sent']}", className="text-warning")
+                    html.H3(f"{detector.stats['alerts_sent']}", className="text-secondary")
                 ])
             ])
-        ], width=3)
+        ], width=2)
     ])
 
 
 def create_device_list():
-    logging.warning(f"detector.realtime_data: {detector.realtime_data}")
     if not detector.realtime_data['device_id']:
         return html.P("No devices detected yet", className="text-muted")
 
@@ -633,4 +786,6 @@ if __name__ == '__main__':
     logging.info("🛡️ PRIVATEER Network Anomaly Detection Service")
     logging.info(f"📱 Device: {detector.device}")
     logging.info(f"📥 Kafka Topic: {detector.input_topic}")
+    logging.info(f"🎯 Initial Threshold: {detector.initial_threshold}")
+    logging.info(f"📏 Threshold Range: {detector.initial_threshold * 0.5:.3f} - {detector.initial_threshold * 1.5:.3f}")
     app.run(host='0.0.0.0', port=8050, debug=False)
