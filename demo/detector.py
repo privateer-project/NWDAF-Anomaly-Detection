@@ -543,35 +543,139 @@ def create_anomaly_figure():
         return create_empty_figure("No Data Available")
 
     fig = go.Figure()
-    colors = ['red' if anomaly else 'blue' for anomaly in detector.realtime_data['is_anomaly']]
 
+    # Categorize points by TP, TN, FP, FN
+    timestamps = detector.realtime_data['timestamp']
+    errors = detector.realtime_data['reconstruction_error']
+    predictions = detector.realtime_data['is_anomaly']
+    true_labels = detector.realtime_data['true_label']
+
+    # Create lists for each category
+    tp_times, tp_errors = [], []
+    tn_times, tn_errors = [], []
+    fp_times, fp_errors = [], []
+    fn_times, fn_errors = [], []
+
+    for i in range(len(timestamps)):
+        is_anomaly = predictions[i]
+        actual_label = true_labels[i]
+
+        if is_anomaly and actual_label == 1:  # True Positive
+            tp_times.append(timestamps[i])
+            tp_errors.append(errors[i])
+        elif not is_anomaly and actual_label == 0:  # True Negative
+            tn_times.append(timestamps[i])
+            tn_errors.append(errors[i])
+        elif is_anomaly and actual_label == 0:  # False Positive
+            fp_times.append(timestamps[i])
+            fp_errors.append(errors[i])
+        elif not is_anomaly and actual_label == 1:  # False Negative
+            fn_times.append(timestamps[i])
+            fn_errors.append(errors[i])
+
+    # Add baseline line connecting all points
     fig.add_trace(go.Scatter(
-        x=detector.realtime_data['timestamp'],
-        y=detector.realtime_data['reconstruction_error'],
-        mode='markers+lines',
+        x=timestamps,
+        y=errors,
+        mode='lines',
         name='Reconstruction Error',
-        marker=dict(color=colors, size=6),
-        line=dict(color='gray', width=1)
+        line=dict(color='lightgray', width=1),
+        showlegend=False,
+        hoverinfo='skip'
     ))
 
+    # Add True Positives (Correctly detected attacks)
+    if tp_times:
+        fig.add_trace(go.Scatter(
+            x=tp_times,
+            y=tp_errors,
+            mode='markers',
+            name='True Positive (TP)',
+            marker=dict(color='green', size=8, symbol='circle'),
+            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add True Negatives (Correctly identified benign)
+    if tn_times:
+        fig.add_trace(go.Scatter(
+            x=tn_times,
+            y=tn_errors,
+            mode='markers',
+            name='True Negative (TN)',
+            marker=dict(color='blue', size=6, symbol='circle'),
+            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add False Positives (Incorrectly flagged as attacks)
+    if fp_times:
+        fig.add_trace(go.Scatter(
+            x=fp_times,
+            y=fp_errors,
+            mode='markers',
+            name='False Positive (FP)',
+            marker=dict(color='orange', size=8, symbol='triangle-up'),
+            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add False Negatives (Missed attacks)
+    if fn_times:
+        fig.add_trace(go.Scatter(
+            x=fn_times,
+            y=fn_errors,
+            mode='markers',
+            name='False Negative (FN)',
+            marker=dict(color='red', size=8, symbol='triangle-down'),
+            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+        ))
+
+    # Add threshold line
     fig.add_hline(
         y=detector.threshold,
         line_dash="dash",
-        line_color="red",
-        annotation_text=f"Threshold ({detector.threshold:.6f})"
+        line_color="black",
+        line_width=2,
+        annotation_text=f"Threshold ({detector.threshold:.6f})",
+        annotation_position="top right"
     )
 
+    # Update layout
     fig.update_layout(
-        title=f"{detector.model_name} Anomaly Detection",
+        title=f"{detector.model_name} Anomaly Detection - Confusion Matrix View",
         xaxis_title="Time",
         yaxis_title="Reconstruction Error",
-        hovermode='x unified'
+        hovermode='closest',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.3,
+            xanchor="center",
+            x=0.5
+        ),
+        margin=dict(b=100)  # Extra space for legend
     )
+
+    # Add performance summary as annotation
+    total_points = len(timestamps)
+    if total_points > 0:
+        summary_text = (f"Points: TP={len(tp_times)} TN={len(tn_times)} "
+                       f"FP={len(fp_times)} FN={len(fn_times)}")
+        fig.add_annotation(
+            text=summary_text,
+            xref="paper", yref="paper",
+            x=0.02, y=0.98,
+            xanchor='left', yanchor='top',
+            showarrow=False,
+            font=dict(size=10, color="black"),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="gray",
+            borderwidth=1
+        )
+
     return fig
 
 
 def create_statistics():
-    """TPR/FPR calculation and display"""
+    """FIXED: Proper TPR/FPR calculation and display"""
     if detector.stats['total'] == 0:
         return html.P("No data processed yet")
 
