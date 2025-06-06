@@ -1,23 +1,4 @@
 services:
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
-    container_name: privateer_mlflow_server
-    restart: unless-stopped
-    ports:
-      - "5001:5001"
-    volumes:
-      - ./mlruns:/mlruns
-      - ./mlartifacts:/mlartifacts
-    command: mlflow server --host 0.0.0.0 --port 5001 --backend-store-uri file:///mlruns --default-artifact-root file:///mlartifacts
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health', timeout=5)"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    networks:
-      - privateer-net
-
   # Kafka for event streaming
   kafka:
     image: bitnami/kafka:latest
@@ -28,145 +9,103 @@ services:
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
-      # Additional configs to speed up startup
-      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
-      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions.sh", "--bootstrap-server", "kafka:9092"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
     networks:
       - privateer-net
 
-  # Data Producer - Reads test dataset
-# Data Producer - Reads test dataset with temporal ordering
+  # MLflow for model registry
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: privateer-mlflow
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./mlruns:/mlruns
+    command: mlflow server --host 0.0.0.0 --port 5001
+    networks:
+      - privateer-net
+
+  # Data Producer
   data-producer:
     build:
-      context: ..
-      dockerfile: ./demo/Dockerfile.producer
+      context: .
+      dockerfile: Dockerfile.producer
     container_name: privateer-producer
     depends_on:
-      kafka:
-        condition: service_healthy
+      - kafka
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - KAFKA_TOPIC=raw-network-data
-      - INTERVAL=0.1  # Minimum interval between messages
-      - TIME_ACCELERATION=10.0  # 10x speed for demo (adjust as needed)
-      - DEMO_MODE=true
+      - CSV_PATH=/app/data/raw/amari_ue_data_merged_with_attack_number.csv
+      - INTERVAL=0.01
     volumes:
-      - ../privateer_ad:/app/privateer_ad
-      - ../data:/app/data
+      - ../data:/app/data:ro
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "sh", "-c", "python -c \"import os; from privateer_ad.config.settings import PathConfig; paths = PathConfig(); assert os.path.exists(paths.raw_dataset), 'Dataset not found'; print('Files OK')\""]
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - privateer-net
 
-  # Anonymization Service
+  # Anonymization & Preprocessing Service
   anonymizer:
     build:
-      context: ..
-      dockerfile: ./demo/Dockerfile.anonymizer
+      context: .
+      dockerfile: Dockerfile.anonymizer
     container_name: privateer-anonymizer
     depends_on:
-      kafka:
-        condition: service_healthy
-      data-producer:
-        condition: service_started
+      - kafka
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - INPUT_TOPIC=raw-network-data
-      - OUTPUT_TOPIC=anonymized-data
+      - OUTPUT_TOPIC=preprocessed-data
     volumes:
-      - ../privateer_ad:/app/privateer_ad
+      - ../privateer_ad:/app/privateer_ad:ro
+      - ../scalers:/app/scalers:ro
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "sh", "-c", "python -c \"from kafka import KafkaProducer; import os; KafkaProducer(bootstrap_servers=os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'), request_timeout_ms=3000).close(); print('OK')\""]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-      start_period: 45s
     networks:
       - privateer-net
 
-# Anomaly Detector with Web UI
+# demo/docker-compose.yml - detector service update
   anomaly-detector:
     build:
-      context: ..
-      dockerfile: ./demo/Dockerfile.detector
+      context: .
+      dockerfile: Dockerfile.detector
     container_name: privateer-detector
     depends_on:
-      kafka:
-        condition: service_healthy
-      mlflow:
-        condition: service_healthy
-      anonymizer:
-        condition: service_started
+      - kafka
+      - mlflow
     ports:
-      - "8090:8090"  # Expose Dash UI port
+      - "8050:8050"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - INPUT_TOPIC=anonymized-data
-      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5050
-      - PRIVATEER_MODEL_MODEL_TYPE=TransformerAD_DP
-
-      # Aggregation settings
-      - AGGREGATION_WINDOW=60  # 60 second window for alert aggregation
-      - AGGREGATION_THRESHOLD=6 # Send alert after 5 occurrences or window expiry
-
-      # Endpoint settings (placeholder)
-      - ENABLE_ENDPOINT=false  # Set to true when endpoint is ready
-      - ALERT_ENDPOINT_URL=http://your-alert-endpoint:8080/alerts  # Replace with actual endpoint
-
-      # Additional configuration
-      - PRIVATEER_PATH_ROOT_DIR=/app
-      - PRIVATEER_DATA_BATCH_SIZE=1
-      - PRIVATEER_DATA_SEQ_LEN=12
-      - PRIVATEER_DATA_NUM_WORKERS=0
-      - PRIVATEER_DATA_PIN_MEMORY=false
+      - INPUT_TOPIC=preprocessed-data
+      - ALERT_TOPIC=anomaly-alerts
+      - PRIVATEER_MLFLOW_TRACKING_URI=http://mlflow:5001
     volumes:
-      # Mount data directory for scalers and models if needed
-      - ../data:/app/data
-      - ../scalers:/app/scalers
-      - ../privateer_ad:/app/privateer_ad
+      - ../privateer_ad:/app/privateer_ad:ro
+      - ../demo:/app/demo:ro
+      - ../models:/app/models:ro
+      - ../scalers:/app/scalers:ro
     restart: unless-stopped
     networks:
       - privateer-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8090/"]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-
-#  # Alert Consumer (for monitoring)
-#  alert-monitor:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.monitor
-#    container_name: privateer-monitor
-#    depends_on:
-#      kafka:
-#        condition: service_healthy
-#      anomaly-detector:
-#        condition: service_started
-#    environment:
-#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-#      - ALERT_TOPIC=anomaly-alerts
-#    restart: unless-stopped
-#    networks:
-#      - privateer-net
+  # Alert Monitor (for testing)
+  alert-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    container_name: privateer-monitor
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - ALERT_TOPIC=anomaly-alerts
+    restart: unless-stopped
+    networks:
+      - privateer-net
 
 networks:
   privateer-net:

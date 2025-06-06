@@ -83,14 +83,13 @@ class DataConfig(BaseSettings):
     num_partitions: int = Field(default=0, ge=0, description="Number of partitions to split the data into. Default: 1")
     num_classes_per_partition: int = Field(default=1, ge=1, description="Number of classes per partition. Default: 1")
 
-    random_seed: int = Field(default=42)
     batch_size: int = Field(default=4096, gt=0)
     seq_len: int = Field(default=12, ge=1)
 
     num_workers: int = Field(default=4, ge=0)
-    pin_memory: bool = Field(default=True)
-    prefetch_factor: int | None = Field(default=10000, ge=1)
+    prefetch_factor: int | None = Field(default=4, ge=1)
     persistent_workers: bool = Field(default=True)
+    pin_memory: bool = Field(default=True)
 
     @model_validator(mode='after')
     def validate_splits_sum_to_one(self):
@@ -107,7 +106,7 @@ class DataConfig(BaseSettings):
 
 class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
-    model_type: str = Field(default='TransformerAD')
+    model_name: str = Field(default='TransformerAD')
     input_size: int = Field(default=9, ge=1)
     num_layers: int = Field(default=1, ge=1)
     embed_dim: int = Field(default=32, ge=1)
@@ -124,14 +123,14 @@ class ModelConfig(BaseSettings):
 
 class TrainingConfig(BaseSettings):
     """Training process configuration"""
-    learning_rate: float = Field(default=0.001, gt=0.0)
+    learning_rate: float = Field(default=0.0001, gt=0.0)
     epochs: int = Field(default=100, gt=0)
     loss_fn_name: str = Field(default='L1Loss')
 
     # Early stopping
-    early_stopping_enabled: bool = Field(default=True)
-    early_stopping_patience: int = Field(default=20, gt=0)
-    early_stopping_warmup: int = Field(default=10, gt=0)
+    es_enabled: bool = Field(default=True)
+    es_patience: int = Field(default=20, gt=0)
+    es_warmup: int = Field(default=10, gt=0)
 
     # Optimization
     target_metric: str = Field(default='val_balanced_f1-score')
@@ -170,7 +169,7 @@ class FederatedLearningConfig(BaseSettings):
 
     server_address: str = Field(default="[::]:8081")
     num_rounds: int = Field(default=100, gt=0)
-    n_clients: int = Field(default=2, gt=0)
+    n_clients: int = Field(default=3, gt=0)
     fraction_fit: float = Field(default=1.0, gt=0.0, le=1.0)
     fraction_evaluate: float = Field(default=1.0, gt=0.0, le=1.0)
 
@@ -193,8 +192,8 @@ class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
     dp_enabled: bool = Field(default=True)
-    target_epsilon: float = Field(default=0.5, gt=0.0)
-    target_delta: float = Field(default=1e-9, gt=0.0)
+    target_epsilon: float = Field(default=0.7, gt=0.0)
+    target_delta: float = Field(default=1e-6, gt=0.0)
     max_grad_norm: float = Field(default=.3, gt=0.0)
     secure_mode: bool = Field(default=True)
 

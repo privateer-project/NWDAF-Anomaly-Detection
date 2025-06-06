@@ -51,7 +51,7 @@ class ModelTrainer:
         self.loss_fn = getattr(torch.nn, self.training_config.loss_fn_name)(reduction='none')
 
         # Initialize early stopping tracking
-        if self.training_config.early_stopping_enabled:
+        if self.training_config.es_enabled:
             self.es_not_improved_epochs = 0
             valid_directions = ('maximize', 'minimize')
             if self.training_config.direction not in valid_directions:
@@ -87,9 +87,8 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
-
-        for epoch in range(start_epoch, start_epoch + self.training_config.epochs):
-            try:
+        try:
+            for epoch in range(start_epoch, start_epoch + self.training_config.epochs):
                 local_epoch = epoch - start_epoch
 
                 # Training phase
@@ -115,8 +114,8 @@ class ModelTrainer:
                 # Early stopping check
                 if self._check_early_stopping(epoch=local_epoch, is_best=is_best):
                     break
-            except KeyboardInterrupt:
-                logging.warning('Training interrupted by user...')
+        except KeyboardInterrupt:
+            logging.warning('Training interrupted by user...')
         pprint(self.get_training_summary())
         return self.best_checkpoint
 
@@ -219,15 +218,18 @@ class ModelTrainer:
         balanced_roc = roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)
         roc = roc_auc_score(y_true=y_true, y_score=losses)
 
+        report_dict = {'loss': torch.mean(losses).item(),
+                       'threshold': float(threshold)}
+
         balanced_metrics = {'balanced_' + k: v for k, v in balanced_metrics.items()}
+        balanced_metrics['balanced_roc'] = balanced_roc
+
         unbalanced_metrics = {'unbalanced_' + k: v for k, v in unbalanced_metrics.items()}
+        unbalanced_metrics['unbalanced_roc'] = roc
 
-        report_dict = balanced_metrics | unbalanced_metrics | {'balanced_roc': balanced_roc,
-                                                               'unbalanced_roc': roc,
-                                                               'loss': torch.mean(losses).item()}
-
+        report_dict |= balanced_metrics | unbalanced_metrics
         report_dict = {f'val_' + k: v for k, v in report_dict.items()}
-        report_dict['threshold'] = float(threshold)
+
         return report_dict
 
     def _is_best_checkpoint(self) -> bool:
@@ -235,11 +237,12 @@ class ModelTrainer:
         Determine if the current metrics represent the best checkpoint so far.
 
         Returns:
-            bool: True if current checkpoint is the best
+            bool: True if current checkpoint is the best 'metrics'
         """
         current_value = self.metrics[self.training_config.target_metric]
         best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
-                                                         np.inf if self.training_config.direction == 'minimize' else -np.inf)
+                                                         -np.inf if self.training_config.direction == 'maximize'
+                                                         else np.inf)
 
         if self.training_config.direction == 'maximize':
             return current_value > best_value
@@ -275,11 +278,11 @@ class ModelTrainer:
         Returns:
             bool: True if training should be stopped, False otherwise
         """
-        if not self.training_config.early_stopping_enabled:
+        if not self.training_config.es_enabled:
             return False
 
         # Skip early stopping during warmup period
-        if epoch <= self.training_config.early_stopping_warmup:
+        if epoch <= self.training_config.es_warmup:
             return False
 
         if is_best:
@@ -300,7 +303,7 @@ class ModelTrainer:
             )
 
         # Check if patience limit reached
-        if self.es_not_improved_epochs >= self.training_config.early_stopping_patience:
+        if self.es_not_improved_epochs >= self.training_config.es_patience:
             logging.warning(f'Early stopping triggered. No improvement for {self.es_not_improved_epochs} epochs.')
             return True
 
@@ -316,6 +319,6 @@ class ModelTrainer:
         return {'best_epoch': self.best_checkpoint['epoch'],
                 'best_metrics': self.best_checkpoint['metrics'],
                 'total_epochs_trained': self.best_checkpoint['epoch'],
-                'early_stopping_triggered': (self.training_config.early_stopping_enabled and
-                                             self.es_not_improved_epochs >= self.training_config.early_stopping_patience),
+                'early_stopping_triggered': (self.training_config.es_enabled and
+                                             self.es_not_improved_epochs >= self.training_config.es_patience),
                 'configuration': self.training_config.model_dump()}

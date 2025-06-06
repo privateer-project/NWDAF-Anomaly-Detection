@@ -1,147 +1,177 @@
 """
-Anonymization Service - Applies privacy-preserving transformations
+Anonymization and Preprocessing Service
+- Applies privacy transformations
+- Uses DataProcessor for preprocessing
 """
 import os
-import sys
 import json
-import time
-from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import NoBrokersAvailable
+import pandas as pd
 
-class Anonymizer:
+from kafka import KafkaConsumer, KafkaProducer
+from collections import defaultdict
+from datetime import datetime
+import sys
+
+sys.path.append('/app')
+
+from privateer_ad.etl import DataProcessor
+from privateer_ad.config import DataConfig
+
+
+class AnonymizerPreprocessor:
+    def __init__(self):
+        self.device_buffers = defaultdict(list)
+
+        # Initialize DataProcessor
+        self.data_config = DataConfig()
+        self.data_config.seq_len = 12
+        self.data_processor = DataProcessor(self.data_config)
+
+        # Load scaler to ensure it's ready
+        self.data_processor.load_scaler()
+
     def anonymize(self, data):
         """Apply anonymization to sensitive fields"""
         anonymized = data.copy()
 
         # Hash device identifier
         if 'imeisv' in anonymized:
+            original_imeisv = anonymized['imeisv']
+            anonymized['_original_device_id'] = original_imeisv  # Keep for buffering
             anonymized['imeisv'] = f"anon-{hash(anonymized['imeisv']) % 10000}"
 
         # Mask IP addresses
-        if 'ip' in anonymized:
-            ip_parts = anonymized['ip'].split('.')
-            if len(ip_parts) >= 2:
-                anonymized['ip'] = f"{ip_parts[0]}.{ip_parts[1]}.xxx.xxx"
+        for field in ['ip', 'bearer_0_ip', 'bearer_1_ip']:
+            if field in anonymized and anonymized[field]:
+                anonymized[field] = "xxx.xxx.xxx.xxx"
 
         # Hash other identifiers
-        for field in ['amf_ue_id', 'bearer_0_ip', 'bearer_1_ip', '5g_tmsi']:
+        for field in ['amf_ue_id', '5g_tmsi']:
             if field in anonymized and anonymized[field]:
                 anonymized[field] = f"anon-{hash(str(anonymized[field])) % 10000}"
 
-        anonymized['_anonymized'] = True
         return anonymized
 
-def wait_for_kafka(bootstrap_servers, max_retries=30):
-    """Wait for Kafka to be available"""
-    for i in range(max_retries):
-        try:
-            # Test connection
-            test_producer = KafkaProducer(bootstrap_servers=bootstrap_servers)
-            test_producer.close()
-            print(f"✅ Connected to Kafka at {bootstrap_servers}")
-            return True
-        except NoBrokersAvailable:
-            print(f"⏳ Waiting for Kafka... attempt {i+1}/{max_retries}")
-            time.sleep(2)
-        except Exception as e:
-            print(f"❌ Kafka connection error: {e}")
-            time.sleep(2)
+    def process_sample(self, data):
+        """Process incoming sample and return sequences when ready"""
+        device_id = data.get('_original_device_id', data.get('imeisv', 'unknown'))
 
-    print(f"❌ Failed to connect to Kafka after {max_retries} attempts")
-    return False
+        # Add to device buffer
+        self.device_buffers[device_id].append(data)
+
+        # Keep only last seq_len samples
+        if len(self.device_buffers[device_id]) > self.data_config.seq_len:
+            self.device_buffers[device_id] = self.device_buffers[device_id][-self.data_config.seq_len:]
+
+        # Check if we have enough samples
+        if len(self.device_buffers[device_id]) == self.data_config.seq_len:
+            try:
+                # Create DataFrame from buffered samples
+                df = pd.DataFrame(self.device_buffers[device_id])
+
+                # Ensure _time column is datetime
+                if '_time' in df.columns:
+                    df['_time'] = pd.to_datetime(df['_time'])
+                elif '_timestamp' in df.columns:
+                    # Use our added timestamp if original _time is missing
+                    df['_time'] = pd.to_datetime(df['_timestamp'])
+                else:
+                    # Create timestamps if missing
+                    df['_time'] = pd.date_range(
+                        end=datetime.now(),
+                        periods=len(df),
+                        freq='1S'
+                    )
+
+                # Apply DataProcessor's cleaning and preprocessing
+                df_cleaned = self.data_processor.clean_data(df)
+                df_processed = self.data_processor.preprocess_data(df_cleaned, only_benign=False)
+
+                # Extract processed features in correct order
+                # Create tensor format [1, seq_len, features]
+                feature_values = df_processed[self.data_processor.input_features].to_dict(orient='list')
+                # Get metadata from the last sample
+                last_sample = self.device_buffers[device_id][-1]
+
+                return {
+                    'device_id': last_sample['imeisv'],  # Use anonymized ID
+                    'feature_values': feature_values,
+                    'timestamp': last_sample.get('_timestamp', datetime.now().isoformat()),
+                    'metadata': {
+                        'attack': int(last_sample.get('attack', 0)),
+                        'malicious': int(last_sample.get('malicious', 0)),
+                        'cell': last_sample.get('cell', 'unknown'),
+                        'attack_number': int(last_sample.get('attack_number', 0))
+                    }
+                }
+
+            except Exception as e:
+                print(f"Error processing sequence for device {device_id}: {e}")
+                # Clear buffer on error to start fresh
+                self.device_buffers[device_id] = []
+                return None
+
+        return None
+
 
 def main():
-    # Force stdout to be unbuffered for Docker logging
-    sys.stdout.reconfigure(line_buffering=True)
-
     bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
     input_topic = os.environ.get('INPUT_TOPIC', 'raw-network-data')
-    output_topic = os.environ.get('OUTPUT_TOPIC', 'anonymized-data')
+    output_topic = os.environ.get('OUTPUT_TOPIC', 'preprocessed-data')
 
-    print("🔐 Starting PRIVATEER Anonymization Service...")
-    print(f"📥 Input topic: {input_topic}")
-    print(f"📤 Output topic: {output_topic}")
-    print(f"🔌 Kafka servers: {bootstrap_servers}")
+    print("Starting anonymizer with DataProcessor preprocessing...")
 
-    # Wait for Kafka to be available
-    if not wait_for_kafka(bootstrap_servers):
-        sys.exit(1)
+    consumer = KafkaConsumer(
+        input_topic,
+        bootstrap_servers=bootstrap_servers,
+        value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+        auto_offset_reset='earliest'  # Start from beginning
+    )
 
-    # Create consumer and producer
-    try:
-        print("🔧 Setting up Kafka consumer and producer...")
+    producer = KafkaProducer(
+        bootstrap_servers=bootstrap_servers,
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
 
-        consumer = KafkaConsumer(
-            input_topic,
-            bootstrap_servers=bootstrap_servers,
-            value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-            auto_offset_reset='earliest',  # Changed from 'latest' to process existing messages
-            group_id='anonymizer-group',
-            enable_auto_commit=True,
-            consumer_timeout_ms=5000  # Add timeout to avoid hanging
-        )
+    processor = AnonymizerPreprocessor()
+    processed_count = 0
 
-        producer = KafkaProducer(
-            bootstrap_servers=bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
-        )
+    print(f"Input features: {processor.data_processor.input_features}")
+    print(f"Sequence length: {processor.data_config.seq_len}")
 
-        print("✅ Consumer and producer created successfully")
+    for message in consumer:
+        try:
+            raw_data = message.value
 
-    except Exception as e:
-        print(f"❌ Failed to create Kafka client: {e}")
-        sys.exit(1)
+            # Anonymize first
+            anonymized_data = processor.anonymize(raw_data)
 
-    anonymizer = Anonymizer()
-    count = 0
-    last_log_time = time.time()
+            # Process and check if sequence is ready
+            result = processor.process_sample(anonymized_data)
 
-    print("🚀 Starting message processing...")
-    print("⏳ Waiting for messages...")
+            if result:
+                # Send preprocessed tensor to detector
+                producer.send(output_topic, value=result)
+                processed_count += 1
 
-    try:
-        while True:
-            # Poll for messages
-            message_batch = consumer.poll(timeout_ms=1000)
+                if processed_count % 10 == 0:
+                    print(f"Processed {processed_count} sequences")
 
-            if not message_batch:
-                # No messages received, log periodically to show it's alive
-                current_time = time.time()
-                if current_time - last_log_time > 30:  # Log every 30 seconds
-                    print(f"💤 Still waiting for messages... (processed {count} so far)")
-                    last_log_time = current_time
-                continue
+                # Log first few for debugging
+                if processed_count <= 3:
+                    print(f"Sent tensor for device {result['device_id']}")
+                    print(f"  Shape: [1, {len(result['tensor'][0])}, {len(result['tensor'][0][0])}]")
+                    print(f"  Metadata: {result['metadata']}")
 
-            # Process messages
-            for topic_partition, messages in message_batch.items():
-                for message in messages:
-                    try:
-                        raw_data = message.value
-                        anonymized_data = anonymizer.anonymize(raw_data)
+        except Exception as e:
+            print(f"Error processing message: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
 
-                        producer.send(output_topic, value=anonymized_data)
+    consumer.close()
+    producer.close()
 
-                        count += 1
-                        if count % 50 == 0:  # Log more frequently
-                            print(f"🔐 Anonymized {count} records")
-
-                        # Log first few messages for debugging
-                        if count <= 5:
-                            print(f"📝 Sample anonymized record {count}: device={anonymized_data.get('imeisv', 'N/A')}")
-
-                    except Exception as e:
-                        print(f"❌ Error processing message: {e}")
-                        continue
-
-    except KeyboardInterrupt:
-        print("🛑 Stopping anonymizer...")
-    except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-    finally:
-        print("🧹 Cleaning up...")
-        consumer.close()
-        producer.close()
-        print(f"✅ Anonymizer stopped. Total processed: {count}")
 
 if __name__ == '__main__':
     main()

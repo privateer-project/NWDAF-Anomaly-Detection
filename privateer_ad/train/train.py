@@ -54,7 +54,8 @@ class TrainPipeline:
         if mlflow.active_run():
             mlflow.end_run()
         mlflow.start_run(run_id=self.mlflow_config.child_run_id, parent_run_id=self.mlflow_config.parent_run_id)
-        self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
+        if not self.mlflow_config.child_run_id:
+            self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
         logging.info(
             f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
@@ -102,7 +103,7 @@ class TrainPipeline:
                 target_delta=self.privacy_config.target_delta,
                 max_grad_norm=self.privacy_config.max_grad_norm
             )
-        if self.training_config.early_stopping_enabled:
+        if self.training_config.es_enabled:
             logging.info('Early stopping enabled.')
         self.trainer = ModelTrainer(model=self.model,
                                     optimizer=self.optimizer,
@@ -118,8 +119,7 @@ class TrainPipeline:
             mlflow.log_params(self.data_config.model_dump())
             mlflow.log_params(self.model_config.model_dump())
             mlflow.log_params(self.privacy_config.model_dump())
-            mlflow.log_text(model_summary,
-                            'model_summary.txt')
+            mlflow.log_text(model_summary, 'model_summary.txt')
 
     def _log_model(self):
         """Log trained model to MLFlow with proper signature and champion tagging."""
@@ -181,17 +181,17 @@ class TrainPipeline:
         """
         best_checkpoint = self.train_model(start_epoch=start_epoch)
         metrics, figures = self.evaluate_model(step=start_epoch)
-        model_name = 'TransformerAD'
+
         if self.privacy_config.dp_enabled:
             metrics['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
-            model_name += '_DP'
+            self.model_config.model_name += '_DP'
 
         log_model(model=self.model,
-                  model_name=model_name,
+                  model_name=self.model_config.model_name,
                   sample=self.sample,
                   direction=self.training_config.direction,
                   target_metric=self.training_config.target_metric,
-                  current_target_metric=best_checkpoint['metrics'][self.training_config.target_metric],
+                  current_metrics=best_checkpoint['metrics'],
                   experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
                   pip_requirements=self.paths_config.requirements_file.as_posix())
         return metrics, figures

@@ -58,15 +58,15 @@ class ModelEvaluator:
         y_pred = (anomaly_scores >= threshold).astype(int)
 
         target_names = ['Benign', 'Malicious']
-        metrics = {'roc_auc': roc_auc_score(y_true=y_true, y_score=anomaly_scores),
-                   'loss': np.mean(anomaly_scores)}
+        metrics = {'roc_auc': float(roc_auc_score(y_true=y_true, y_score=anomaly_scores)),
+                   'loss': float(np.mean(anomaly_scores))}
 
         metrics.update(classification_report(y_true=y_true,
                                              y_pred=y_pred,
                                              target_names=target_names,
                                              output_dict=True)['macro avg'])
         metrics = {f'{prefix}_' + k: v for k, v in metrics.items()}
-        metrics[f'{prefix}_threshold'] = threshold
+        metrics[f'{prefix}_threshold'] = float(threshold)
         self.visualizer.visualize(y_true=y_true,
                                   y_pred=y_pred,
                                   scores=anomaly_scores,
