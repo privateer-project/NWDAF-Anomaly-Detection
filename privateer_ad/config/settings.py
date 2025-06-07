@@ -86,8 +86,8 @@ class DataConfig(BaseSettings):
     batch_size: int = Field(default=4096, gt=0)
     seq_len: int = Field(default=12, ge=1)
 
-    num_workers: int = Field(default=2, ge=0)
-    prefetch_factor: int | None = Field(default=2, ge=1)
+    num_workers: int = Field(default=16, ge=0)
+    prefetch_factor: int | None = Field(default=16, ge=1)
     persistent_workers: bool = Field(default=True)
     pin_memory: bool = Field(default=True)
 
@@ -192,9 +192,9 @@ class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
     dp_enabled: bool = Field(default=True)
-    target_epsilon: float = Field(default=0.7, gt=0.0)
-    target_delta: float = Field(default=1e-6, gt=0.0)
-    max_grad_norm: float = Field(default=.3, gt=0.0)
+    target_epsilon: float = Field(default=0.3, gt=0.0)
+    target_delta: float = Field(default=1e-7, gt=0.0)
+    max_grad_norm: float = Field(default=.5, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)

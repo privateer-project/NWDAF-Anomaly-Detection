@@ -93,20 +93,20 @@ services:
     restart: unless-stopped
     networks:
       - privateer-net
-  # Alert Monitor (for testing)
-  alert-monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.monitor
-    container_name: privateer-monitor
-    depends_on:
-      - kafka
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - ALERT_TOPIC=anomaly-alerts
-    restart: unless-stopped
-    networks:
-      - privateer-net
+#  # Alert Monitor (for testing)
+#  alert-monitor:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.monitor
+#    container_name: privateer-monitor
+#    depends_on:
+#      - kafka
+#    environment:
+#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - ALERT_TOPIC=anomaly-alerts
+#    restart: unless-stopped
+#    networks:
+#      - privateer-net
 
 networks:
   privateer-net:

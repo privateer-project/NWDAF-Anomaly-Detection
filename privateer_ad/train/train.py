@@ -63,6 +63,8 @@ class TrainPipeline:
         logging.info('Setup dataloaders.')
 
         self.dp = DataProcessor(data_config=self.data_config)
+        self.model_config.input_size = len(self.dp.input_features)
+        self.model_config.seq_len = self.dp.data_config.seq_len
 
         # Create dataloaders with configuration
         self.train_dl = self.dp.get_dataloader('train', only_benign=True, train=True)
