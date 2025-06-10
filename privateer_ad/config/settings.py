@@ -147,7 +147,7 @@ class AutotuningConfig(BaseSettings):
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
     n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
-    target_metric: str = Field(default="test_f1-score", description="Metric to optimize")
+    target_metric: str = Field(default="val_unbalanced_f1-score", description="Metric to optimize")
     direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
     storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")

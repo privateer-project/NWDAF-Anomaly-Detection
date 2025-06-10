@@ -25,7 +25,7 @@ class AutotuneParam:
 
 # Simple parameter definitions - no class needed
 MODEL_PARAMS = [
-    AutotuneParam(name='seq_len', type='categorical' , choices=[1, 2, 6, 12, 24, 120]),
+    # AutotuneParam(name='seq_len', type='categorical' , choices=[1, 2, 6, 12, 24, 120]),
     AutotuneParam(name='num_layers', type='categorical', choices=[1, 2, 3, 4]),
     AutotuneParam(name='hidden_dim', type='categorical', choices=[16, 32, 64, 128]),
     AutotuneParam(name='latent_dim', type='categorical', choices=[8, 16, 32, 64]),
@@ -35,7 +35,7 @@ MODEL_PARAMS = [
 
 TRAINING_PARAMS = [
     AutotuneParam(name='learning_rate', type='loguniform', low=1e-5, high=1e-2),
-    AutotuneParam(name='batch_size', type='categorical', choices=[512, 1024, 2048, 4096]),
+    AutotuneParam(name='batch_size', type='categorical', choices=[256, 512, 1024, 2048, 4096, 8192]),
 ]
 
 ALL_PARAMS = MODEL_PARAMS + TRAINING_PARAMS
@@ -44,15 +44,13 @@ ALL_PARAMS = MODEL_PARAMS + TRAINING_PARAMS
 class ModelAutoTuner:
     """Hyperparameter optimization using Optuna"""
 
-    def __init__(self,
-                 autotune_config: Optional[AutotuningConfig] = None,
-                 parent_run_id: Optional[str] = None):
-
+    def __init__(self, autotune_config: Optional[AutotuningConfig] = None, parent_run_id: Optional[str] = None):
         self.autotune_config = autotune_config or AutotuningConfig()
         self.model_params = MODEL_PARAMS
         self.training_params = TRAINING_PARAMS
-
-        self.parent_run_id = parent_run_id
+        self.mlflow_config = MLFlowConfig(parent_run_id=parent_run_id)
+        self.training_config = TrainingConfig()
+        self.model_config = ModelConfig()
 
         storage = self.autotune_config.study_name
         if not storage.startswith(('sqlite://', 'mysql://', 'postgresql://')):
@@ -65,19 +63,46 @@ class ModelAutoTuner:
             load_if_exists=True
         )
 
+    def run(self) -> tuple:
+        """Run optimization and return plots"""
+        logging.info(f'Starting optimization: {self.autotune_config.n_trials} trials')
+
+        self.study.optimize(self.objective, n_trials=self.autotune_config.n_trials,
+                            timeout=self.autotune_config.timeout, show_progress_bar=True)
+
+        # Log best result
+        best = self.study.best_trial
+        logging.info(f'Best {self.autotune_config.target_metric}: {best.value:.4f}')
+        logging.info(f'Best params: {best.params}')
+
+        # Return plots
+        return (
+            optuna.visualization.plot_param_importances(self.study),
+            optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target_metric)
+        )
+
     def objective(self, trial: optuna.Trial) -> float:
         """Run one trial"""
-        mlflow_config = MLFlowConfig(parent_run_id=self.parent_run_id)
-        training_config = TrainingConfig(**{param.name: self._suggest_value(trial, param) for param in self.training_params})
-        model_config = ModelConfig(**{param.name: self._suggest_value(trial, param) for param in self.model_params})
-        # Train and evaluate
+        training_updates = {
+            param.name: self._suggest_value(trial, param)
+            for param in self.training_params
+        }
+        model_updates = {
+            param.name: self._suggest_value(trial, param)
+            for param in self.model_params
+        }
+
+        # Create new config instances with updates
+        training_config = TrainingConfig(**training_updates)
+        model_config = ModelConfig(**model_updates)
         try:
-            pipeline = TrainPipeline(mlflow_config=mlflow_config,
+            pipeline = TrainPipeline(mlflow_config=self.mlflow_config,
                                      training_config=training_config,
                                      model_config=model_config)
 
-            metrics, _ = pipeline.train_eval()
-            return metrics[self.autotune_config.target_metric]
+            best_checkpoint = pipeline.train_model()
+            pipeline.evaluate_model()
+            return best_checkpoint['metrics'][self.autotune_config.target_metric]
         except Exception as e:
             logging.error(f'Trial {trial.number} failed: {e}')
             return -np.inf if self.autotune_config.direction == 'maximize' else np.inf
@@ -148,21 +173,3 @@ class ModelAutoTuner:
 
         else:
             raise NotImplementedError(f"Parameter type '{param.type}' not implemented.")
-
-    def run(self) -> tuple:
-        """Run optimization and return plots"""
-        logging.info(f'Starting optimization: {self.autotune_config.n_trials} trials')
-
-        self.study.optimize(self.objective, n_trials=self.autotune_config.n_trials,
-                            timeout=self.autotune_config.timeout, show_progress_bar=True)
-
-        # Log best result
-        best = self.study.best_trial
-        logging.info(f'Best {self.autotune_config.target_metric}: {best.value:.4f}')
-        logging.info(f'Best params: {best.params}')
-
-        # Return plots
-        return (
-            optuna.visualization.plot_param_importances(self.study),
-            optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target_metric)
-        )

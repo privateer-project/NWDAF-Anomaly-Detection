@@ -196,6 +196,9 @@ class TrainPipeline:
                   current_metrics=best_checkpoint['metrics'],
                   experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
                   pip_requirements=self.paths_config.requirements_file.as_posix())
+
+        if mlflow.active_run():
+            mlflow.end_run()
         return metrics, figures
 
     def __exit__(self, exc_type, exc_val, exc_tb):

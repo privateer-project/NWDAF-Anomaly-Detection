@@ -12,9 +12,7 @@ def autotune():
     mlflow_config = MLFlowConfig()
 
     mlflow.set_tracking_uri(mlflow_config.tracking_uri)
-    experiment = mlflow.get_experiment_by_name(mlflow_config.experiment_name)
-    if experiment is not None:
-        mlflow.set_experiment(experiment_id=experiment.experiment_id)
+    mlflow.set_experiment(mlflow_config.experiment_name)
     mlflow.start_run()
     tuner = ModelAutoTuner(parent_run_id=mlflow.active_run().info.run_id)
     logging.info('Start autotuning.')
