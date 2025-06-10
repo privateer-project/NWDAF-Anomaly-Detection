@@ -13,7 +13,3 @@ def check_existing_datasets():
         path = get_dataset_path(mode)
         if os.path.exists(path):
             raise FileExistsError(f'File {path} exists.')
-
-def get_scaler_path(scaler_name: str) -> str:
-    """Get full path for a scaler file."""
-    return str(PathConfig().scalers_dir.joinpath(f'{scaler_name}.scaler'))

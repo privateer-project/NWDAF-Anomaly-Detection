@@ -34,7 +34,7 @@ class AnomalyDetectorWithUI:
             self.mlflow_config = MLFlowConfig()
 
             # Try multiple model names
-            model_names = ['TransformerAD', 'TransformerAD_DP', 'global_TransformerAD']
+            model_names = ['global_TransformerAD', 'TransformerAD', 'TransformerAD_DP']
             self.model = None
 
             for model_name in model_names:
@@ -549,6 +549,7 @@ def create_anomaly_figure():
     errors = detector.realtime_data['reconstruction_error']
     predictions = detector.realtime_data['is_anomaly']
     true_labels = detector.realtime_data['true_label']
+    device_ids = detector.realtime_data['device_id']
 
     # Create lists for each category
     tp_times, tp_errors = [], []
@@ -556,10 +557,33 @@ def create_anomaly_figure():
     fp_times, fp_errors = [], []
     fn_times, fn_errors = [], []
 
+    # Get unique devices and assign colors
+    unique_devices = list(set(device_ids))
+    device_colors = [
+        'purple', 'darkblue', 'darkgreen', 'brown', 'pink',
+        'gray', 'olive', 'cyan', 'magenta', 'navy'
+    ]
+
+    # Create device-specific data
+    device_data = {}
+    for device in unique_devices:
+        device_data[device] = {
+            'timestamps': [],
+            'errors': [],
+            'color': device_colors[len(device_data) % len(device_colors)]
+        }
+
+    # Organize data by device and category
     for i in range(len(timestamps)):
         is_anomaly = predictions[i]
         actual_label = true_labels[i]
+        device_id = device_ids[i]
 
+        # Add to device-specific data
+        device_data[device_id]['timestamps'].append(timestamps[i])
+        device_data[device_id]['errors'].append(errors[i])
+
+        # Categorize for confusion matrix visualization
         if is_anomaly and actual_label == 1:  # True Positive
             tp_times.append(timestamps[i])
             tp_errors.append(errors[i])
@@ -573,16 +597,25 @@ def create_anomaly_figure():
             fn_times.append(timestamps[i])
             fn_errors.append(errors[i])
 
-    # Add baseline line connecting all points
-    fig.add_trace(go.Scatter(
-        x=timestamps,
-        y=errors,
-        mode='lines',
-        name='Reconstruction Error',
-        line=dict(color='lightgray', width=1),
-        showlegend=False,
-        hoverinfo='skip'
-    ))
+    # Add device-specific baseline lines
+    for device_id, data in device_data.items():
+        if len(data['timestamps']) > 1:  # Only show line if we have multiple points
+            # Sort by timestamp to ensure proper line connection
+            sorted_indices = sorted(range(len(data['timestamps'])),
+                                  key=lambda k: data['timestamps'][k])
+            sorted_times = [data['timestamps'][i] for i in sorted_indices]
+            sorted_errors = [data['errors'][i] for i in sorted_indices]
+
+            fig.add_trace(go.Scatter(
+                x=sorted_times,
+                y=sorted_errors,
+                mode='lines',
+                name=f'Device {device_id}',
+                line=dict(color=data['color'], width=2, dash='solid'),
+                hoverinfo='skip',
+                legendgroup='devices',
+                legendgrouptitle_text="Devices"
+            ))
 
     # Add True Positives (Correctly detected attacks)
     if tp_times:
@@ -591,8 +624,15 @@ def create_anomaly_figure():
             y=tp_errors,
             mode='markers',
             name='True Positive (TP)',
-            marker=dict(color='green', size=8, symbol='circle'),
-            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+            marker=dict(
+                color='green',
+                size=10,
+                symbol='circle',
+                line=dict(width=2, color='darkgreen')
+            ),
+            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
+            legendgroup='confusion',
+            legendgrouptitle_text="Detection Results"
         ))
 
     # Add True Negatives (Correctly identified benign)
@@ -602,8 +642,14 @@ def create_anomaly_figure():
             y=tn_errors,
             mode='markers',
             name='True Negative (TN)',
-            marker=dict(color='blue', size=6, symbol='circle'),
-            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+            marker=dict(
+                color='blue',
+                size=6,
+                symbol='circle',
+                line=dict(width=1, color='darkblue')
+            ),
+            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
+            legendgroup='confusion'
         ))
 
     # Add False Positives (Incorrectly flagged as attacks)
@@ -613,8 +659,14 @@ def create_anomaly_figure():
             y=fp_errors,
             mode='markers',
             name='False Positive (FP)',
-            marker=dict(color='orange', size=8, symbol='triangle-up'),
-            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+            marker=dict(
+                color='orange',
+                size=10,
+                symbol='triangle-up',
+                line=dict(width=2, color='darkorange')
+            ),
+            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
+            legendgroup='confusion'
         ))
 
     # Add False Negatives (Missed attacks)
@@ -624,8 +676,14 @@ def create_anomaly_figure():
             y=fn_errors,
             mode='markers',
             name='False Negative (FN)',
-            marker=dict(color='red', size=8, symbol='triangle-down'),
-            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
+            marker=dict(
+                color='red',
+                size=10,
+                symbol='triangle-down',
+                line=dict(width=2, color='darkred')
+            ),
+            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
+            legendgroup='confusion'
         ))
 
     # Add threshold line
@@ -633,40 +691,43 @@ def create_anomaly_figure():
         y=detector.threshold,
         line_dash="dash",
         line_color="black",
-        line_width=2,
+        line_width=3,
         annotation_text=f"Threshold ({detector.threshold:.6f})",
         annotation_position="top right"
     )
 
     # Update layout
     fig.update_layout(
-        title=f"{detector.model_name} Anomaly Detection - Confusion Matrix View",
+        title=f"{detector.model_name} - Device-Separated Anomaly Detection",
         xaxis_title="Time",
         yaxis_title="Reconstruction Error",
         hovermode='closest',
         legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.3,
-            xanchor="center",
-            x=0.5
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+            groupclick="toggleitem"
         ),
-        margin=dict(b=100)  # Extra space for legend
+        margin=dict(r=200),  # Extra space for legend
+        showlegend=True
     )
 
     # Add performance summary as annotation
     total_points = len(timestamps)
+    device_count = len(unique_devices)
     if total_points > 0:
-        summary_text = (f"Points: TP={len(tp_times)} TN={len(tn_times)} "
-                       f"FP={len(fp_times)} FN={len(fn_times)}")
+        summary_text = (f"Devices: {device_count} | Points: TP={len(tp_times)} "
+                       f"TN={len(tn_times)} FP={len(fp_times)} FN={len(fn_times)}")
         fig.add_annotation(
             text=summary_text,
             xref="paper", yref="paper",
             x=0.02, y=0.98,
             xanchor='left', yanchor='top',
             showarrow=False,
-            font=dict(size=10, color="black"),
-            bgcolor="rgba(255,255,255,0.8)",
+            font=dict(size=11, color="black"),
+            bgcolor="rgba(255,255,255,0.9)",
             bordercolor="gray",
             borderwidth=1
         )

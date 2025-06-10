@@ -44,6 +44,7 @@ services:
       - KAFKA_TOPIC=raw-network-data
       - CSV_PATH=/app/data/raw/amari_ue_data_merged_with_attack_number.csv
       - INTERVAL=0.01
+      - DEMO_MODE=true
     volumes:
       - ../data:/app/data:ro
     restart: unless-stopped
@@ -93,20 +94,20 @@ services:
     restart: unless-stopped
     networks:
       - privateer-net
-  # Alert Monitor (for testing)
-  alert-monitor:
-    build:
-      context: .
-      dockerfile: Dockerfile.monitor
-    container_name: privateer-monitor
-    depends_on:
-      - kafka
-    environment:
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - ALERT_TOPIC=anomaly-alerts
-    restart: unless-stopped
-    networks:
-      - privateer-net
+#  # Alert Monitor (for testing)
+#  alert-monitor:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.monitor
+#    container_name: privateer-monitor
+#    depends_on:
+#      - kafka
+#    environment:
+#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+#      - ALERT_TOPIC=anomaly-alerts
+#    restart: unless-stopped
+#    networks:
+#      - privateer-net
 
 networks:
   privateer-net:

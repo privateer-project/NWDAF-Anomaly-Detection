@@ -3,6 +3,7 @@ Anonymization and Preprocessing Service
 - Applies privacy transformations
 - Uses DataProcessor for preprocessing
 """
+
 import os
 import json
 import pandas as pd
@@ -26,9 +27,6 @@ class AnonymizerPreprocessor:
         self.data_config = DataConfig()
         self.data_config.seq_len = 12
         self.data_processor = DataProcessor(self.data_config)
-
-        # Load scaler to ensure it's ready
-        self.data_processor.load_scaler()
 
     def anonymize(self, data):
         """Apply anonymization to sensitive fields"""
@@ -80,16 +78,17 @@ class AnonymizerPreprocessor:
                     df['_time'] = pd.date_range(
                         end=datetime.now(),
                         periods=len(df),
-                        freq='1S'
+                        freq='1s'
                     )
 
                 # Apply DataProcessor's cleaning and preprocessing
-                df_cleaned = self.data_processor.clean_data(df)
-                df_processed = self.data_processor.preprocess_data(df_cleaned, only_benign=False)
+                df = self.data_processor.clean_data(df)
+                df_processed = self.data_processor.scale_data(df=df)
 
                 # Extract processed features in correct order
                 # Create tensor format [1, seq_len, features]
-                feature_values = df_processed[self.data_processor.input_features].to_dict(orient='list')
+                feature_df = df_processed[self.data_processor.input_features]
+                feature_values = feature_df.to_dict(orient='list')
                 # Get metadata from the last sample
                 last_sample = self.device_buffers[device_id][-1]
 
@@ -160,7 +159,7 @@ def main():
                 # Log first few for debugging
                 if processed_count <= 3:
                     print(f"Sent tensor for device {result['device_id']}")
-                    print(f"  Shape: [1, {len(result['tensor'][0])}, {len(result['tensor'][0][0])}]")
+                    print(f"  Shape: [1, {len(result['feature_values']['ul_retx'])}, {len(result['feature_values'])}]")
                     print(f"  Metadata: {result['metadata']}")
 
         except Exception as e:

@@ -1,3 +1,4 @@
+import logging
 from typing import Tuple, List
 
 import mlflow
@@ -13,6 +14,8 @@ from privateer_ad.visualizations import Visualizer
 
 class ModelEvaluator:
     def __init__(self, device: torch.device, loss_fn: str=None):
+        logging.info('Instantiate ModelEvaluator...')
+
         self.device = device
         self.loss_fn = loss_fn or TrainingConfig().loss_fn_name
 
@@ -83,4 +86,6 @@ class ModelEvaluator:
             mlflow.log_metrics(metrics, step=step)
             for name, fig in self.visualizer.figures.items():
                 mlflow.log_figure(fig, f'{str(step).zfill(3)}_{name}.png')
+        metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
+        logging.info(f'Test metrics:\n{metrics_logs}')
         return metrics, self.visualizer.figures

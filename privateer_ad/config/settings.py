@@ -86,8 +86,8 @@ class DataConfig(BaseSettings):
     batch_size: int = Field(default=4096, gt=0)
     seq_len: int = Field(default=12, ge=1)
 
-    num_workers: int = Field(default=2, ge=0)
-    prefetch_factor: int | None = Field(default=2, ge=1)
+    num_workers: int = Field(default=16, ge=0)
+    prefetch_factor: int | None = Field(default=16, ge=1)
     persistent_workers: bool = Field(default=True)
     pin_memory: bool = Field(default=True)
 
@@ -147,7 +147,7 @@ class AutotuningConfig(BaseSettings):
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
     n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
-    target_metric: str = Field(default="test_f1-score", description="Metric to optimize")
+    target_metric: str = Field(default="val_unbalanced_f1-score", description="Metric to optimize")
     direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
     storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
@@ -192,9 +192,9 @@ class PrivacyConfig(BaseSettings):
     """Privacy and differential privacy settings"""
 
     dp_enabled: bool = Field(default=True)
-    target_epsilon: float = Field(default=0.7, gt=0.0)
-    target_delta: float = Field(default=1e-6, gt=0.0)
-    max_grad_norm: float = Field(default=.3, gt=0.0)
+    target_epsilon: float = Field(default=0.3, gt=0.0)
+    target_delta: float = Field(default=1e-7, gt=0.0)
+    max_grad_norm: float = Field(default=.5, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)
