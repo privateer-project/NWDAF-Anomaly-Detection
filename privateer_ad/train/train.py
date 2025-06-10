@@ -51,13 +51,10 @@ class TrainPipeline:
         # Setup MLFlow
         mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
-        if mlflow.active_run():
-            mlflow.end_run()
         mlflow.start_run(run_id=self.mlflow_config.child_run_id, parent_run_id=self.mlflow_config.parent_run_id)
         if not self.mlflow_config.child_run_id:
             self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
-        logging.info(
-            f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
+        logging.info(f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
         # Setup datasets
         logging.info('Setup dataloaders.')
@@ -75,13 +72,12 @@ class TrainPipeline:
         torch.serialization.add_safe_globals([TransformerAD])
         self.model_config.seq_len = self.data_config.seq_len
         # Create model instance
-        self.model = TransformerAD(self.model_config)
         self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
-        model_summary = str(summary(model=self.model, input_data=self.sample,
-                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')))
+        self.model = TransformerAD(self.model_config)
         if self.privacy_config.dp_enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
+            self.model_config.model_name += '_DP'
             self.model = ModuleValidator.fix(self.model)
 
         # Create optimizer
@@ -93,7 +89,6 @@ class TrainPipeline:
         else:
             logging.info('Differential Privacy enabled.')
             from opacus import PrivacyEngine
-
             self.privacy_engine = PrivacyEngine(accountant='rdp', secure_mode=self.privacy_config.secure_mode)
 
             self.model, self.optimizer, self.train_dl = self.privacy_engine.make_private_with_epsilon(
@@ -107,32 +102,6 @@ class TrainPipeline:
             )
         if self.training_config.es_enabled:
             logging.info('Early stopping enabled.')
-        self.trainer = ModelTrainer(model=self.model,
-                                    optimizer=self.optimizer,
-                                    device=self.device,
-                                    training_config=self.training_config)
-
-        self.evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
-
-        # Log configuration if MLFlow is enabled
-        if mlflow.active_run():
-            mlflow.log_params({'device': str(self.device)})
-            mlflow.log_params(self.training_config.model_dump())
-            mlflow.log_params(self.data_config.model_dump())
-            mlflow.log_params(self.model_config.model_dump())
-            mlflow.log_params(self.privacy_config.model_dump())
-            mlflow.log_text(model_summary, 'model_summary.txt')
-
-    def _log_model(self):
-        """Log trained model to MLFlow with proper signature and champion tagging."""
-        self.model.to('cpu')
-        # Log the model
-        mlflow.pytorch.log_model(pytorch_model=self.model,
-                                 artifact_path='model',
-                                 registered_model_name='TransformerAD',
-                                 signature=get_signature(self.model, self.sample),
-                                 pip_requirements=self.paths_config.requirements_file.as_posix()
-                                 )
 
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
@@ -144,13 +113,30 @@ class TrainPipeline:
         Returns:
             Best checkpoint information
         """
-        logging.info('Start Training...')
-        best_checkpoint = self.trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
+        self.model.train()
+        trainer = ModelTrainer(model=self.model,
+                               optimizer=self.optimizer,
+                               device=self.device,
+                               training_config=self.training_config)
 
-        # Set model to best checkpoint
-        self.model.load_state_dict(best_checkpoint['model_state_dict'])
+        model_summary = str(summary(model=self.model, input_data=self.sample,
+                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')))
+
+        # Log configuration if MLFlow is enabled
+        if mlflow.active_run():
+            mlflow.log_params({'device': str(self.device)})
+            mlflow.log_params(self.training_config.model_dump())
+            mlflow.log_params(self.data_config.model_dump())
+            mlflow.log_params(self.model_config.model_dump())
+            mlflow.log_params(self.privacy_config.model_dump())
+            mlflow.log_text(model_summary, 'model_summary.txt')
+
+        best_checkpoint = trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
+        if self.privacy_config.dp_enabled:
+            best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
+
+        self.model = trainer.model
         logging.info('Training Finished.')
-
         return best_checkpoint
 
     def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
@@ -164,11 +150,8 @@ class TrainPipeline:
             Evaluation metrics
         """
         self.model.eval()
-
-        metrics, figures = self.evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
-
-        metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
-        logging.info(f'Test metrics:\n{metrics_logs}')
+        evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
+        metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
         return metrics, figures
 
     def train_eval(self, start_epoch: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
@@ -182,28 +165,35 @@ class TrainPipeline:
             Evaluation metrics
         """
         best_checkpoint = self.train_model(start_epoch=start_epoch)
-        metrics, figures = self.evaluate_model(step=start_epoch)
+        test_metrics, figures = self.evaluate_model(step=start_epoch)
 
-        if self.privacy_config.dp_enabled:
-            metrics['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
-            self.model_config.model_name += '_DP'
+        best_checkpoint['metrics'].udpate(test_metrics)
+        # Log model
+        self._log_model(current_metrics=best_checkpoint['metrics'])
+        self.model.to('cpu')
 
-        log_model(model=self.model,
-                  model_name=self.model_config.model_name,
-                  sample=self.sample,
+        return best_checkpoint['metrics'], figures
+
+    def _log_model(self):
+        """Log trained model to MLFlow with proper signature and champion tagging."""
+        self.model.to('cpu')
+        # Log the model
+        log_model(self.model,
+                  self.model_config.model_name,
+                  self.sample,
                   direction=self.training_config.direction,
                   target_metric=self.training_config.target_metric,
-                  current_metrics=best_checkpoint['metrics'],
-                  experiment_id=mlflow.get_experiment_by_name(self.mlflow_config.experiment_name).experiment_id,
-                  pip_requirements=self.paths_config.requirements_file.as_posix())
-
-        if mlflow.active_run():
-            mlflow.end_run()
-        return metrics, figures
+                  current_metrics, experiment_id=mlflow.get_experiment(), pip_requirements)
+        mlflow.pytorch.log_model(pytorch_model=self.model,
+                                 artifact_path='model',
+                                 registered_model_name=self.model_config.model_name,
+                                 signature=get_signature(self.model, self.sample),
+                                 pip_requirements=self.paths_config.requirements_file.as_posix()
+                                 )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # End parent run
-        if mlflow.active_run():
+        # End run
+        if mlflow.active_run().info.run_id == self.mlflow_config.child_run_id:
             mlflow.end_run()
 
 

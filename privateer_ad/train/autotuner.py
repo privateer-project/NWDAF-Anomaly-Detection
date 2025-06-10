@@ -1,4 +1,5 @@
 import logging
+from pprint import pprint, pformat
 
 from typing import Optional, List
 from dataclasses import dataclass
@@ -49,8 +50,6 @@ class ModelAutoTuner:
         self.model_params = MODEL_PARAMS
         self.training_params = TRAINING_PARAMS
         self.mlflow_config = MLFlowConfig(parent_run_id=parent_run_id)
-        self.training_config = TrainingConfig()
-        self.model_config = ModelConfig()
 
         storage = self.autotune_config.study_name
         if not storage.startswith(('sqlite://', 'mysql://', 'postgresql://')):
@@ -91,14 +90,14 @@ class ModelAutoTuner:
             param.name: self._suggest_value(trial, param)
             for param in self.model_params
         }
+        logging.info(f'Trial {trial.number}')
+        logging.info(pformat(training_updates))
+        logging.info(pformat(model_updates))
 
-        # Create new config instances with updates
-        training_config = TrainingConfig(**training_updates)
-        model_config = ModelConfig(**model_updates)
         try:
             pipeline = TrainPipeline(mlflow_config=self.mlflow_config,
-                                     training_config=training_config,
-                                     model_config=model_config)
+                                     training_config=TrainingConfig(**training_updates),
+                                     model_config=ModelConfig(**model_updates))
 
             best_checkpoint = pipeline.train_model()
             pipeline.evaluate_model()

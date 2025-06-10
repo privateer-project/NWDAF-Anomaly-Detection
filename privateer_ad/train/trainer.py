@@ -87,6 +87,7 @@ class ModelTrainer:
                 - metrics: Dictionary of metrics at best point
                 - epoch: Epoch number when best model was achieved
         """
+        logging.info('Start Training...')
         try:
             for epoch in range(start_epoch, start_epoch + self.training_config.epochs):
                 local_epoch = epoch - start_epoch
@@ -117,6 +118,9 @@ class ModelTrainer:
         except KeyboardInterrupt:
             logging.warning('Training interrupted by user...')
         pprint(self.get_training_summary())
+        logging.info('Training completed.')
+        # Set model to best checkpoint
+        self.model.load_state_dict(self.best_checkpoint['model_state_dict'])
         return self.best_checkpoint
 
     def _training_loop(self, epoch: int, train_dl) -> Dict[str, float]:
@@ -321,4 +325,5 @@ class ModelTrainer:
                 'total_epochs_trained': self.best_checkpoint['epoch'],
                 'early_stopping_triggered': (self.training_config.es_enabled and
                                              self.es_not_improved_epochs >= self.training_config.es_patience),
-                'configuration': self.training_config.model_dump()}
+                'training configuration': self.training_config.model_dump(),
+                'optimizer configuration': ''}
