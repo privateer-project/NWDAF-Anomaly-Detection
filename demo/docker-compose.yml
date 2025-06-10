@@ -44,6 +44,7 @@ services:
       - KAFKA_TOPIC=raw-network-data
       - CSV_PATH=/app/data/raw/amari_ue_data_merged_with_attack_number.csv
       - INTERVAL=0.01
+      - DEMO_MODE=true
     volumes:
       - ../data:/app/data:ro
     restart: unless-stopped
