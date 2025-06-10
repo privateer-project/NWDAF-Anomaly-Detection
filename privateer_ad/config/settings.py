@@ -133,7 +133,7 @@ class TrainingConfig(BaseSettings):
     es_warmup: int = Field(default=10, gt=0)
 
     # Optimization
-    target_metric: str = Field(default='val_balanced_f1-score')
+    target_metric: str = Field(default='val_unbalanced_f1-score')
     direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
     model_config = {'env_prefix': 'PRIVATEER_TRAIN_',

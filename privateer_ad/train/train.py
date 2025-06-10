@@ -13,7 +13,7 @@ from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.architectures import TransformerAD
 from privateer_ad.train.trainer import ModelTrainer
 from privateer_ad.evaluate.evaluator import ModelEvaluator
-from privateer_ad.utils import get_signature, log_model
+from privateer_ad.utils import log_model
 
 
 class TrainPipeline:
@@ -48,32 +48,60 @@ class TrainPipeline:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logging.info(f'Using device: {self.device}')
 
-        # Setup MLFlow
+        try:
+            self._setup_mlflow()
+            self._setup_data_and_model()
+        except Exception as e:
+            self._cleanup_mlflow()
+            raise e
+
+    def _setup_mlflow(self):
+        """Setup MLFlow with proper nested run handling"""
         mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
-        mlflow.start_run(run_id=self.mlflow_config.child_run_id, parent_run_id=self.mlflow_config.parent_run_id)
-        if not self.mlflow_config.child_run_id:
-            self.mlflow_config.child_run_id = mlflow.active_run().info.run_id
-        logging.info(f'Started MLFlow run: {mlflow.active_run().info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
+        # Handle nested runs for autotuning
+        if self.mlflow_config.parent_run_id:
+            run = mlflow.start_run(
+                run_id=self.mlflow_config.child_run_id,
+                parent_run_id=self.mlflow_config.parent_run_id,
+                nested=True
+            )
+        else:
+            run = mlflow.start_run(
+                run_id=self.mlflow_config.child_run_id,
+                parent_run_id=self.mlflow_config.parent_run_id
+            )
+
+        if not self.mlflow_config.child_run_id:
+            self.mlflow_config.child_run_id = run.info.run_id
+
+        logging.info(f'Started MLFlow run: {run.info.run_name} (ID: {self.mlflow_config.child_run_id})')
+
+    def _setup_data_and_model(self):
+        """Setup datasets and model"""
         # Setup datasets
         logging.info('Setup dataloaders.')
 
-        self.dp = DataProcessor(data_config=self.data_config)
-        self.model_config.input_size = len(self.dp.input_features)
-        self.model_config.seq_len = self.dp.data_config.seq_len
+        self.data_proc = DataProcessor(data_config=self.data_config)
+        self.model_config.input_size = len(self.data_proc.input_features)
+        self.model_config.seq_len = self.data_proc.data_config.seq_len
 
         # Create dataloaders with configuration
-        self.train_dl = self.dp.get_dataloader('train', only_benign=True, train=True)
-        self.val_dl = self.dp.get_dataloader('val', only_benign=False, train=False)
-        self.test_dl = self.dp.get_dataloader('test', only_benign=False, train=False)
+        self.train_dl = self.data_proc.get_dataloader('train', only_benign=True, train=True)
+        self.val_dl = self.data_proc.get_dataloader('val', only_benign=False, train=False)
+        self.test_dl = self.data_proc.get_dataloader('test', only_benign=False, train=False)
 
         # Setup model and optimizer
         torch.serialization.add_safe_globals([TransformerAD])
-        self.model_config.seq_len = self.data_config.seq_len
-        # Create model instance
+
         self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
         self.model = TransformerAD(self.model_config)
+        if mlflow.active_run():
+            mlflow.log_text(str(summary(model=self.model,
+                                        input_data=self.sample,
+                                        col_names=('input_size', 'output_size', 'num_params', 'params_percent'))),
+                            'model_summary.txt')
         if self.privacy_config.dp_enabled:
             from opacus.validators import ModuleValidator
             ModuleValidator.validate(self.model, strict=True)
@@ -103,43 +131,49 @@ class TrainPipeline:
         if self.training_config.es_enabled:
             logging.info('Early stopping enabled.')
 
+    # Add this debug code to your train_model method to understand the shape issue
+
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
         Train the model with current configuration.
-
-        Args:
-            start_epoch: Starting epoch for training
-
-        Returns:
-            Best checkpoint information
         """
-        self.model.train()
-        trainer = ModelTrainer(model=self.model,
-                               optimizer=self.optimizer,
-                               device=self.device,
-                               training_config=self.training_config)
+        try:
+            self.model.train()
+            trainer = ModelTrainer(model=self.model,
+                                   optimizer=self.optimizer,
+                                   device=self.device,
+                                   training_config=self.training_config)
 
-        model_summary = str(summary(model=self.model, input_data=self.sample,
-                                    col_names=('input_size', 'output_size', 'num_params', 'params_percent')))
+            # Debug the sample shape before trying summary
+            logging.info(f"Sample shape: {self.sample.shape}")
+            logging.info(
+                f"Model config - seq_len: {self.model_config.seq_len}, input_size: {self.model_config.input_size}")
+            logging.info(
+                f"Expected input shape: [batch_size, {self.model_config.seq_len}, {self.model_config.input_size}]")
 
-        # Log configuration if MLFlow is enabled
-        if mlflow.active_run():
-            mlflow.log_params({'device': str(self.device)})
-            mlflow.log_params(self.training_config.model_dump())
-            mlflow.log_params(self.data_config.model_dump())
-            mlflow.log_params(self.model_config.model_dump())
-            mlflow.log_params(self.privacy_config.model_dump())
-            mlflow.log_text(model_summary, 'model_summary.txt')
+            # Log configuration if MLFlow is enabled
+            if mlflow.active_run():
+                mlflow.log_params({'device': str(self.device)})
+                mlflow.log_params(self.training_config.model_dump())
+                mlflow.log_params(self.data_config.model_dump())
+                mlflow.log_params(self.model_config.model_dump())
+                mlflow.log_params(self.privacy_config.model_dump())
 
-        best_checkpoint = trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
-        if self.privacy_config.dp_enabled:
-            best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
+            best_checkpoint = trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
+            if self.privacy_config.dp_enabled:
+                best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(
+                    self.privacy_config.target_delta)
 
-        self.model = trainer.model
-        logging.info('Training Finished.')
-        return best_checkpoint
+            self.model = trainer.model
+            logging.info('Training Finished.')
+            return best_checkpoint
 
-    def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
+        except Exception as e:
+            logging.error(f"Training failed: {e}")
+            self._cleanup_mlflow()
+            raise e
+
+    def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Evaluate the trained model.
 
@@ -149,10 +183,15 @@ class TrainPipeline:
         Returns:
             Evaluation metrics
         """
-        self.model.eval()
-        evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
-        metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
-        return metrics, figures
+        try:
+            self.model.eval()
+            evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
+            metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
+            return metrics, figures
+        except Exception as e:
+            logging.error(f"Evaluation failed: {e}")
+            self._cleanup_mlflow()
+            raise e
 
     def train_eval(self, start_epoch: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
@@ -162,39 +201,59 @@ class TrainPipeline:
             start_epoch: Starting epoch for training
 
         Returns:
-            Evaluation metrics
+            Evaluation metrics and figures
         """
-        best_checkpoint = self.train_model(start_epoch=start_epoch)
-        test_metrics, figures = self.evaluate_model(step=start_epoch)
+        try:
+            best_checkpoint = self.train_model(start_epoch=start_epoch)
+            test_metrics, figures = self.evaluate_model(step=start_epoch)
 
-        best_checkpoint['metrics'].udpate(test_metrics)
-        # Log model
-        self._log_model(current_metrics=best_checkpoint['metrics'])
-        self.model.to('cpu')
+            best_checkpoint['metrics'].update(test_metrics)
 
-        return best_checkpoint['metrics'], figures
+            try:
+                self.model.to('cpu')
 
-    def _log_model(self):
-        """Log trained model to MLFlow with proper signature and champion tagging."""
-        self.model.to('cpu')
-        # Log the model
-        log_model(self.model,
-                  self.model_config.model_name,
-                  self.sample,
-                  direction=self.training_config.direction,
-                  target_metric=self.training_config.target_metric,
-                  current_metrics, experiment_id=mlflow.get_experiment(), pip_requirements)
-        mlflow.pytorch.log_model(pytorch_model=self.model,
-                                 artifact_path='model',
-                                 registered_model_name=self.model_config.model_name,
-                                 signature=get_signature(self.model, self.sample),
-                                 pip_requirements=self.paths_config.requirements_file.as_posix()
-                                 )
+                # Get current experiment ID
+                current_experiment = mlflow.get_experiment_by_name(self.mlflow_config.experiment_name)
+                experiment_id = current_experiment.experiment_id if current_experiment else None
+
+                log_model(
+                    model=self.model,
+                    model_name=self.model_config.model_name,
+                    sample=self.sample,
+                    direction=self.training_config.direction,
+                    target_metric=self.training_config.target_metric,
+                    current_metrics=best_checkpoint['metrics'],
+                    experiment_id=experiment_id,
+                    pip_requirements=self.paths_config.requirements_file.as_posix()
+                )
+
+                logging.info(f"Model {self.model_config.model_name} logged successfully to MLFlow")
+
+            except Exception as e:
+                logging.error(f"Failed to log model with champion tagging: {e}")
+            self.model.to('cpu')
+
+            return best_checkpoint['metrics'], figures
+        finally:
+            self._cleanup_mlflow()
+
+
+    def _cleanup_mlflow(self):
+        """Ensure MLflow run is properly ended"""
+        try:
+            if mlflow.active_run() and mlflow.active_run().info.run_id == self.mlflow_config.child_run_id:
+                mlflow.end_run()
+                logging.info(f"Ended MLflow run: {self.mlflow_config.child_run_id}")
+        except Exception as e:
+            logging.warning(f"Error during MLflow cleanup: {e}")
+
+    def __del__(self):
+        """Cleanup when object is destroyed"""
+        self._cleanup_mlflow()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # End run
-        if mlflow.active_run().info.run_id == self.mlflow_config.child_run_id:
-            mlflow.end_run()
+        """Context manager exit"""
+        self._cleanup_mlflow()
 
 
 def main():
