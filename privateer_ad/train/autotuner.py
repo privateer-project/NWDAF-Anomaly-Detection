@@ -1,13 +1,14 @@
 import logging
-from pprint import pprint, pformat
+from pprint import pformat
 
 from typing import Optional, List
 from dataclasses import dataclass
 
 import numpy as np
 import optuna
+import mlflow
 
-from privateer_ad.config import AutotuningConfig, ModelConfig, TrainingConfig, MLFlowConfig
+from privateer_ad.config import AutotuningConfig, ModelConfig, TrainingConfig, MLFlowConfig, DataConfig
 from privateer_ad.train.train import TrainPipeline
 
 
@@ -24,9 +25,11 @@ class AutotuneParam:
     log: Optional[bool] = False
 
 
-# Simple parameter definitions - no class needed
+# Parameter definitions
+DATA_PARAMS = [
+    AutotuneParam(name='seq_len', type='categorical', choices=[12]),  # [1, 2, 6, 12, 24, 120]
+]
 MODEL_PARAMS = [
-    # AutotuneParam(name='seq_len', type='categorical' , choices=[1, 2, 6, 12, 24, 120]),
     AutotuneParam(name='num_layers', type='categorical', choices=[1, 2, 3, 4]),
     AutotuneParam(name='hidden_dim', type='categorical', choices=[16, 32, 64, 128]),
     AutotuneParam(name='latent_dim', type='categorical', choices=[8, 16, 32, 64]),
@@ -48,8 +51,9 @@ class ModelAutoTuner:
     def __init__(self, autotune_config: Optional[AutotuningConfig] = None, parent_run_id: Optional[str] = None):
         self.autotune_config = autotune_config or AutotuningConfig()
         self.model_params = MODEL_PARAMS
+        self.data_params = DATA_PARAMS
         self.training_params = TRAINING_PARAMS
-        self.mlflow_config = MLFlowConfig(parent_run_id=parent_run_id)
+        self.parent_run_id = parent_run_id
 
         storage = self.autotune_config.study_name
         if not storage.startswith(('sqlite://', 'mysql://', 'postgresql://')):
@@ -80,8 +84,8 @@ class ModelAutoTuner:
             optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target_metric)
         )
 
-    def objective(self, trial: optuna.Trial) -> float:
-        """Run one trial"""
+    def objective(self, trial: optuna.Trial) -> float | None:
+        """Run one trial with proper cleanup"""
         training_updates = {
             param.name: self._suggest_value(trial, param)
             for param in self.training_params
@@ -90,21 +94,56 @@ class ModelAutoTuner:
             param.name: self._suggest_value(trial, param)
             for param in self.model_params
         }
+        data_updates = {
+            param.name: self._suggest_value(trial, param)
+            for param in self.data_params
+        }
+
         logging.info(f'Trial {trial.number}')
         logging.info(pformat(training_updates))
         logging.info(pformat(model_updates))
+        logging.info(pformat(data_updates))
 
+        pipeline = None
         try:
-            pipeline = TrainPipeline(mlflow_config=self.mlflow_config,
-                                     training_config=TrainingConfig(**training_updates),
-                                     model_config=ModelConfig(**model_updates))
+            # Create MLflow config for this trial
+            trial_mlflow_config = MLFlowConfig(parent_run_id=self.parent_run_id)
 
-            best_checkpoint = pipeline.train_model()
-            pipeline.evaluate_model()
-            return best_checkpoint['metrics'][self.autotune_config.target_metric]
+            pipeline = TrainPipeline(
+                mlflow_config=trial_mlflow_config,
+                training_config=TrainingConfig(**training_updates),
+                data_config=DataConfig(**data_updates),
+                model_config=ModelConfig(**model_updates)
+            )
+
+            metrics, figs = pipeline.train_eval()
+            target_value = metrics[self.autotune_config.target_metric]
+            logging.info(
+                f'Trial {trial.number} completed with {self.autotune_config.target_metric}: {target_value:.4f}')
+
+            return target_value
+
         except Exception as e:
             logging.error(f'Trial {trial.number} failed: {e}')
             return -np.inf if self.autotune_config.direction == 'maximize' else np.inf
+
+        finally:
+            # Ensure cleanup happens regardless of success or failure
+            if pipeline:
+                try:
+                    pipeline._cleanup_mlflow()
+                except:
+                    pass
+
+            # Additional cleanup to ensure no hanging runs
+            try:
+                if mlflow.active_run():
+                    active_run_id = mlflow.active_run().info.run_id
+                    if active_run_id != self.parent_run_id:  # Don't end parent run
+                        mlflow.end_run()
+                        logging.info(f"Cleaned up hanging run: {active_run_id}")
+            except Exception as cleanup_error:
+                logging.warning(f"Error during final cleanup: {cleanup_error}")
 
     def _suggest_value(self, trial: optuna.Trial, param: AutotuneParam):
         """Get parameter value from trial"""
