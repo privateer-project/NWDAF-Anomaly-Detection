@@ -98,6 +98,13 @@ class ModelAutoTuner:
             param.name: self._suggest_value(trial, param)
             for param in self.data_params
         }
+        # # Force single-threaded for autotuning to prevent file handle leaks
+        # data_updates.update({
+        #     'num_workers': 0,
+        #     'persistent_workers': False,
+        #     'prefetch_factor': None,
+        #     'pin_memory': False
+        # })
 
         logging.info(f'Trial {trial.number}')
         logging.info(pformat(training_updates))
@@ -118,9 +125,6 @@ class ModelAutoTuner:
 
             metrics, figs = pipeline.train_eval()
             target_value = metrics[self.autotune_config.target_metric]
-            logging.info(
-                f'Trial {trial.number} completed with {self.autotune_config.target_metric}: {target_value:.4f}')
-
             return target_value
 
         except Exception as e:
@@ -128,22 +132,24 @@ class ModelAutoTuner:
             return -np.inf if self.autotune_config.direction == 'maximize' else np.inf
 
         finally:
-            # Ensure cleanup happens regardless of success or failure
             if pipeline:
                 try:
+                    pipeline._cleanup_resources()
                     pipeline._cleanup_mlflow()
-                except:
-                    pass
+                    del pipeline
+                except Exception as cleanup_error:
+                    logging.warning(f"Error during pipeline cleanup: {cleanup_error}")
 
-            # Additional cleanup to ensure no hanging runs
+            import gc
+            gc.collect()
+
             try:
                 if mlflow.active_run():
                     active_run_id = mlflow.active_run().info.run_id
-                    if active_run_id != self.parent_run_id:  # Don't end parent run
+                    if active_run_id != self.parent_run_id:
                         mlflow.end_run()
-                        logging.info(f"Cleaned up hanging run: {active_run_id}")
-            except Exception as cleanup_error:
-                logging.warning(f"Error during final cleanup: {cleanup_error}")
+            except:
+                pass
 
     def _suggest_value(self, trial: optuna.Trial, param: AutotuneParam):
         """Get parameter value from trial"""
