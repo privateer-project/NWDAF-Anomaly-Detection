@@ -19,7 +19,7 @@ The configuration system supports environment variable overrides with the PRIVAT
 enabling flexible deployment across different environments while maintaining type safety
 and validation through Pydantic models.
 """
-
+from .metadata import MetadataConfig
 from .settings import (
     PathConfig,
     ModelConfig,
@@ -28,10 +28,11 @@ from .settings import (
     DataConfig,
     FederatedLearningConfig,
     PrivacyConfig,
-    MLFlowConfig,
+    MLFlowConfig
 )
 
 __all__ = [
+    'MetadataConfig',
     'PathConfig',
     'ModelConfig',
     'TrainingConfig',
