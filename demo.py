@@ -16,15 +16,17 @@ import torch
 
 from dash import dcc, html, Input, Output, State
 
+from privateer_ad.config.metadata import MetadataConfig
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import DataConfig, MLFlowConfig, MetadataConfig
+from privateer_ad.config import DataConfig, MLFlowConfig
 from privateer_ad.utils import load_champion_model
 
 
 class PrivateerAnomalyDetector:
-    """Anomaly detector"""
+    """Core anomaly detection engine using TransformerAD with differential privacy."""
 
     def __init__(self,model_name :str = 'TransformerAD_DP'):
+        """Initialize detector with specified model and privacy configurations."""
         self.model_name = model_name
 
         self.data_config = DataConfig()
@@ -57,10 +59,7 @@ class PrivateerAnomalyDetector:
 
     def detect_anomaly(self, input_batch):
         """
-        Detect anomaly for a single batch from the dataloader
-
-        Args:
-            input_batch:
+        Run anomaly detection on input batch.
 
         Returns:
             tuple: (is_anomaly, reconstruction_error, true_label)
@@ -85,15 +84,15 @@ class PrivateerAnomalyDetector:
             return False, 0.0, None
 
     def update_threshold(self, new_threshold):
-        """Update the anomaly threshold"""
+        """Update anomaly detection threshold for real-time adjustment."""
         self.threshold = new_threshold
         logging.info(f"🎯 Threshold updated to: {new_threshold:.6f}")
 
 
 class NetworkTrafficSimulator:
-    """Traffic simulator using DataProcessor dataloader"""
-
+    """Simulates network traffic using real dataset for demonstration purposes."""
     def __init__(self, detector):
+        """Initialize simulator with anomaly detector instance."""
         self.detector = detector
         self.data_queue = queue.Queue()
         self.running = False
@@ -102,13 +101,13 @@ class NetworkTrafficSimulator:
         self.dataloader_iterator = iter(self.detector.test_dl)
 
     def reset_iterator(self):
-        """Reset the dataloader iterator to start from beginning"""
+        """Reset dataloader to beginning for continuous simulation."""
         self.dataloader_iterator = iter(self.detector.test_dl)
         self.current_sample_index = 0
         logging.info("🔄 Dataloader iterator reset to beginning")
 
     def get_next_sample(self):
-        """Get the next sample from the dataloader"""
+        """Fetch next sample from dataset, cycling back when exhausted."""
         try:
             sample = next(self.dataloader_iterator)
             self.current_sample_index += 1
@@ -120,7 +119,7 @@ class NetworkTrafficSimulator:
             return self.get_next_sample()
 
     def start_simulation(self, interval=0.1):
-        """Start the data simulation"""
+        """Begin traffic simulation in separate thread with specified interval."""
         self.running = True
         self.thread = threading.Thread(target=self._simulation_loop, args=(interval,))
         self.thread.daemon = True
@@ -128,14 +127,14 @@ class NetworkTrafficSimulator:
         logging.info(f"▶️ Simulation started with {interval}s interval")
 
     def stop_simulation(self):
-        """Stop the data simulation"""
+        """Stop simulation and clean up thread resources."""
         self.running = False
         if self.thread:
             self.thread.join()
         logging.warning("⏸️ Simulation stopped")
 
     def _simulation_loop(self, interval):
-        """Main simulation loop"""
+        """Main simulation execution loop running in background thread."""
         while self.running:
             try:
                 # Get next sample from dataloader
@@ -193,7 +192,7 @@ class NetworkTrafficSimulator:
                 time.sleep(interval)
 
     def get_latest_data(self):
-        """Get all available data from queue"""
+        """Retrieve all pending simulation results from queue."""
         data = []
         while not self.data_queue.empty():
             try:
@@ -341,10 +340,12 @@ app.layout = dbc.Container([
     prevent_initial_call=True
 )
 def update_threshold(threshold):
+    """Callback to handle threshold slider changes in real-time."""
     detector.update_threshold(threshold)
     return dash.no_update
 
 def create_status_badge(text, color):
+    """Generate status indicator with current simulation state."""
     return dbc.Row([
         dbc.Col([
             dbc.Badge(f"Status: {text}", color=color, className="fs-6 me-2"),
@@ -364,6 +365,7 @@ def create_status_badge(text, color):
     [State('simulation-state', 'data')]
 )
 def control_simulation(start_clicks, stop_clicks, reset_clicks, state):
+    """Handle simulation control buttons and state management."""
     ctx = dash.callback_context
 
     if not ctx.triggered:
@@ -406,6 +408,7 @@ def control_simulation(start_clicks, stop_clicks, reset_clicks, state):
     [State('simulation-state', 'data')]
 )
 def update_graphs(n, state):
+    """Main callback for updating all dashboard visualizations."""
     if not state.get('running', False):
         return (create_empty_figure("Simulation Stopped"),
                 create_empty_figure("Simulation Stopped"),
@@ -455,12 +458,14 @@ def update_graphs(n, state):
     prevent_initial_call=True
 )
 def update_sample_counter(n, state):
+    """Update sample counter display during active simulation."""
     if state.get('running', False):
         return create_status_badge("Running", "success")
     return dash.no_update
 
 
 def create_empty_figure(title):
+    """Generate placeholder figure when no data is available."""
     fig = go.Figure()
     fig.add_annotation(
         text=title,
@@ -477,6 +482,7 @@ def create_empty_figure(title):
 
 
 def create_feature_figure():
+    """Build real-time network feature visualization with anomaly highlights."""
     if not realtime_data['timestamp']:
         return create_empty_figure("No Data Available")
 
@@ -528,8 +534,8 @@ def create_feature_figure():
 
     return fig
 
-
 def create_anomaly_figure():
+    """Create reconstruction error plot with threshold and ground truth markers."""
     if not realtime_data['timestamp']:
         return create_empty_figure("No Data Available")
 
@@ -582,6 +588,7 @@ def create_anomaly_figure():
 
 
 def create_statistics():
+    """Calculate and display detection performance metrics."""
     if not realtime_data['timestamp']:
         return html.P("No data available")
 
@@ -642,6 +649,7 @@ def create_statistics():
 
 
 def create_device_list():
+    """Show anonymized device list with anomaly rates."""
     if not realtime_data['anonymized_device_id']:
         return html.P("No devices detected yet", className="text-muted")
 

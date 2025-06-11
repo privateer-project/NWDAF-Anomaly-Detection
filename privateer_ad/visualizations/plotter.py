@@ -7,12 +7,32 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 
 
 class Visualizer:
+    """
+    Comprehensive visualization toolkit for anomaly detection model evaluation.
+
+    Generates plots including confusion matrices, ROC curves,
+    and score distribution visualizations. Configured with clean styling for
+    professional presentation and analysis of model performance characteristics.
+
+    Attributes:
+        figures (dict): Collection of generated matplotlib figures for export
+    """
+
     def __init__(self):
+        """Initialize visualizer with clean seaborn styling configuration."""
         sns.set_theme('paper', 'white')
         self.figures = {}
 
     def plot_training_history(self, history):
-        """Plot training and validation metrics"""
+        """
+        Generate training progression plots from model history.
+
+        Creates individual plots for each metric tracked during training,
+        displaying both training and validation curves when available.
+
+        Args:
+            history: Training history object containing metric evolution
+        """
         for metric in history.history:
             if not metric.startswith('val_'):
                 fig, ax = plt.subplots(figsize=(10, 6))
@@ -26,7 +46,20 @@ class Visualizer:
                 self.figures[f'{metric}_history'] = fig
 
     def visualize(self, y_true, y_pred, scores=None, threshold=None, target_names=None, prefix=''):
-        """Generate visualizations figures"""
+        """
+        Generate comprehensive evaluation visualizations for model assessment.
+
+        Creates standard evaluation plots including confusion matrix and ROC curve,
+        with optional score distribution analysis.
+
+        Args:
+            y_true (array): True binary labels
+            y_pred (array): Predicted binary labels
+            scores (array, optional): Continuous anomaly scores for distribution analysis
+            threshold (float, optional): Decision threshold for score visualization
+            target_names (list, optional): Class names for plot labeling
+            prefix (str, optional): Prefix for figure naming in collection
+        """
         # Create confusion matrix visualizations
         self.figures[f'{prefix}_confusion_matrix'] = self.create_confusion_matrix(y_true, y_pred, target_names)
         self.figures[f'{prefix}_roc_curve'] = self.create_roc_curve(y_true, y_pred, scores, target_names)
@@ -36,12 +69,20 @@ class Visualizer:
 
     @staticmethod
     def create_roc_curve(y_true, y_pred, scores, class_names):
-        """Create ROC curves for multiclass classification using One-vs-Rest approach.
+        """
+        Generate ROC curve visualization for binary or multiclass classification.
+
+        Creates ROC analysis with AUC computation, supporting both score-based
+        evaluation and one-vs-rest multiclass scenarios.
 
         Args:
-            y_true: True labels (integer class indices)
-            y_pred: Predicted probabilities for each class
-            class_names: List of class names
+            y_true (array): True class labels
+            y_pred (array): Predicted labels or probabilities
+            scores (array): Continuous prediction scores for ROC computation
+            class_names (list): Class names for legend labeling
+
+        Returns:
+            matplotlib.figure.Figure: ROC curve visualization
         """
         fig, ax = plt.subplots(figsize=(10, 8))
         if scores is not None:
@@ -83,8 +124,20 @@ class Visualizer:
 
     @staticmethod
     def create_confusion_matrix(y_true, y_pred, class_names):
-        """Create basic confusion matrix visualizations using seaborn"""
+        """
+        Generate normalized confusion matrix heatmap visualization.
 
+        Creates confusion matrix with row normalization
+        for percentage-based interpretation of classification performance.
+
+        Args:
+            y_true (array): True class labels
+            y_pred (array): Predicted class labels
+            class_names (list): Class names for axis labeling
+
+        Returns:
+            matplotlib.figure.Figure: Confusion matrix heatmap
+        """
         # Compute confusion matrix
         cm = confusion_matrix(y_true, y_pred)
 
@@ -110,13 +163,22 @@ class Visualizer:
         plt.tight_layout()
 
         return plt.gcf()  # Return current figure
+
     def create_distribution_plot(self, scores, y_true, threshold):
-        """Create an enhanced distribution plot comparing benign and malicious scores.
+        """
+        Generate enhanced score distribution visualization with threshold analysis.
+
+        Creates overlaid histograms showing score distributions for benign and
+        malicious samples, with threshold line and decision regions highlighted
+        for intuitive understanding of classification behavior.
 
         Args:
-            scores: Array of anomaly scores
-            y_true: Array of true labels (0 for benign, 1 for malicious)
-            threshold: Detection threshold value
+            scores (array): Continuous anomaly scores from model
+            y_true (array): True binary labels (0=benign, 1=malicious)
+            threshold (float): Decision threshold for anomaly classification
+
+        Returns:
+            matplotlib.figure.Figure: Score distribution visualization with threshold
         """
         # Create figure with appropriate size and DPI for clarity
         fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
@@ -141,7 +203,7 @@ class Visualizer:
             stat='density',  # Use density to normalize distributions
             common_norm=False,  # Normalize each distribution separately
             kde=True,  # Explicitly disable KDE overlay
-            kde_kws= {'bw_adjust': 1.6}
+            kde_kws={'bw_adjust': 1.6}
         )
 
         # Add threshold line with annotation
@@ -190,6 +252,6 @@ class Visualizer:
         return fig
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Cleanup figures"""
+        """Clean up matplotlib figures to prevent memory leaks."""
         for fig in self.figures.values():
             plt.close(fig)

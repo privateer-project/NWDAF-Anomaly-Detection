@@ -19,12 +19,28 @@ app = ServerApp()
 @app.main()
 def main(grid: Grid, context: Context) -> None:
     """
-    Main server application.
+    Orchestrate privacy-preserving federated learning for anomaly detection.
 
+    This function serves as the central coordinator for secure federated learning
+    sessions, managing the complete lifecycle from initialization through final
+    model evaluation and artifact preservation. The implementation prioritizes
+    privacy through secure aggregation protocols while maintaining comprehensive
+    experiment tracking and reproducibility
     Args:
-        grid: Flower Grid instance
-        context: Flower context containing run configuration
-    """
+        grid (Grid): Flower Grid instance providing the infrastructure for
+                    distributed computation and client coordination. This
+                    component manages the underlying communication and
+                    resource allocation for federated learning execution.
+        context (Context): Flower context containing run configuration parameters,
+                          client specifications, and other execution settings
+                          that control the federated learning session behavior.
+
+    Note:
+        The function performs comprehensive cleanup and final evaluation regardless
+        of whether the federated learning process completes successfully or
+        encounters errors. This ensures that partial results are preserved and
+        experiment tracking remains consistent even in failure scenarios.
+        """
     mlflow_config = MLFlowConfig()
     _, server_run_id = setup_mlflow(experiment_name=mlflow_config.experiment_name,
                                     tracking_uri=mlflow_config.tracking_uri)
@@ -98,7 +114,31 @@ def main(grid: Grid, context: Context) -> None:
 
 
 def setup_mlflow(experiment_name, tracking_uri):
-    """Setup MLFlow tracking if enabled."""
+    """
+    Initialize MLflow experiment tracking for federated learning coordination.
+    Args:
+    experiment_name (str): Name of the MLflow experiment for organizing
+                         federated learning runs. This name should be
+                         descriptive enough to distinguish between different
+                         experimental configurations and objectives.
+    tracking_uri (str): URI of the MLflow tracking server where experiment
+                      data will be stored. This can be a local file path
+                      or a remote server address depending on the deployment
+                      configuration.
+
+    Returns:
+        tuple: A two-element tuple containing:
+            - Run name assigned by MLflow for human-readable identification
+            - Run ID for programmatic reference and hierarchical organization
+
+            Both values are None if MLflow setup fails, allowing calling code
+            to handle tracking unavailability appropriately.
+
+    Note:
+        The function automatically handles cleanup of any existing active runs
+        to prevent experiment tracking conflicts. This ensures clean experiment
+        organization even when previous sessions terminated unexpectedly.
+    """
     try:
         mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)

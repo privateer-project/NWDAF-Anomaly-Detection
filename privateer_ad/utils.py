@@ -8,14 +8,21 @@ from privateer_ad.config import TrainingConfig
 
 def load_model_weights(model_path: str, paths_config) -> dict:
     """
-    Load model weights from various path formats.
+    Load PyTorch model weights with flexible path resolution and format handling.
+
+    Attempts to locate and load model weights from various common path patterns,
+    handling different state dictionary formats and cleaning distributed training
+    artifacts for compatibility with single-device loading.
 
     Args:
-        model_path: Path to model file or experiment directory
-        paths_config: Paths configuration
+        model_path (str): Model file path or experiment identifier
+        paths_config: Path configuration object with directory specifications
 
     Returns:
-        Model state dictionary
+        dict: Cleaned model state dictionary ready for loading
+
+    Raises:
+        FileNotFoundError: When model file cannot be located in any expected location
     """
     model_path = Path(model_path)
 
@@ -57,7 +64,27 @@ def load_model_weights(model_path: str, paths_config) -> dict:
 
 
 def log_model(model, model_name, sample, direction, target_metric, current_metrics, experiment_id, pip_requirements):
-    """Log trained model to MLFlow with proper signature and champion tagging."""
+    """
+    Log trained model to MLflow with champion tracking and version management.
+
+    Registers the model in MLflow with champion tagging based on
+    performance comparison with previous versions. Manages version lifecycle
+    and metadata tagging for model selection and deployment decisions.
+
+    Args:
+        model: Trained PyTorch model to register
+        model_name (str): Registry name for the model
+        sample: Representative input sample for signature inference
+        direction (str): Optimization direction ('maximize' or 'minimize')
+        target_metric (str): Primary metric for champion selection
+        current_metrics (dict): Performance metrics from current training
+        experiment_id (str): MLflow experiment identifier
+        pip_requirements (str): Path to requirements file for reproducibility
+
+    Note:
+        Automatically manages champion tag transfer between model versions
+        based on performance improvement detection.
+    """
     model.to('cpu')
     signature = get_signature(model=model, sample=sample)
     client = mlflow.tracking.MlflowClient()
@@ -73,7 +100,9 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
 
     try:
         # Find the best run across all experiments
-        best_run = client.search_runs(experiment_id, order_by=[f'metrics.`{target_metric}` {sorting}'], max_results=1)[0]
+        best_run = client.search_runs([experiment_id],
+                                      order_by=[f'metrics.`{target_metric}` {sorting}'],
+                                      max_results=1)[0]
 
         if target_metric in best_run.data.metrics:
             best_target_metric = best_run.data.metrics[target_metric]
@@ -145,6 +174,7 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
 
 
 def get_signature(model, sample):
+    """Generate MLflow model signature from sample input and model output."""
     _output = model(sample)
 
     if isinstance(_output, dict):
@@ -157,9 +187,21 @@ def get_signature(model, sample):
 
 def load_champion_model(tracking_uri, model_name: str = "TransformerAD"):
     """
-    Load champion model with associated threshold and loss function.
+    Load the best-performing model version with associated metadata.
+
+    Retrieves the champion model from MLflow registry along with its optimal
+    threshold and loss function configuration. Falls back to latest version
+    if no champion is tagged.
+
+    Args:
+        tracking_uri (str): MLflow tracking server address
+        model_name (str): Registered model name to load
+
     Returns:
-        tuple: (model, threshold, loss_fn)
+        tuple: (model, threshold, loss_fn) for complete inference setup
+
+    Raises:
+        Exception: When model loading or metadata extraction fails
     """
     mlflow.set_tracking_uri(tracking_uri)
     client = mlflow.tracking.MlflowClient()
