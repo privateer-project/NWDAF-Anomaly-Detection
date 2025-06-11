@@ -1,0 +1,528 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.config.settings &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../privateer_ad.html">privateer_ad package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">privateer_ad.config.settings</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for privateer_ad.config.settings</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Configuration management system for PRIVATEER anomaly detection framework.</span>
+
+<span class="sd">This module provides comprehensive configuration management through Pydantic</span>
+<span class="sd">BaseSettings classes, enabling type-safe parameter validation, environment</span>
+<span class="sd">variable integration, and consistent configuration across distributed training</span>
+<span class="sd">scenarios. The implementation supports all major framework components including</span>
+<span class="sd">data processing, model architecture, training procedures, privacy mechanisms,</span>
+<span class="sd">and federated learning orchestration.</span>
+
+<span class="sd">The configuration system maintains flexibility for research experimentation and</span>
+<span class="sd">production deployment scenarios. All configuration classes support environment</span>
+<span class="sd">variable overrides and validation to ensure parameter consistency across</span>
+<span class="sd">different execution environments.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">resources</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">ClassVar</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">model_validator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic_settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSettings</span>
+
+<span class="n">package_path</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s1">&#39;privateer_ad&#39;</span><span class="p">)</span>
+<span class="c1"># Get the src package location</span>
+<span class="k">with</span> <span class="n">resources</span><span class="o">.</span><span class="n">as_file</span><span class="p">(</span><span class="n">package_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">pkg_path</span><span class="p">:</span>
+    <span class="n">root_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">pkg_path</span><span class="o">.</span><span class="n">parent</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># CONFIGURATION CLASSES</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="PathConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.PathConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PathConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    File system path configuration with package-based root resolution.</span>
+
+<span class="sd">    This configuration class manages all file and directory paths within the</span>
+<span class="sd">    PRIVATEER framework using package-based root directory resolution to ensure</span>
+<span class="sd">    consistent path handling across different deployment environments.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        root_dir (Path): Package root directory automatically resolved from</span>
+<span class="sd">                        installation location</span>
+<span class="sd">        data_url (str): Remote data source URL for dataset download operations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Package root directory&quot;</span><span class="p">)</span>
+    <span class="n">data_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;https://zenodo.org/api/records/13900057/files-archive&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Data URL&quot;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_PATH_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">data_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Primary data directory for all dataset storage and processing.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">models_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trained model storage directory for model persistence.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;models&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">experiments_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Experiment results directory for training artifacts and logs.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;experiments&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scalers_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Feature scaling parameters directory for preprocessing consistency.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;scalers&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analysis_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Analysis results directory for evaluation metrics and visualizations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;analysis_results&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">requirements_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Python dependencies specification file for reproducible environments.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;requirements.txt&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Raw dataset storage directory for unprocessed network traffic data.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;raw&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">processed_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Processed dataset directory for cleaned and prepared training data.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;processed&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zip_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Temporary zip file location for dataset download operations.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;nwdaf-data.zip&#39;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Primary raw dataset file containing network traffic with attack labels.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s1">&#39;amari_ue_data_merged_with_attack_number.csv&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DataConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.DataConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Data processing and loading configuration for privacy-preserving analytics.</span>
+
+<span class="sd">    This configuration class controls all aspects of data preparation including</span>
+<span class="sd">    dataset splitting, batch processing, sequence length specification, and</span>
+<span class="sd">    federated learning partitioning. The implementation supports both centralized</span>
+<span class="sd">    and distributed training scenarios while maintaining privacy-preserving</span>
+<span class="sd">    data handling throughout the processing pipeline.</span>
+
+<span class="sd">    The configuration enables pathological data partitioning for realistic</span>
+<span class="sd">    federated learning scenarios where data distribution across participants</span>
+<span class="sd">    reflects real-world heterogeneity. Performance optimization parameters</span>
+<span class="sd">    balance throughput with memory usage across different hardware configurations.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        train_size (float): Training set proportion for dataset splitting</span>
+<span class="sd">        val_size (float): Validation set proportion for dataset splitting</span>
+<span class="sd">        partition_id (int): Client partition identifier for federated learning</span>
+<span class="sd">        partition_by (str): Feature column for pathological partitioning</span>
+<span class="sd">        num_partitions (int): Total partition count for federated scenarios</span>
+<span class="sd">        num_classes_per_partition (int): Class limit per partition for non-IID data</span>
+<span class="sd">        batch_size (int): Training batch size for model optimization</span>
+<span class="sd">        seq_len (int): Temporal sequence length for time series modeling</span>
+<span class="sd">        num_workers (int): DataLoader worker processes for parallel loading</span>
+<span class="sd">        prefetch_factor (int): Batch prefetching count for performance optimization</span>
+<span class="sd">        persistent_workers (bool): Worker process persistence across epochs</span>
+<span class="sd">        pin_memory (bool): GPU memory pinning for accelerated transfer</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">train_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Training set size as a fraction of the dataset. &#39;</span>
+                                                                       <span class="s1">&#39;Example: &quot;0.8&quot; for 80</span><span class="si">% o</span><span class="s1">f the dataset. Default: &quot;0.8&quot; Test size is calculated as 1 - train_size - val_size&#39;</span><span class="p">)</span>
+    <span class="n">val_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Validation set size as a fraction of the dataset. &#39;</span>
+                                                                     <span class="s1">&#39;Example: &quot;0.1&quot; for 10</span><span class="si">% o</span><span class="s1">f the dataset. Default: &quot;0.1&quot;. Test size is calculated as 1 - train_size - val_size&#39;</span><span class="p">)</span>
+    <span class="n">partition_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Partition ID for data partitioning. Default: &quot;-1&quot;&#39;</span><span class="p">)</span>
+    <span class="n">partition_by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;cell&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Column to partition data by. Default: &#39;cell&#39;&quot;</span><span class="p">)</span>
+    <span class="n">num_partitions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of partitions to split the data into. Default: 1&quot;</span><span class="p">)</span>
+    <span class="n">num_classes_per_partition</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of classes per partition. Default: 1&quot;</span><span class="p">)</span>
+
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">4096</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">seq_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">prefetch_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">persistent_workers</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">pin_memory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DataConfig.validate_splits_sum_to_one">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.DataConfig.validate_splits_sum_to_one">[docs]</a>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_splits_sum_to_one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate dataset split proportions sum to valid range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_size</span>
+        <span class="k">if</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">total</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Train and val sizes must be between 0 and 1. Total: </span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_DATA_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="ModelConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.ModelConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModelConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Transformer architecture configuration for anomaly detection models.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        model_name (str): Model identifier for experiment tracking and persistence</span>
+<span class="sd">        input_size (int): Input feature dimension determined by dataset characteristics</span>
+<span class="sd">        num_layers (int): Transformer encoder layer count for representational depth</span>
+<span class="sd">        embed_dim (int): Model embedding dimension for attention mechanisms</span>
+<span class="sd">        latent_dim (int): Compressed representation dimension for reconstruction</span>
+<span class="sd">        num_heads (int): Multi-head attention head count for parallel processing</span>
+<span class="sd">        dropout (float): Dropout probability for regularization during training</span>
+<span class="sd">        seq_len (int): Input sequence length for temporal modeling</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;TransformerAD&#39;</span><span class="p">)</span>
+    <span class="n">input_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">embed_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">latent_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">seq_len</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_MODEL_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="TrainingConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.TrainingConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TrainingConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Training process configuration for optimization and convergence control.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        learning_rate (float): Optimizer learning rate for gradient descent</span>
+<span class="sd">        epochs (int): Maximum training epochs before termination</span>
+<span class="sd">        loss_fn_name (str): PyTorch loss function name for reconstruction training</span>
+<span class="sd">        es_enabled (bool): Early stopping activation for convergence control</span>
+<span class="sd">        es_patience (int): Early stopping patience epochs before termination</span>
+<span class="sd">        es_warmup (int): Early stopping warmup epochs before monitoring</span>
+<span class="sd">        target_metric (str): Primary evaluation metric for model selection</span>
+<span class="sd">        direction (Literal): Optimization direction for target metric</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Optimization parameters</span>
+    <span class="n">learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">loss_fn_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;L1Loss&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Early stopping</span>
+    <span class="n">es_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">es_patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">es_warmup</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Evaluation parameters</span>
+    <span class="n">target_metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;val_unbalanced_f1-score&#39;</span><span class="p">)</span>
+    <span class="n">direction</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;minimize&#39;</span><span class="p">,</span> <span class="s1">&#39;maximize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;maximize&#39;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_TRAIN_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="AutotuningConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.AutotuningConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AutotuningConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hyperparameter optimization configuration using Optuna framework.</span>
+
+<span class="sd">    This configuration class controls automated hyperparameter search through</span>
+<span class="sd">    Optuna optimization framework, enabling systematic exploration of model</span>
+<span class="sd">    and training parameter spaces. The implementation supports various sampling</span>
+<span class="sd">    strategies, pruning mechanisms, and storage backends for scalable</span>
+<span class="sd">    hyperparameter optimization across distributed computing environments.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        study_name (str): Optuna study identifier for experiment organization</span>
+<span class="sd">        n_trials (int): Total optimization trials for parameter exploration</span>
+<span class="sd">        timeout (Optional[int]): Maximum optimization time in seconds</span>
+<span class="sd">        target_metric (str): Optimization objective for parameter selection</span>
+<span class="sd">        direction (Literal): Optimization direction for objective function</span>
+<span class="sd">        storage_url (str): Database storage URL for trial persistence</span>
+<span class="sd">        enable_pruning (bool): Trial pruning activation for efficiency</span>
+<span class="sd">        pruning_warmup_steps (int): Warmup steps before pruning evaluation</span>
+<span class="sd">        sampler_type (Literal): Sampling strategy for parameter space exploration</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">study_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;privateer-autotune&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Name for the Optuna study&quot;</span><span class="p">)</span>
+    <span class="n">n_trials</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Number of optimization trials&quot;</span><span class="p">)</span>
+    <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Timeout in seconds for optimization&quot;</span><span class="p">)</span>
+    <span class="n">target_metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;val_unbalanced_f1-score&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Metric to optimize&quot;</span><span class="p">)</span>
+    <span class="n">direction</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;minimize&quot;</span><span class="p">,</span> <span class="s2">&quot;maximize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optimization direction&quot;</span><span class="p">)</span>
+
+    <span class="n">storage_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;sqlite:///optuna_study.db&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Optuna storage URL&quot;</span><span class="p">)</span>
+
+    <span class="n">enable_pruning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Enable trial pruning&quot;</span><span class="p">)</span>
+    <span class="n">pruning_warmup_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Steps before pruning can start&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Sampler configuration</span>
+    <span class="n">sampler_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tpe&quot;</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;cmaes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;tpe&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Type of sampler to use&quot;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_AUTOTUNE_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="FederatedLearningConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.FederatedLearningConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FederatedLearningConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Federated learning orchestration configuration with privacy guarantees.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        server_address (str): Federated learning server binding address</span>
+<span class="sd">        num_rounds (int): Total federated learning rounds for convergence</span>
+<span class="sd">        n_clients (int): Active client count for each training round</span>
+<span class="sd">        fraction_fit (float): Client participation fraction for training</span>
+<span class="sd">        fraction_evaluate (float): Client participation fraction for evaluation</span>
+<span class="sd">        secure_aggregation_enabled (bool): Secure aggregation protocol activation</span>
+<span class="sd">        num_shares (int): Secret sharing parameter count for secure aggregation</span>
+<span class="sd">        reconstruction_threshold (int): Minimum shares for reconstruction</span>
+<span class="sd">        secagg_timeout (int): Secure aggregation timeout in seconds</span>
+<span class="sd">        secagg_max_weight (int): Maximum model weight for secure aggregation</span>
+<span class="sd">        epochs_per_round (int): Local training epochs per federated round</span>
+<span class="sd">        partition_data (bool): Data partitioning activation for federated scenarios</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">server_address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;[::]:8081&quot;</span><span class="p">)</span>
+    <span class="n">num_rounds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">n_clients</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">fraction_fit</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">fraction_evaluate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">secure_aggregation_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">num_shares</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">reconstruction_threshold</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">secagg_timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">secagg_max_weight</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">200000</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">epochs_per_round</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">partition_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_FL_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="PrivacyConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.PrivacyConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrivacyConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Privacy protection configuration for differential privacy and anonymization.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        dp_enabled (bool): Differential privacy mechanism activation</span>
+<span class="sd">        target_epsilon (float): Privacy budget parameter for DP guarantees</span>
+<span class="sd">        target_delta (float): Failure probability parameter for DP guarantees</span>
+<span class="sd">        max_grad_norm (float): Gradient clipping threshold for sensitivity control</span>
+<span class="sd">        secure_mode (bool): Enhanced security mode for production deployments</span>
+<span class="sd">        anonymization_enabled (bool): Data anonymization protocol activation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dp_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">target_epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">target_delta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">max_grad_norm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mf">.5</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">secure_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">anonymization_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_DP_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="MLFlowConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.settings.html#privateer_ad.config.MLFlowConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MLFlowConfig</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Experiment tracking configuration for MLFlow integration.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        enabled (bool): MLFlow tracking activation for experiment management</span>
+<span class="sd">        tracking_uri (str): MLFlow server address for experiment storage</span>
+<span class="sd">        experiment_name (str): Experiment identifier for organization</span>
+<span class="sd">        parent_run_id (Optional[str]): Parent run identifier for nested experiments</span>
+<span class="sd">        child_run_id (Optional[str]): Child run identifier for federated clients</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Enable MLFlow tracking&quot;</span><span class="p">)</span>
+    <span class="n">tracking_uri</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;http://localhost:5001&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;MLFlow server address&quot;</span><span class="p">)</span>
+    <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;privateer-ad&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;MLFlow experiment name&quot;</span><span class="p">)</span>
+    <span class="n">parent_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Parent run id&quot;</span><span class="p">)</span>
+    <span class="n">child_run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Client run id&quot;</span><span class="p">)</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;env_prefix&#39;</span><span class="p">:</span> <span class="s1">&#39;PRIVATEER_MLFLOW_&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;env_file&#39;</span><span class="p">:</span> <span class="s1">&#39;.env&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;ignore&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

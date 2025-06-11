@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.architectures.transformer_ad module &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.config package" href="privateer_ad.config.html" />
+    <link rel="prev" title="privateer_ad.architectures.layers.positional_encoding module" href="privateer_ad.architectures.layers.positional_encoding.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="privateer_ad.html">privateer_ad package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.html">privateer_ad package</a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.architectures.html">privateer_ad.architectures package</a></li>
+      <li class="breadcrumb-item active">privateer_ad.architectures.transformer_ad module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.architectures.transformer_ad.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad.architectures.transformer_ad">
+<span id="privateer-ad-architectures-transformer-ad-module"></span><h1>privateer_ad.architectures.transformer_ad module<a class="headerlink" href="#module-privateer_ad.architectures.transformer_ad" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.architectures.transformer_ad.</span></span><span class="sig-name descname"><span class="pre">TransformerAD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.ModelConfig" title="privateer_ad.config.settings.ModelConfig"><span class="pre">ModelConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/architectures/transformer_ad.html#TransformerAD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>Transformer-based reconstruction model for privacy-preserving anomaly detection.</p>
+<p>This implementation leverages transformer attention mechanisms to learn temporal
+patterns in sequential network data and reconstruct input sequences. The architecture
+incorporates differential privacy through specialized attention layers while maintaining
+the temporal modeling capabilities essential for network traffic analysis.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration parameters controlling model architecture</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig" title="privateer_ad.config.ModelConfig">ModelConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.embed">
+<span class="sig-name descname"><span class="pre">embed</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.embed" title="Link to this definition"></a></dt>
+<dd><p>Input feature embedding layer transforming raw features
+to model embedding dimension</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Linear</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.pos_enc">
+<span class="sig-name descname"><span class="pre">pos_enc</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.pos_enc" title="Link to this definition"></a></dt>
+<dd><p>Sinusoidal positional encoding for temporal
+sequence understanding</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.architectures.layers.html#privateer_ad.architectures.layers.PositionalEncoding" title="privateer_ad.architectures.layers.PositionalEncoding">PositionalEncoding</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.transformer_encoder">
+<span class="sig-name descname"><span class="pre">transformer_encoder</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.transformer_encoder" title="Link to this definition"></a></dt>
+<dd><p>Multi-layer transformer encoder
+with privacy-preserving attention</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.TransformerEncoder</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.compress">
+<span class="sig-name descname"><span class="pre">compress</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.compress" title="Link to this definition"></a></dt>
+<dd><p>Compression pathway reducing encoded representations
+to latent space dimensions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Sequential</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.output">
+<span class="sig-name descname"><span class="pre">output</span></span><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.output" title="Link to this definition"></a></dt>
+<dd><p>Reconstruction layer projecting latent representations
+back to original feature space</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Linear</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.ModelConfig" title="privateer_ad.config.settings.ModelConfig"><span class="pre">ModelConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/architectures/transformer_ad.html#TransformerAD.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the transformer-based anomaly detection architecture.</p>
+<p>The transformer encoder receives specialized differential privacy
+attention layers that replace standard multi-head attention to ensure
+privacy guarantees during federated training scenarios. Layer normalization
+and feed-forward dimensions are configured to balance representational
+capacity with computational efficiency requirements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_config</strong> (<a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig" title="privateer_ad.config.ModelConfig"><em>ModelConfig</em></a><em>, </em><em>optional</em>) – Architecture configuration specifying embedding dimensions, attention
+heads, layer counts, and privacy parameters.
+If None, uses default configuration with standard transformer settings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.architectures.transformer_ad.TransformerAD.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/architectures/transformer_ad.html#TransformerAD.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.architectures.transformer_ad.TransformerAD.forward" title="Link to this definition"></a></dt>
+<dd><p>Execute forward pass for sequence reconstruction and anomaly detection.</p>
+<p>Processes input network traffic sequences through the transformer-based
+reconstruction pipeline, producing reconstructed outputs for anomaly scoring.
+The forward pass maintains temporal relationships through positional
+encoding while leveraging attention mechanisms to capture complex
+feature interactions within the sequence.</p>
+<p>The reconstruction quality serves as the primary anomaly indicator, where
+high reconstruction errors suggest anomalous behavior patterns that
+deviate from learned benign traffic characteristics. The privacy-preserving
+attention mechanisms ensure that individual sequence contributions remain
+protected throughout the processing pipeline.</p>
+<p>Processing stages include:
+1. Feature embedding to model dimension space
+2. Positional encoding addition for temporal awareness
+3. Multi-layer transformer encoding with privacy-preserving attention
+4. Latent space compression through ReLU activation
+5. Linear reconstruction to original feature space</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Input sequences of shape [batch_size, seq_length, input_size]
+representing network traffic feature vectors over time.
+Each sequence contains temporal measurements of network
+metrics such as throughput, latency, and connection patterns.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Reconstructed sequences of identical shape to input</dt><dd><p>[batch_size, seq_length, input_size]. Reconstruction
+quality indicates anomaly likelihood, with higher
+reconstruction errors suggesting anomalous patterns.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The model operates in reconstruction mode where input and output dimensions
+match, enabling direct reconstruction error computation for anomaly
+scoring. During training, reconstruction loss drives the learning of
+normal traffic pattern representations.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="privateer_ad.architectures.layers.positional_encoding.html" class="btn btn-neutral float-left" title="privateer_ad.architectures.layers.positional_encoding module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.config.html" class="btn btn-neutral float-right" title="privateer_ad.config package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

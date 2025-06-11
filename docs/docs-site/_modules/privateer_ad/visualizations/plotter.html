@@ -1,0 +1,428 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.visualizations.plotter &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../privateer_ad.html">privateer_ad package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">privateer_ad.visualizations.plotter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for privateer_ad.visualizations.plotter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">confusion_matrix</span><span class="p">,</span> <span class="n">roc_curve</span><span class="p">,</span> <span class="n">auc</span>
+
+
+<div class="viewcode-block" id="Visualizer">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Visualizer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Comprehensive visualization toolkit for anomaly detection model evaluation.</span>
+
+<span class="sd">    Generates plots including confusion matrices, ROC curves,</span>
+<span class="sd">    and score distribution visualizations. Configured with clean styling for</span>
+<span class="sd">    professional presentation and analysis of model performance characteristics.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        figures (dict): Collection of generated matplotlib figures for export</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Visualizer.__init__">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize visualizer with clean seaborn styling configuration.&quot;&quot;&quot;</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="s1">&#39;paper&#39;</span><span class="p">,</span> <span class="s1">&#39;white&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">figures</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="Visualizer.plot_training_history">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.plot_training_history">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_training_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">history</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate training progression plots from model history.</span>
+
+<span class="sd">        Creates individual plots for each metric tracked during training,</span>
+<span class="sd">        displaying both training and validation curves when available.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            history: Training history object containing metric evolution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">metric</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;val_&#39;</span><span class="p">):</span>
+                <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="n">metric</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Train&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="sa">f</span><span class="s1">&#39;val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Validation&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Epoch&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">figures</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">_history&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="Visualizer.visualize">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.visualize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">visualize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">scores</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">target_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate comprehensive evaluation visualizations for model assessment.</span>
+
+<span class="sd">        Creates standard evaluation plots including confusion matrix and ROC curve,</span>
+<span class="sd">        with optional score distribution analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            y_true (array): True binary labels</span>
+<span class="sd">            y_pred (array): Predicted binary labels</span>
+<span class="sd">            scores (array, optional): Continuous anomaly scores for distribution analysis</span>
+<span class="sd">            threshold (float, optional): Decision threshold for score visualization</span>
+<span class="sd">            target_names (list, optional): Class names for plot labeling</span>
+<span class="sd">            prefix (str, optional): Prefix for figure naming in collection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create confusion matrix visualizations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">figures</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">_confusion_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_confusion_matrix</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">target_names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">figures</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">_roc_curve&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_roc_curve</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">target_names</span><span class="p">)</span>
+        <span class="c1"># Create distribution plot if we have scores and threshold</span>
+        <span class="k">if</span> <span class="n">scores</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">figures</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">_distribution&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_distribution_plot</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Visualizer.create_roc_curve">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.create_roc_curve">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_roc_curve</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">class_names</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate ROC curve visualization for binary or multiclass classification.</span>
+
+<span class="sd">        Creates ROC analysis with AUC computation, supporting both score-based</span>
+<span class="sd">        evaluation and one-vs-rest multiclass scenarios.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            y_true (array): True class labels</span>
+<span class="sd">            y_pred (array): Predicted labels or probabilities</span>
+<span class="sd">            scores (array): Continuous prediction scores for ROC computation</span>
+<span class="sd">            class_names (list): Class names for legend labeling</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            matplotlib.figure.Figure: ROC curve visualization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">scores</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Calculate ROC curve</span>
+            <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">scores</span><span class="p">)</span>
+            <span class="n">roc_auc</span> <span class="o">=</span> <span class="n">auc</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Anomaly Detector (AUC = </span><span class="si">{</span><span class="n">roc_auc</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROC Curve&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Convert predictions to one-hot if they aren&#39;t already</span>
+            <span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">class_names</span><span class="p">))[</span><span class="n">y_pred</span><span class="p">]</span>
+            <span class="c1"># Plot ROC curve for each class</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">class_names</span><span class="p">):</span>
+                <span class="c1"># Create binary labels for current class (one-vs-rest)</span>
+                <span class="n">y_true_binary</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_true</span> <span class="o">==</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">y_pred_binary</span> <span class="o">=</span> <span class="n">y_pred</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">y_pred_binary</span> <span class="o">=</span> <span class="n">y_pred</span>
+
+                <span class="c1"># Calculate ROC curve</span>
+                <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">roc_curve</span><span class="p">(</span><span class="n">y_true_binary</span><span class="p">,</span> <span class="n">y_pred_binary</span><span class="p">)</span>
+                <span class="n">roc_auc</span> <span class="o">=</span> <span class="n">auc</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">)</span>
+
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s1"> (AUC = </span><span class="si">{</span><span class="n">roc_auc</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROC Curves (One-vs-Rest)&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;k--&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;False Positive Rate&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;True Positive Rate&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="Visualizer.create_confusion_matrix">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.create_confusion_matrix">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_confusion_matrix</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">class_names</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate normalized confusion matrix heatmap visualization.</span>
+
+<span class="sd">        Creates confusion matrix with row normalization</span>
+<span class="sd">        for percentage-based interpretation of classification performance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            y_true (array): True class labels</span>
+<span class="sd">            y_pred (array): Predicted class labels</span>
+<span class="sd">            class_names (list): Class names for axis labeling</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            matplotlib.figure.Figure: Confusion matrix heatmap</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Compute confusion matrix</span>
+        <span class="n">cm</span> <span class="o">=</span> <span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y_true</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)</span>
+
+        <span class="c1"># Normalize by true labels (rows) - equivalent to normalize=&#39;true&#39;</span>
+        <span class="n">cm_normalized</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">cm</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+        <span class="c1"># Create the plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+        <span class="c1"># Create heatmap with seaborn</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">cm_normalized</span><span class="p">,</span>
+                    <span class="n">annot</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Show values in cells</span>
+                    <span class="n">fmt</span><span class="o">=</span><span class="s1">&#39;.2f&#39;</span><span class="p">,</span>  <span class="c1"># Format as 2 decimal places</span>
+                    <span class="n">xticklabels</span><span class="o">=</span><span class="n">class_names</span><span class="p">,</span>  <span class="c1"># X-axis labels</span>
+                    <span class="n">yticklabels</span><span class="o">=</span><span class="n">class_names</span><span class="p">,</span>  <span class="c1"># Y-axis labels</span>
+                    <span class="n">cbar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># No colorbar</span>
+                    <span class="n">square</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Square cells</span>
+
+        <span class="c1"># Set labels and title</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Predicted&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;True&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Confusion Matrix&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>  <span class="c1"># Return current figure</span></div>
+
+
+<div class="viewcode-block" id="Visualizer.create_distribution_plot">
+<a class="viewcode-back" href="../../../privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.Visualizer.create_distribution_plot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_distribution_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate enhanced score distribution visualization with threshold analysis.</span>
+
+<span class="sd">        Creates overlaid histograms showing score distributions for benign and</span>
+<span class="sd">        malicious samples, with threshold line and decision regions highlighted</span>
+<span class="sd">        for intuitive understanding of classification behavior.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scores (array): Continuous anomaly scores from model</span>
+<span class="sd">            y_true (array): True binary labels (0=benign, 1=malicious)</span>
+<span class="sd">            threshold (float): Decision threshold for anomaly classification</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            matplotlib.figure.Figure: Score distribution visualization with threshold</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create figure with appropriate size and DPI for clarity</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="c1"># Create pandas DataFrame for easier plotting</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;Score&#39;</span><span class="p">:</span> <span class="n">scores</span><span class="p">,</span>
+            <span class="s1">&#39;Category&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">y_true</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Benign&#39;</span><span class="p">,</span> <span class="s1">&#39;Malicious&#39;</span><span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="c1"># Plot histograms using seaborn for better statistics</span>
+        <span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">x</span><span class="o">=</span><span class="s1">&#39;Score&#39;</span><span class="p">,</span>
+            <span class="n">hue</span><span class="o">=</span><span class="s1">&#39;Category&#39;</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+            <span class="n">palette</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;Benign&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;Malicious&#39;</span><span class="p">:</span> <span class="s1">&#39;red&#39;</span>
+            <span class="p">},</span>
+            <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>  <span class="c1"># Adjust number of bins as needed</span>
+            <span class="n">stat</span><span class="o">=</span><span class="s1">&#39;density&#39;</span><span class="p">,</span>  <span class="c1"># Use density to normalize distributions</span>
+            <span class="n">common_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Normalize each distribution separately</span>
+            <span class="n">kde</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Explicitly disable KDE overlay</span>
+            <span class="n">kde_kws</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;bw_adjust&#39;</span><span class="p">:</span> <span class="mf">1.6</span><span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Add threshold line with annotation</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+            <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+            <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Threshold (</span><span class="si">{</span><span class="n">threshold</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Get current axis limits for background regions</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">()</span>
+        <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()</span>
+
+        <span class="c1"># Fill background regions</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">x_min</span><span class="p">,</span> <span class="n">threshold</span><span class="p">],</span>
+            <span class="n">y2</span><span class="o">=</span><span class="n">y_max</span><span class="p">,</span>
+            <span class="n">y1</span><span class="o">=</span><span class="n">y_min</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Benign Region&#39;</span>
+        <span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">threshold</span><span class="p">,</span> <span class="n">x_max</span><span class="p">],</span>
+            <span class="n">y2</span><span class="o">=</span><span class="n">y_max</span><span class="p">,</span>
+            <span class="n">y1</span><span class="o">=</span><span class="n">y_min</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span>
+            <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Anomaly Region&#39;</span>
+        <span class="p">)</span>
+        <span class="c1"># Enhance plot aesthetics</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Anomaly Score&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Density&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Score Distribution&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">pad</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Categories&#39;</span><span class="p">,</span> <span class="n">title_fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+        <span class="c1"># Add grid for better readability</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Adjust layout to prevent label clipping</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clean up matplotlib figures to prevent memory leaks.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">fig</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">figures</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

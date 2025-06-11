@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad package &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.architectures package" href="privateer_ad.architectures.html" />
+    <link rel="prev" title="PRIVATEER: Privacy-First Security Analytics for 6G Networks" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">privateer_ad package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">privateer_ad package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad">
+<span id="privateer-ad-package"></span><h1>privateer_ad package<a class="headerlink" href="#module-privateer_ad" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD"><code class="docutils literal notranslate"><span class="pre">TransformerAD</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.model_config"><code class="docutils literal notranslate"><span class="pre">TransformerAD.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.embed"><code class="docutils literal notranslate"><span class="pre">TransformerAD.embed</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.pos_enc"><code class="docutils literal notranslate"><span class="pre">TransformerAD.pos_enc</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.transformer_encoder"><code class="docutils literal notranslate"><span class="pre">TransformerAD.transformer_encoder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.compress"><code class="docutils literal notranslate"><span class="pre">TransformerAD.compress</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.output"><code class="docutils literal notranslate"><span class="pre">TransformerAD.output</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.__init__"><code class="docutils literal notranslate"><span class="pre">TransformerAD.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD.forward"><code class="docutils literal notranslate"><span class="pre">TransformerAD.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.html#privateer_ad.architectures.layers.PositionalEncoding"><code class="docutils literal notranslate"><span class="pre">PositionalEncoding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html#privateer_ad.architectures.transformer_ad.TransformerAD"><code class="docutils literal notranslate"><span class="pre">TransformerAD</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig"><code class="docutils literal notranslate"><span class="pre">PathConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.data_url"><code class="docutils literal notranslate"><span class="pre">PathConfig.data_url</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.analysis_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.analysis_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.data_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.data_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.experiments_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.experiments_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.model_config"><code class="docutils literal notranslate"><span class="pre">PathConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.models_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.models_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.processed_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.processed_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.raw_dataset"><code class="docutils literal notranslate"><span class="pre">PathConfig.raw_dataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.raw_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.raw_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.requirements_file"><code class="docutils literal notranslate"><span class="pre">PathConfig.requirements_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.scalers_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.scalers_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.zip_file"><code class="docutils literal notranslate"><span class="pre">PathConfig.zip_file</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PathConfig.root_dir"><code class="docutils literal notranslate"><span class="pre">PathConfig.root_dir</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id0"><code class="docutils literal notranslate"><span class="pre">PathConfig.data_url</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig"><code class="docutils literal notranslate"><span class="pre">ModelConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.input_size"><code class="docutils literal notranslate"><span class="pre">ModelConfig.input_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.num_layers"><code class="docutils literal notranslate"><span class="pre">ModelConfig.num_layers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.embed_dim"><code class="docutils literal notranslate"><span class="pre">ModelConfig.embed_dim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.latent_dim"><code class="docutils literal notranslate"><span class="pre">ModelConfig.latent_dim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.num_heads"><code class="docutils literal notranslate"><span class="pre">ModelConfig.num_heads</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.dropout"><code class="docutils literal notranslate"><span class="pre">ModelConfig.dropout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.seq_len"><code class="docutils literal notranslate"><span class="pre">ModelConfig.seq_len</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.model_config"><code class="docutils literal notranslate"><span class="pre">ModelConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig.model_name"><code class="docutils literal notranslate"><span class="pre">ModelConfig.model_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id1"><code class="docutils literal notranslate"><span class="pre">ModelConfig.input_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id2"><code class="docutils literal notranslate"><span class="pre">ModelConfig.num_layers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id3"><code class="docutils literal notranslate"><span class="pre">ModelConfig.embed_dim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id4"><code class="docutils literal notranslate"><span class="pre">ModelConfig.latent_dim</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id5"><code class="docutils literal notranslate"><span class="pre">ModelConfig.num_heads</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id6"><code class="docutils literal notranslate"><span class="pre">ModelConfig.dropout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id7"><code class="docutils literal notranslate"><span class="pre">ModelConfig.seq_len</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig"><code class="docutils literal notranslate"><span class="pre">TrainingConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.epochs"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.epochs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.loss_fn_name"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.loss_fn_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.es_enabled"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.es_patience"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_patience</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.es_warmup"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_warmup</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.target_metric"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.target_metric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.direction"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.model_config"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig.learning_rate"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.learning_rate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id8"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.epochs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id9"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.loss_fn_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id10"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id11"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_patience</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id12"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.es_warmup</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id13"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.target_metric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id14"><code class="docutils literal notranslate"><span class="pre">TrainingConfig.direction</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig"><code class="docutils literal notranslate"><span class="pre">DataConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.train_size"><code class="docutils literal notranslate"><span class="pre">DataConfig.train_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.val_size"><code class="docutils literal notranslate"><span class="pre">DataConfig.val_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.partition_id"><code class="docutils literal notranslate"><span class="pre">DataConfig.partition_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.partition_by"><code class="docutils literal notranslate"><span class="pre">DataConfig.partition_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.num_partitions"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_partitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.num_classes_per_partition"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_classes_per_partition</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.batch_size"><code class="docutils literal notranslate"><span class="pre">DataConfig.batch_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.seq_len"><code class="docutils literal notranslate"><span class="pre">DataConfig.seq_len</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.num_workers"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_workers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.prefetch_factor"><code class="docutils literal notranslate"><span class="pre">DataConfig.prefetch_factor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.persistent_workers"><code class="docutils literal notranslate"><span class="pre">DataConfig.persistent_workers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.pin_memory"><code class="docutils literal notranslate"><span class="pre">DataConfig.pin_memory</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DataConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.DataConfig.validate_splits_sum_to_one"><code class="docutils literal notranslate"><span class="pre">DataConfig.validate_splits_sum_to_one()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id15"><code class="docutils literal notranslate"><span class="pre">DataConfig.train_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id16"><code class="docutils literal notranslate"><span class="pre">DataConfig.val_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id17"><code class="docutils literal notranslate"><span class="pre">DataConfig.partition_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id18"><code class="docutils literal notranslate"><span class="pre">DataConfig.partition_by</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id19"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_partitions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id20"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_classes_per_partition</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id21"><code class="docutils literal notranslate"><span class="pre">DataConfig.batch_size</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id22"><code class="docutils literal notranslate"><span class="pre">DataConfig.seq_len</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id23"><code class="docutils literal notranslate"><span class="pre">DataConfig.num_workers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id24"><code class="docutils literal notranslate"><span class="pre">DataConfig.prefetch_factor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id25"><code class="docutils literal notranslate"><span class="pre">DataConfig.persistent_workers</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id26"><code class="docutils literal notranslate"><span class="pre">DataConfig.pin_memory</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.num_rounds"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.num_rounds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.n_clients"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.n_clients</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.fraction_fit"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.fraction_fit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.fraction_evaluate"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.fraction_evaluate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.secure_aggregation_enabled"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secure_aggregation_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.num_shares"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.num_shares</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.reconstruction_threshold"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.reconstruction_threshold</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.secagg_timeout"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secagg_timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.secagg_max_weight"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secagg_max_weight</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.epochs_per_round"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.epochs_per_round</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.partition_data"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.partition_data</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.model_config"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.FederatedLearningConfig.server_address"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.server_address</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id27"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.num_rounds</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id28"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.n_clients</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id29"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.fraction_fit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id30"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.fraction_evaluate</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id31"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secure_aggregation_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id32"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.num_shares</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id33"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.reconstruction_threshold</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id34"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secagg_timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id35"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.secagg_max_weight</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id36"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.epochs_per_round</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id37"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig.partition_data</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.target_epsilon"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.target_epsilon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.target_delta"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.target_delta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.max_grad_norm"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.max_grad_norm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.secure_mode"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.secure_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.anonymization_enabled"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.anonymization_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.model_config"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.PrivacyConfig.dp_enabled"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.dp_enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id38"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.target_epsilon</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id39"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.target_delta</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id40"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.max_grad_norm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id41"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.secure_mode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id42"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig.anonymization_enabled</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.tracking_uri"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.tracking_uri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.experiment_name"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.experiment_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.parent_run_id"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.parent_run_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.child_run_id"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.child_run_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.model_config"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig.enabled"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.enabled</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id43"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.tracking_uri</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id44"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.experiment_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id45"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.parent_run_id</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id46"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig.child_run_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.n_trials"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.n_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.timeout"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.target_metric"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.target_metric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.direction"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.storage_url"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.storage_url</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.enable_pruning"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.enable_pruning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.pruning_warmup_steps"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.pruning_warmup_steps</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.sampler_type"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.sampler_type</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.model_config"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.model_config</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.AutotuningConfig.study_name"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.study_name</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id47"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.n_trials</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id48"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.timeout</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id49"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.target_metric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id50"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.direction</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id51"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.storage_url</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id52"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.enable_pruning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id53"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.pruning_warmup_steps</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.html#id54"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig.sampler_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.metadata.html#privateer_ad.config.metadata.DeviceInfo"><code class="docutils literal notranslate"><span class="pre">DeviceInfo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.metadata.html#privateer_ad.config.metadata.AttackInfo"><code class="docutils literal notranslate"><span class="pre">AttackInfo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.metadata.html#privateer_ad.config.metadata.FeatureInfo"><code class="docutils literal notranslate"><span class="pre">FeatureInfo</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataRegistry"><code class="docutils literal notranslate"><span class="pre">MetadataRegistry</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig"><code class="docutils literal notranslate"><span class="pre">MetadataConfig</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.PathConfig"><code class="docutils literal notranslate"><span class="pre">PathConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.DataConfig"><code class="docutils literal notranslate"><span class="pre">DataConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.ModelConfig"><code class="docutils literal notranslate"><span class="pre">ModelConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.TrainingConfig"><code class="docutils literal notranslate"><span class="pre">TrainingConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.AutotuningConfig"><code class="docutils literal notranslate"><span class="pre">AutotuningConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.FederatedLearningConfig"><code class="docutils literal notranslate"><span class="pre">FederatedLearningConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.PrivacyConfig"><code class="docutils literal notranslate"><span class="pre">PrivacyConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.config.settings.html#privateer_ad.config.settings.MLFlowConfig"><code class="docutils literal notranslate"><span class="pre">MLFlowConfig</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.etl.download.html#privateer_ad.etl.download.Downloader"><code class="docutils literal notranslate"><span class="pre">Downloader</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html#privateer_ad.evaluate.ModelEvaluator"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.html#privateer_ad.evaluate.ModelEvaluator.__init__"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.html#privateer_ad.evaluate.ModelEvaluator.compute_anomaly_scores"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.compute_anomaly_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.html#privateer_ad.evaluate.ModelEvaluator.evaluate"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.evaluate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.html#privateer_ad.evaluate.ModelEvaluator.find_optimal_threshold"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.find_optimal_threshold()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.fl.strategy.html#privateer_ad.fl.strategy.metrics_aggregation_fn"><code class="docutils literal notranslate"><span class="pre">metrics_aggregation_fn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.fl.strategy.html#privateer_ad.fl.strategy.CustomStrategy"><code class="docutils literal notranslate"><span class="pre">CustomStrategy</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.fl.utils.html#privateer_ad.fl.utils.set_weights"><code class="docutils literal notranslate"><span class="pre">set_weights()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.fl.utils.html#privateer_ad.fl.utils.get_weights"><code class="docutils literal notranslate"><span class="pre">get_weights()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer"><code class="docutils literal notranslate"><span class="pre">Visualizer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.figures"><code class="docutils literal notranslate"><span class="pre">Visualizer.figures</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.__init__"><code class="docutils literal notranslate"><span class="pre">Visualizer.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.create_confusion_matrix"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_confusion_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.create_distribution_plot"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_distribution_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.create_roc_curve"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_roc_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.plot_training_history"><code class="docutils literal notranslate"><span class="pre">Visualizer.plot_training_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.html#privateer_ad.visualizations.Visualizer.visualize"><code class="docutils literal notranslate"><span class="pre">Visualizer.visualize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer"><code class="docutils literal notranslate"><span class="pre">Visualizer</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html#privateer_ad.utils.load_model_weights"><code class="docutils literal notranslate"><span class="pre">load_model_weights()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html#privateer_ad.utils.log_model"><code class="docutils literal notranslate"><span class="pre">log_model()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html#privateer_ad.utils.get_signature"><code class="docutils literal notranslate"><span class="pre">get_signature()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html#privateer_ad.utils.load_champion_model"><code class="docutils literal notranslate"><span class="pre">load_champion_model()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="PRIVATEER: Privacy-First Security Analytics for 6G Networks" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.architectures.html" class="btn btn-neutral float-right" title="privateer_ad.architectures package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,432 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.utils &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../privateer_ad.html">privateer_ad package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">privateer_ad.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for privateer_ad.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mlflow</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">privateer_ad.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainingConfig</span>
+
+
+<div class="viewcode-block" id="load_model_weights">
+<a class="viewcode-back" href="../../privateer_ad.utils.html#privateer_ad.utils.load_model_weights">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_model_weights</span><span class="p">(</span><span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">paths_config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load PyTorch model weights with flexible path resolution and format handling.</span>
+
+<span class="sd">    Attempts to locate and load model weights from various common path patterns,</span>
+<span class="sd">    handling different state dictionary formats and cleaning distributed training</span>
+<span class="sd">    artifacts for compatibility with single-device loading.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_path (str): Model file path or experiment identifier</span>
+<span class="sd">        paths_config: Path configuration object with directory specifications</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Cleaned model state dictionary ready for loading</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: When model file cannot be located in any expected location</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+
+    <span class="c1"># Try different path resolutions</span>
+    <span class="n">possible_paths</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">model_path</span><span class="p">,</span>  <span class="c1"># Direct path</span>
+        <span class="n">paths_config</span><span class="o">.</span><span class="n">experiments_dir</span> <span class="o">/</span> <span class="n">model_path</span> <span class="o">/</span> <span class="s1">&#39;model.pt&#39;</span><span class="p">,</span>  <span class="c1"># Experiment directory</span>
+        <span class="n">paths_config</span><span class="o">.</span><span class="n">models_dir</span> <span class="o">/</span> <span class="n">model_path</span><span class="p">,</span>  <span class="c1"># Models directory</span>
+        <span class="n">Path</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s1">&#39;.pt&#39;</span><span class="p">),</span>  <span class="c1"># Add .pt extension</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">possible_paths</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading model from: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+
+                <span class="c1"># Handle different state dict formats</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="c1"># Remove common prefixes from distributed training</span>
+                    <span class="n">cleaned_state_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                        <span class="c1"># Remove common prefixes</span>
+                        <span class="n">clean_key</span> <span class="o">=</span> <span class="n">key</span>
+                        <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;_module.&#39;</span><span class="p">,</span> <span class="s1">&#39;module.&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">clean_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+                                <span class="n">clean_key</span> <span class="o">=</span> <span class="n">clean_key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span>
+                        <span class="n">cleaned_state_dict</span><span class="p">[</span><span class="n">clean_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+                    <span class="k">return</span> <span class="n">cleaned_state_dict</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unexpected state dict format: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Failed to load from </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not find model file at any of: </span><span class="si">{</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">possible_paths</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="log_model">
+<a class="viewcode-back" href="../../privateer_ad.utils.html#privateer_ad.utils.log_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">target_metric</span><span class="p">,</span> <span class="n">current_metrics</span><span class="p">,</span> <span class="n">experiment_id</span><span class="p">,</span> <span class="n">pip_requirements</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Log trained model to MLflow with champion tracking and version management.</span>
+
+<span class="sd">    Registers the model in MLflow with champion tagging based on</span>
+<span class="sd">    performance comparison with previous versions. Manages version lifecycle</span>
+<span class="sd">    and metadata tagging for model selection and deployment decisions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: Trained PyTorch model to register</span>
+<span class="sd">        model_name (str): Registry name for the model</span>
+<span class="sd">        sample: Representative input sample for signature inference</span>
+<span class="sd">        direction (str): Optimization direction (&#39;maximize&#39; or &#39;minimize&#39;)</span>
+<span class="sd">        target_metric (str): Primary metric for champion selection</span>
+<span class="sd">        current_metrics (dict): Performance metrics from current training</span>
+<span class="sd">        experiment_id (str): MLflow experiment identifier</span>
+<span class="sd">        pip_requirements (str): Path to requirements file for reproducibility</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Automatically manages champion tag transfer between model versions</span>
+<span class="sd">        based on performance improvement detection.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">get_signature</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">sample</span><span class="p">)</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">tracking</span><span class="o">.</span><span class="n">MlflowClient</span><span class="p">()</span>
+
+    <span class="c1"># Determine sort direction for finding best run</span>
+    <span class="n">current_target_metric</span> <span class="o">=</span> <span class="n">current_metrics</span><span class="p">[</span><span class="n">target_metric</span><span class="p">]</span>
+    <span class="n">sorting</span> <span class="o">=</span> <span class="s1">&#39;DESC&#39;</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span> <span class="k">else</span> <span class="s1">&#39;ASC&#39;</span>
+
+    <span class="c1"># Check if this is a new champion</span>
+    <span class="n">is_champion</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">best_target_metric</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="n">champions</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Find the best run across all experiments</span>
+        <span class="n">best_run</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">search_runs</span><span class="p">([</span><span class="n">experiment_id</span><span class="p">],</span>
+                                      <span class="n">order_by</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;metrics.`</span><span class="si">{</span><span class="n">target_metric</span><span class="si">}</span><span class="s1">` </span><span class="si">{</span><span class="n">sorting</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">],</span>
+                                      <span class="n">max_results</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">target_metric</span> <span class="ow">in</span> <span class="n">best_run</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">metrics</span><span class="p">:</span>
+            <span class="n">best_target_metric</span> <span class="o">=</span> <span class="n">best_run</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="n">target_metric</span><span class="p">]</span>
+
+            <span class="c1"># Compare with previous best</span>
+            <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span><span class="p">:</span>
+                <span class="n">is_champion</span> <span class="o">=</span> <span class="n">current_target_metric</span> <span class="o">&gt;=</span> <span class="n">best_target_metric</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">is_champion</span> <span class="o">=</span> <span class="n">current_target_metric</span> <span class="o">&lt;=</span> <span class="n">best_target_metric</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Previous best </span><span class="si">{</span><span class="n">target_metric</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">best_target_metric</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Current </span><span class="si">{</span><span class="n">target_metric</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">current_target_metric</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Is new champion: </span><span class="si">{</span><span class="n">is_champion</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Find previous champion versions to remove tag</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">champions</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">search_model_versions</span><span class="p">(</span><span class="n">filter_string</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;name = &#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&#39; and tag.champion = &#39;true&#39;&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No previous champion found or error accessing registry: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No previous runs found or error accessing metrics: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># This is likely the first model, so it&#39;s automatically the champion</span>
+        <span class="n">is_champion</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Log the model</span>
+    <span class="n">model_info</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">log_model</span><span class="p">(</span>
+        <span class="n">pytorch_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="n">artifact_path</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">registered_model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+        <span class="n">signature</span><span class="o">=</span><span class="n">signature</span><span class="p">,</span>
+        <span class="n">pip_requirements</span><span class="o">=</span><span class="n">pip_requirements</span>
+    <span class="p">)</span>
+
+    <span class="n">current_version</span> <span class="o">=</span> <span class="n">model_info</span><span class="o">.</span><span class="n">registered_model_version</span>
+
+    <span class="c1"># Handle champion tagging</span>
+    <span class="k">if</span> <span class="n">is_champion</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🏆 New champion model! Logging with champion tag.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove champion tag from previous versions</span>
+        <span class="k">for</span> <span class="n">champion</span> <span class="ow">in</span> <span class="n">champions</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">client</span><span class="o">.</span><span class="n">delete_model_version_tag</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">champion</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="s1">&#39;champion&#39;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removed champion tag from version </span><span class="si">{</span><span class="n">champion</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to remove champion tag from version </span><span class="si">{</span><span class="n">champion</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">set_model_version_tag</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">current_version</span><span class="p">,</span> <span class="s1">&#39;champion&#39;</span><span class="p">,</span> <span class="s1">&#39;true&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Add metadata about when it became champion</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">set_model_version_tag</span><span class="p">(</span>
+                <span class="n">model_name</span><span class="p">,</span>
+                <span class="n">current_version</span><span class="p">,</span>
+                <span class="s1">&#39;champion_since&#39;</span><span class="p">,</span>
+                <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+            <span class="p">)</span>
+
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Added champion tag to version </span><span class="si">{</span><span class="n">current_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error adding champion tag: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model performance (</span><span class="si">{</span><span class="n">current_target_metric</span><span class="si">}</span><span class="s2">) did not exceed &quot;</span>
+                     <span class="sa">f</span><span class="s2">&quot;previous best (</span><span class="si">{</span><span class="n">best_target_metric</span><span class="si">}</span><span class="s2">). No champion tag added.&quot;</span><span class="p">)</span>
+
+    <span class="n">client</span><span class="o">.</span><span class="n">set_model_version_tag</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">current_version</span><span class="p">,</span> <span class="n">target_metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_target_metric</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="get_signature">
+<a class="viewcode-back" href="../../privateer_ad.utils.html#privateer_ad.utils.get_signature">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_signature</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate MLflow model signature from sample input and model output.&quot;&quot;&quot;</span>
+    <span class="n">_output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_output</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">_output</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_output</span> <span class="o">=</span> <span class="n">_output</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">signature</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">infer_signature</span><span class="p">(</span><span class="n">model_input</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">model_output</span><span class="o">=</span><span class="n">_output</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">signature</span></div>
+
+
+
+<div class="viewcode-block" id="load_champion_model">
+<a class="viewcode-back" href="../../privateer_ad.utils.html#privateer_ad.utils.load_champion_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_champion_model</span><span class="p">(</span><span class="n">tracking_uri</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TransformerAD&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load the best-performing model version with associated metadata.</span>
+
+<span class="sd">    Retrieves the champion model from MLflow registry along with its optimal</span>
+<span class="sd">    threshold and loss function configuration. Falls back to latest version</span>
+<span class="sd">    if no champion is tagged.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tracking_uri (str): MLflow tracking server address</span>
+<span class="sd">        model_name (str): Registered model name to load</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: (model, threshold, loss_fn) for complete inference setup</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: When model loading or metadata extraction fails</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mlflow</span><span class="o">.</span><span class="n">set_tracking_uri</span><span class="p">(</span><span class="n">tracking_uri</span><span class="p">)</span>
+    <span class="n">client</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">tracking</span><span class="o">.</span><span class="n">MlflowClient</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Get registered model</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Get all versions of the model</span>
+        <span class="n">all_versions</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">search_model_versions</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;name=&#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_versions</span><span class="p">)</span><span class="si">}</span><span class="s1"> total versions for model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Find champion version</span>
+        <span class="k">for</span> <span class="n">model_version</span> <span class="ow">in</span> <span class="n">all_versions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model_version</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;champion&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span><span class="p">:</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="n">model_version</span><span class="o">.</span><span class="n">version</span>
+                <span class="n">run_id</span> <span class="o">=</span> <span class="n">model_version</span><span class="o">.</span><span class="n">run_id</span>
+                <span class="n">source</span> <span class="o">=</span> <span class="n">model_version</span><span class="o">.</span><span class="n">source</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🏆 Found champion model v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Sort by version number and get latest</span>
+            <span class="n">latest_version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">all_versions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">version</span><span class="p">))</span>
+            <span class="n">version</span> <span class="o">=</span> <span class="n">latest_version</span><span class="o">.</span><span class="n">version</span>
+            <span class="n">run_id</span> <span class="o">=</span> <span class="n">latest_version</span><span class="o">.</span><span class="n">run_id</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">latest_version</span><span class="o">.</span><span class="n">source</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;⚠️ No champion found, using latest version v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Load the model</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading model from: </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">load_conf</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;map_location&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cuda&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)}</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">mlflow</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">model_uri</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="o">**</span><span class="n">load_conf</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Model loaded!&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get run details to extract threshold and loss_fn</span>
+        <span class="n">run</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_run</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+        <span class="c1"># Extract threshold from metrics</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">threshold_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;global_test_threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;val_threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;test_threshold&#39;</span><span class="p">,</span> <span class="s1">&#39;threshold&#39;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">threshold_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">run</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">metrics</span><span class="p">:</span>
+                <span class="n">threshold</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📏 Found threshold: </span><span class="si">{</span><span class="n">threshold</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2"> (from metric: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;⚠️ No threshold found in run metrics, using default: 0.5&quot;</span><span class="p">)</span>
+            <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+        <span class="c1"># Extract loss_fn from parameters</span>
+        <span class="n">loss_fn_name</span> <span class="o">=</span> <span class="n">run</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;loss_fn_name&#39;</span><span class="p">,</span> <span class="n">TrainingConfig</span><span class="p">()</span><span class="o">.</span><span class="n">loss_fn_name</span><span class="p">)</span>
+        <span class="n">loss_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="p">,</span> <span class="n">loss_fn_name</span><span class="p">)(</span><span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Successfully loaded:&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🏆 Model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> v</span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📏 Threshold: </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;📊 Loss function: </span><span class="si">{</span><span class="n">loss_fn_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">loss_fn</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Error loading champion model: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

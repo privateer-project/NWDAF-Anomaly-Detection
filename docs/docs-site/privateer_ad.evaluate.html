@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.evaluate package &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.evaluate.evaluator module" href="privateer_ad.evaluate.evaluator.html" />
+    <link rel="prev" title="privateer_ad.etl.utils module" href="privateer_ad.etl.utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="privateer_ad.html">privateer_ad package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.html">privateer_ad package</a></li>
+      <li class="breadcrumb-item active">privateer_ad.evaluate package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.evaluate.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad.evaluate">
+<span id="privateer-ad-evaluate-package"></span><h1>privateer_ad.evaluate package<a class="headerlink" href="#module-privateer_ad.evaluate" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.evaluate.ModelEvaluator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.evaluate.</span></span><span class="sig-name descname"><span class="pre">ModelEvaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/evaluate/evaluator.html#ModelEvaluator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.evaluate.ModelEvaluator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Evaluation framework for anomaly detection models.</p>
+<p>This class provides a complete evaluation pipeline for anomaly detection models,
+handling everything from raw model predictions through threshold optimization to
+final performance metrics. It’s designed specifically for reconstruction-based
+anomaly detection approaches where the model learns to reconstruct normal patterns
+and flags deviations as anomalous.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.evaluate.ModelEvaluator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/evaluate/evaluator.html#ModelEvaluator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.evaluate.ModelEvaluator.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the model evaluator with device and loss function configuration.</p>
+<p>Sets up the evaluation environment by configuring the computational device
+and loss function. The loss function determines how reconstruction errors
+are computed, which directly affects threshold selection and final performance
+metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device</strong> (<em>torch.device</em>) – The device where model inference will be performed.
+This should match the device used during training for
+optimal performance.</p></li>
+<li><p><strong>loss_fn</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the PyTorch loss function to use for
+computing reconstruction errors. If not provided,
+uses the default from TrainingConfig.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.evaluate.ModelEvaluator.compute_anomaly_scores">
+<span class="sig-name descname"><span class="pre">compute_anomaly_scores</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/evaluate/evaluator.html#ModelEvaluator.compute_anomaly_scores"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.evaluate.ModelEvaluator.compute_anomaly_scores" title="Link to this definition"></a></dt>
+<dd><p>Compute reconstruction errors and ground truth labels for the entire dataset.</p>
+<p>This method performs inference across the complete dataset, computing
+reconstruction errors that serve as anomaly scores. The process handles
+batched data efficiently while maintaining memory constraints through
+proper tensor management and gradient computation disabled.</p>
+<p>The reconstruction errors are computed by comparing the model’s output
+with its input, using the configured loss function. These errors form
+the basis for threshold selection and final anomaly classification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The trained anomaly detection model to evaluate. Should be a
+PyTorch model that takes input tensors and produces reconstructions.</p></li>
+<li><p><strong>dataloader</strong> – DataLoader providing batched evaluation data with inputs
+and corresponding ground truth labels.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>Input data arrays for potential further analysis</p></li>
+<li><p>Ground truth binary labels (0 for normal, 1 for anomalous)</p></li>
+<li><p>Computed anomaly scores (reconstruction errors)</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[np.ndarray, np.ndarray, np.ndarray]</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The model is automatically moved to the configured device and set to
+evaluation mode. All computations are performed with gradients disabled
+for efficiency and memory conservation.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.evaluate.ModelEvaluator.evaluate">
+<span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/evaluate/evaluator.html#ModelEvaluator.evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.evaluate.ModelEvaluator.evaluate" title="Link to this definition"></a></dt>
+<dd><p>Perform comprehensive model evaluation with metrics computation and visualization.</p>
+<p>This method orchestrates the complete evaluation process, from computing
+reconstruction errors through threshold optimization to final performance
+assessment. It generates a comprehensive set of metrics suitable for
+understanding model performance in anomaly detection scenarios.</p>
+<p>The evaluation process includes automatic threshold selection when not
+provided, classification performance metrics, and visualization generation.
+All results are automatically logged to MLflow when an active experiment
+session is available, facilitating experiment tracking and comparison.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The trained anomaly detection model to evaluate.</p></li>
+<li><p><strong>dataloader</strong> – DataLoader providing evaluation data with ground truth labels.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Decision threshold for binary classification.
+If None, an optimal threshold is computed automatically.</p></li>
+<li><p><strong>prefix</strong> (<em>str</em><em>, </em><em>optional</em>) – Prefix for metric names in logging and reporting.
+Useful for distinguishing between different evaluation
+sets (e.g., ‘<a href="#id1"><span class="problematic" id="id2">test_</span></a>’, ‘<a href="#id3"><span class="problematic" id="id4">val_</span></a>’).</p></li>
+<li><p><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – Training step or epoch number for metric logging.
+Helps track performance evolution during training.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>Dictionary of computed metrics with descriptive names</p></li>
+<li><p>Dictionary of generated visualization figures</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[dict[str, float], dict]</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When MLflow tracking is active, this method automatically logs all
+computed metrics, classification reports, and generated visualizations.
+The logging includes step information for tracking performance over time.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.evaluate.ModelEvaluator.find_optimal_threshold">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find_optimal_threshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/privateer_ad/evaluate/evaluator.html#ModelEvaluator.find_optimal_threshold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.evaluate.ModelEvaluator.find_optimal_threshold" title="Link to this definition"></a></dt>
+<dd><p>Determine the optimal decision threshold using ROC curve analysis.</p>
+<p>This method finds the threshold that minimizes the Euclidean distance to
+the perfect classifier point (0, 1) in ROC space. This approach balances
+true positive and false positive rates effectively, providing a reasonable
+default threshold for anomaly detection scenarios.</p>
+<p>The optimization seeks the point on the ROC curve closest to perfect classification.
+This geometric approach often yields thresholds that work well in practice without requiring
+domain-specific tuning.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> (<em>np.ndarray</em>) – Binary ground truth labels where 1 indicates
+anomalous samples and 0 indicates normal samples.</p></li>
+<li><p><strong>y_score</strong> (<em>np.ndarray</em>) – Continuous anomaly scores, typically reconstruction
+errors, where higher values suggest higher likelihood
+of being anomalous.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The optimal threshold value for binary classification. Samples</dt><dd><p>with scores above this threshold should be classified as anomalous.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method assumes that higher scores indicate higher anomaly likelihood.
+The returned threshold represents the decision boundary that optimally
+separates normal and anomalous samples based on the ROC analysis.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator.__init__"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator.compute_anomaly_scores"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.compute_anomaly_scores()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator.find_optimal_threshold"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.find_optimal_threshold()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html#privateer_ad.evaluate.evaluator.ModelEvaluator.evaluate"><code class="docutils literal notranslate"><span class="pre">ModelEvaluator.evaluate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="privateer_ad.etl.utils.html" class="btn btn-neutral float-left" title="privateer_ad.etl.utils module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.evaluate.evaluator.html" class="btn btn-neutral float-right" title="privateer_ad.evaluate.evaluator module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
