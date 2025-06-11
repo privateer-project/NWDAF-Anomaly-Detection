@@ -13,11 +13,18 @@ production deployment scenarios. All configuration classes support environment
 variable overrides and validation to ensure parameter consistency across
 different execution environments.
 """
+import importlib.resources as resources
 
 from pathlib import Path
-from typing import Optional, Literal
+from typing import Optional, Literal, ClassVar
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
+
+package_path = resources.files('privateer_ad')
+# Get the src package location
+with resources.as_file(package_path) as pkg_path:
+    root_dir: Path = pkg_path.parent
+
 
 # =============================================================================
 # CONFIGURATION CLASSES
@@ -35,12 +42,7 @@ class PathConfig(BaseSettings):
                         installation location
         data_url (str): Remote data source URL for dataset download operations
     """
-    import importlib.resources as resources
-    # Get the src package location
-    package_path = resources.files('privateer_ad')
-    with resources.as_file(package_path) as pkg_path:
-        root_dir: Path = pkg_path.parent
-
+    root_dir: Path = Field(default=root_dir, description="Package root directory")
     data_url: str = Field(default="https://zenodo.org/api/records/13900057/files-archive", description="Data URL")
 
     model_config = {'env_prefix': 'PRIVATEER_PATH_',
