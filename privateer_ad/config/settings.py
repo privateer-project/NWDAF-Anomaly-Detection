@@ -107,7 +107,7 @@ class DataConfig(BaseSettings):
 class ModelConfig(BaseSettings):
     """Model architecture and hyperparameters"""
     model_name: str = Field(default='TransformerAD')
-    input_size: int = Field(default=9, ge=1)
+    input_size: int = Field(default=8, ge=1)
     num_layers: int = Field(default=1, ge=1)
     embed_dim: int = Field(default=32, ge=1)
     latent_dim: int = Field(default=16, ge=1)
