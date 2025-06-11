@@ -2,25 +2,22 @@
 PRIVATEER Configuration Module
 
 This module provides a centralized, type-safe configuration system for the entire project.
-All configurations are organized by domain and easily accessible through convenient functions.
 
 Usage Examples:
     # Get specific configurations
-    paths = get_paths()
-    model_cfg = get_model_config()
+    paths = PathConfig()
+    model_cfg = ModelConfig()
 
     # Access specific values
-    batch_size = get_training_config().batch_size
-    data_dir = get_paths().data_dir
+    batch_size = DataConfig().batch_size
+    data_dir = PathConfig().data_dir
 
-    # Get the full configuration
-    config = get_config()
+    # Override with environment variables
+    config = ModelConfig() # Automatically loads PRIVATEER_MODEL_* env vars
 
-    # Print configuration summary
-    print_config_summary()
-
-    # Validate configuration
-    validate_config()
+The configuration system supports environment variable overrides with the PRIVATEER_ prefix,
+enabling flexible deployment across different environments while maintaining type safety
+and validation through Pydantic models.
 """
 
 from .settings import (
@@ -32,7 +29,6 @@ from .settings import (
     FederatedLearningConfig,
     PrivacyConfig,
     MLFlowConfig,
-    MetadataConfig,
 )
 
 __all__ = [
@@ -43,6 +39,5 @@ __all__ = [
     'FederatedLearningConfig',
     'PrivacyConfig',
     'MLFlowConfig',
-    'MetadataConfig',
     'AutotuningConfig',
 ]

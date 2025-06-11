@@ -14,7 +14,23 @@ from privateer_ad.train.train import TrainPipeline
 
 @dataclass
 class AutotuneParam:
-    """Parameter to tune"""
+    """
+    Configuration specification for individual hyperparameters in optimization studies.
+
+    Defines the search space and constraints for a single hyperparameter, supporting
+    various parameter types including categorical choices, continuous ranges, and
+    logarithmic distributions commonly used in machine learning optimization.
+
+    Attributes:
+        name (str): Parameter identifier matching configuration attribute names
+        type (str): Parameter type ('categorical', 'float', 'int', 'loguniform', etc.)
+        choices (Optional[List]): Available options for categorical parameters
+        low (Optional[float]): Lower bound for numeric parameters
+        high (Optional[float]): Upper bound for numeric parameters
+        step (Optional[float]): Step size for discrete parameters
+        q (Optional[float]): Quantization factor for discrete sampling
+        log (Optional[bool]): Whether to use logarithmic scaling for numeric ranges
+    """
     name: str
     type: str
     choices: Optional[List] = None
@@ -46,9 +62,40 @@ ALL_PARAMS = MODEL_PARAMS + TRAINING_PARAMS
 
 
 class ModelAutoTuner:
-    """Hyperparameter optimization using Optuna"""
+    """
+    Optuna-based hyperparameter optimization for anomaly detection models.
+
+    Manages systematic exploration of hyperparameter spaces using Bayesian
+    optimization to identify optimal model configurations. Integrates with
+    MLflow for comprehensive experiment tracking and supports resumable
+    optimization studies through persistent storage.
+
+    The tuner coordinates trial execution, manages resource cleanup, and
+    generates visualization artifacts for optimization analysis. Each trial
+    runs complete training pipelines with different parameter combinations
+    to evaluate performance on the target metric.
+
+    Attributes:
+        autotune_config (AutotuningConfig): Optimization settings and constraints
+        study (optuna.Study): Optuna study managing the optimization process
+        parent_run_id (str): MLflow parent run for experiment hierarchy
+    """
 
     def __init__(self, autotune_config: Optional[AutotuningConfig] = None, parent_run_id: Optional[str] = None):
+        """
+        Initialize hyperparameter optimization with study configuration.
+
+        Sets up the Optuna study with persistent storage and experiment tracking
+        integration. Configures parameter search spaces and optimization direction
+        based on the target metric requirements.
+
+        Args:
+            autotune_config (AutotuningConfig, optional): Optimization configuration
+                                                        including trial limits and
+                                                        target metrics
+            parent_run_id (str, optional): MLflow parent run for organizing
+                                         trial experiments
+        """
         self.autotune_config = autotune_config or AutotuningConfig()
         self.model_params = MODEL_PARAMS
         self.data_params = DATA_PARAMS
@@ -67,7 +114,16 @@ class ModelAutoTuner:
         )
 
     def run(self) -> tuple:
-        """Run optimization and return plots"""
+        """
+        Execute hyperparameter optimization and generate analysis visualizations.
+
+        Runs the configured number of optimization trials, tracking the best
+        performance achieved and generating parameter importance and optimization
+        history plots for analysis.
+
+        Returns:
+            tuple: Parameter importance plot and optimization history visualization
+        """
         logging.info(f'Starting optimization: {self.autotune_config.n_trials} trials')
 
         self.study.optimize(self.objective, n_trials=self.autotune_config.n_trials,
@@ -85,7 +141,19 @@ class ModelAutoTuner:
         )
 
     def objective(self, trial: optuna.Trial) -> float | None:
-        """Run one trial with proper cleanup"""
+        """
+        Execute single optimization trial with comprehensive resource management.
+
+        Runs complete training pipeline with trial-specific hyperparameters,
+        evaluates performance on target metric, and ensures proper resource
+        cleanup regardless of trial outcome.
+
+        Args:
+            trial (optuna.Trial): Optuna trial object for parameter sampling
+
+        Returns:
+            float: Target metric value for optimization, or infinity for failed trials
+        """
         training_updates = {
             param.name: self._suggest_value(trial, param)
             for param in self.training_params
@@ -98,13 +166,6 @@ class ModelAutoTuner:
             param.name: self._suggest_value(trial, param)
             for param in self.data_params
         }
-        # # Force single-threaded for autotuning to prevent file handle leaks
-        # data_updates.update({
-        #     'num_workers': 0,
-        #     'persistent_workers': False,
-        #     'prefetch_factor': None,
-        #     'pin_memory': False
-        # })
 
         logging.info(f'Trial {trial.number}')
         logging.info(pformat(training_updates))
@@ -152,9 +213,23 @@ class ModelAutoTuner:
                 pass
 
     def _suggest_value(self, trial: optuna.Trial, param: AutotuneParam):
-        """Get parameter value from trial"""
+        """
+        Generate parameter values based on configured search space specifications.
 
-        # Validate that required attributes exist for each type
+        Translates AutotuneParam configurations into appropriate Optuna sampling
+        calls, handling various parameter types and their specific constraints.
+
+        Args:
+            trial (optuna.Trial): Optuna trial for parameter sampling
+            param (AutotuneParam): Parameter specification with type and constraints
+
+        Returns:
+            Sampled parameter value appropriate for the specified type and constraints
+
+        Raises:
+            ValueError: For incomplete parameter specifications
+            NotImplementedError: For unsupported parameter types
+        """
         if param.type == 'categorical':
             if not param.choices:
                 raise ValueError(f"Parameter '{param.name}' of type 'categorical' requires 'choices'")
@@ -185,7 +260,6 @@ class ModelAutoTuner:
         elif param.type == 'loguniform':
             if param.low is None or param.high is None:
                 raise ValueError(f"Parameter '{param.name}' of type 'loguniform' requires 'low' and 'high'")
-            # Use suggest_float with log=True instead of deprecated suggest_loguniform
             return trial.suggest_float(
                 name=param.name,
                 low=param.low,
@@ -196,7 +270,6 @@ class ModelAutoTuner:
         elif param.type == 'uniform':
             if param.low is None or param.high is None:
                 raise ValueError(f"Parameter '{param.name}' of type 'uniform' requires 'low' and 'high'")
-            # Use suggest_float instead of deprecated suggest_uniform
             return trial.suggest_float(
                 name=param.name,
                 low=param.low,
@@ -207,7 +280,6 @@ class ModelAutoTuner:
             if param.low is None or param.high is None or param.step is None:
                 raise ValueError(
                     f"Parameter '{param.name}' of type 'discrete_uniform' requires 'low', 'high', and 'step'")
-            # Use suggest_float with step instead of deprecated suggest_discrete_uniform
             return trial.suggest_float(
                 name=param.name,
                 low=param.low,

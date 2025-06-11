@@ -8,6 +8,24 @@ from privateer_ad.train import ModelAutoTuner
 
 
 def autotune():
+    """
+    Execute hyperparameter optimization with comprehensive experiment tracking.
+
+    Orchestrates the complete autotuning workflow from MLflow initialization
+    through parameter optimization to result visualization and artifact logging.
+    The function manages experiment tracking infrastructure, runs Optuna-based
+    optimization, and preserves all results for subsequent analysis.
+
+    The process generates parameter importance plots and optimization history
+    visualizations that provide insights into the hyperparameter search process.
+    All artifacts are logged to MLflow for persistent storage and later retrieval,
+    while temporary files are cleaned up to maintain system hygiene.
+
+    Note:
+        Creates a parent MLflow run that coordinates child runs created during
+        individual optimization trials, establishing proper experiment hierarchy
+        for detailed analysis of the optimization process.
+    """
     logging.info('Initialize auto-tuning.')
     mlflow_config = MLFlowConfig()
 
@@ -31,5 +49,12 @@ def autotune():
     mlflow.end_run()
 
 def main():
+    """
+    Command-line interface entry point for hyperparameter optimization.
+
+    Provides Fire-based CLI access to the autotuning functionality, enabling
+    execution from command line with automatic argument parsing and help
+    generation for operational deployment scenarios.
+    """
     from fire import Fire
     Fire(autotune)

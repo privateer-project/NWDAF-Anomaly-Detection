@@ -16,12 +16,22 @@ from privateer_ad.config import TrainingConfig
 
 class ModelTrainer:
     """
-    Trains a PyTorch model with early stopping capability.
+    PyTorch model trainer with early stopping and comprehensive metrics tracking.
 
-    This class handles the training workflow for models, including
-    training loop, validation, metrics tracking, and early stopping functionality.
-    It integrates with MLFlow for experiment tracking and uses proper configuration
-    dependency injection.
+    Handles the complete training workflow including training loops, validation,
+    metrics computation, and early stopping functionality. Integrates with MLflow
+    for experiment tracking and supports anomaly detection specific evaluation
+    with balanced and unbalanced metrics computation.
+
+    The trainer implements validation logic that computes optimal
+    thresholds using ROC analysis and tracks both balanced and unbalanced
+    performance metrics to provide comprehensive model assessment.
+
+    Attributes:
+        model (torch.nn.Module): The PyTorch model being trained
+        optimizer: Training optimizer
+        device (torch.device): Computational device for training
+        training_config (TrainingConfig): Training parameters and settings
     """
 
     def __init__(
@@ -31,12 +41,17 @@ class ModelTrainer:
             device: torch.device,
             training_config: TrainingConfig = None):
         """
-        Initialize the ModelTrainer.
+        Initialize model trainer with configuration and early stopping setup.
+
+        Sets up the training environment including device placement, loss function
+        configuration, and early stopping tracking. Validates optimization direction
+        and initializes checkpoint management for best model preservation.
 
         Args:
-            model: The PyTorch model to be trained
-            optimizer: The optimizer used for training
-            device: The device (CPU/GPU) where training will be performed
+            model (torch.nn.Module): PyTorch model to train
+            optimizer: Optimizer for gradient updates
+            device (torch.device): Device for training computations
+            training_config (TrainingConfig, optional): Training configuration parameters
         """
         logging.info('Instantiate ModelTrainer...')
 
@@ -69,23 +84,21 @@ class ModelTrainer:
 
     def training(self, train_dl, val_dl, start_epoch: int = 0) -> Dict[str, Any]:
         """
-        Execute the full training process with validation and early stopping.
+        Execute complete training process with validation and early stopping.
 
-        Trains the model for the specified number of epochs or until early stopping
-        criteria are met. For each epoch, runs a training loop followed by a validation
-        loop, logs metrics, and tracks the best model state.
+        Orchestrates the full training workflow including epoch-by-epoch training
+        and validation loops, metrics tracking, best model checkpoint management,
+        and early stopping evaluation. Maintains comprehensive experiment tracking
+        throughout the process.
 
         Args:
-            train_dl: DataLoader for training data
-            val_dl: DataLoader for validation data
-            start_epoch: Starting epoch number
+            train_dl: Training data loader
+            val_dl: Validation data loader
+            start_epoch (int): Starting epoch for training continuation
 
         Returns:
-            Dict[str, Any]: The best checkpoint dictionary containing:
-                - model_state_dict: State dict of the best model
-                - optimizer_state_dict: State dict of the optimizer at best point
-                - metrics: Dictionary of metrics at best point
-                - epoch: Epoch number when best model was achieved
+            Dict[str, Any]: Best checkpoint containing model state, optimizer state,
+                           metrics, and epoch information
         """
         logging.info('Start Training...')
         try:
@@ -124,6 +137,7 @@ class ModelTrainer:
         return self.best_checkpoint
 
     def _training_loop(self, epoch: int, train_dl) -> Dict[str, float]:
+        """Execute single training epoch with gradient updates and loss tracking."""
         self.model.train()
         self.model.to(self.device)
 
@@ -153,6 +167,17 @@ class ModelTrainer:
         return {'loss': avg_loss}
 
     def _validation_loop(self, val_dl) -> Dict[str, float]:
+        """
+        Validation with threshold optimization and balanced metrics.
+
+        Performs validation evaluation including reconstruction error computation,
+        optimal threshold selection using ROC analysis, and calculation of both
+        balanced and unbalanced performance metrics for thorough model assessment.
+
+        Returns:
+            Dict[str, float]: Validation metrics including loss,
+                             threshold, balanced and unbalanced performance scores
+        """
         self.model.eval()
 
         with torch.no_grad():
@@ -237,12 +262,7 @@ class ModelTrainer:
         return report_dict
 
     def _is_best_checkpoint(self) -> bool:
-        """
-        Determine if the current metrics represent the best checkpoint so far.
-
-        Returns:
-            bool: True if current checkpoint is the best 'metrics'
-        """
+        """Determine if current metrics represent the best checkpoint based on target metric."""
         current_value = self.metrics[self.training_config.target_metric]
         best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
                                                          -np.inf if self.training_config.direction == 'maximize'
@@ -254,13 +274,7 @@ class ModelTrainer:
             return current_value < best_value
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int):
-        """
-        Update and log metrics to various tracking systems.
-
-        Args:
-            metrics: Dictionary of metrics to log
-            epoch: Current epoch number
-        """
+        """Update internal metrics and log to MLflow and console."""
         # Update internal metrics
         self.metrics.update(metrics)
 
@@ -273,14 +287,14 @@ class ModelTrainer:
 
     def _check_early_stopping(self, epoch: int, is_best: bool) -> bool:
         """
-        Check if early stopping criteria are met.
+        Evaluate early stopping criteria with warmup period and patience tracking.
 
         Args:
-            epoch: Current training epoch number
-            is_best: Whether the current checkpoint is the best so far
+            epoch (int): Current local epoch number
+            is_best (bool): Whether current checkpoint is the best so far
 
         Returns:
-            bool: True if training should be stopped, False otherwise
+            bool: True if training should stop, False to continue
         """
         if not self.training_config.es_enabled:
             return False
@@ -314,12 +328,7 @@ class ModelTrainer:
         return False
 
     def get_training_summary(self) -> Dict[str, Any]:
-        """
-        Get a summary of the training process.
-
-        Returns:
-            Dict containing training summary information
-        """
+        """Generate comprehensive training summary with key statistics and configurations."""
         return {'best_epoch': self.best_checkpoint['epoch'],
                 'best_metrics': self.best_checkpoint['metrics'],
                 'total_epochs_trained': self.best_checkpoint['epoch'],

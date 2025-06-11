@@ -9,7 +9,25 @@ from dataclasses import dataclass
 
 @dataclass
 class DeviceInfo:
-    """Device information"""
+    """
+    Device characterization for network traffic analysis.
+
+    This dataclass encapsulates device properties within the, including identification parameters,
+    network configuration and attack participation metadata. The characterization supports both
+    malicious and benign device categories while tracking participation
+    patterns across different attack scenarios.
+
+    Attributes:
+        imeisv (str): International Mobile Equipment Identity Software Version
+                     serving as unique device identifier within the network
+        ip (str): Assigned IP address for network communication and traffic
+                 correlation analysis
+        type (str): Hardware Device Type, e.g., 'raspberry', 'waveshare_5g_cpe_box',
+        malicious (bool): Binary indicator specifying whether device exhibits
+                         malicious behavior during attack scenarios
+        in_attacks (List[int]): Attack scenario identifiers where device participates, enabling temporal correlation
+                                of device behavior with attack patterns
+    """
     imeisv: str
     ip: str
     type: str
@@ -19,26 +37,65 @@ class DeviceInfo:
 
 @dataclass
 class AttackInfo:
-    """Attack information"""
+    """
+    Temporal attack scenario specification for dataset annotation.
+
+    This dataclass defines precise temporal boundaries for attack events
+    within the network traffic dataset, enabling accurate labeling of
+    malicious versus benign traffic periods. The temporal precision
+    supports fine-grained anomaly detection training and evaluation
+    across different attack methodologies.
+
+    Attributes:
+        start (str): Attack initiation timestamp in ISO format, marking
+                    the precise beginning of malicious activity within
+                    the network traffic timeline
+        stop (str): Attack termination timestamp in ISO format, defining
+                   the conclusion of malicious activity and return to
+                   benign traffic patterns
+    """
     start: str
     stop: str
 
 
 @dataclass
 class FeatureInfo:
-    """Feature configuration"""
+    """
+    Feature processing configuration for machine learning pipeline integration.
+
+    This dataclass specifies comprehensive processing instructions for individual
+    network traffic features, controlling data type handling and inclusion criteria.
+    The configuration enables flexible feature engineering while maintaining
+    consistency across training and inference phases of the anomaly detection pipeline.
+
+    Attributes:
+        dtype (str): Data type specification for proper pandas DataFrame
+                    construction and type validation during loading
+        drop (bool): Feature exclusion flag controlling whether feature
+                    should be removed during preprocessing pipeline
+        is_input (bool): Model input designation specifying whether feature
+                        serves as input to machine learning models
+    """
+
     dtype: str = 'str'
     drop: bool = False
     is_input: bool = False
-    process: List[str] = None
-
-    def __post_init__(self):
-        if self.process is None:
-            self.process = []
 
 
 class MetadataRegistry:
-    """Central registry for all metadata - replaces metadata.yaml"""
+    """
+    Centralized metadata repository for PRIVATEER dataset characterization.
+
+    This registry maintains comprehensive metadata specifications for the
+    network traffic dataset, including device configurations and attack
+    scenario definitions. The registry providing type-safe access to dataset
+    metadata throughout the analytics pipeline.
+
+    The registry encompasses three primary metadata categories: device
+    specifications defining network participants and their attack involvement,
+    attack timeline information enabling precise temporal labeling, and controlling data preparation workflows.
+    This centralized approach ensures consistency across distributed training scenarios.
+    """
 
     # Device configurations
     DEVICES = {
@@ -119,10 +176,10 @@ class MetadataRegistry:
     # Feature configurations
     FEATURES = {
         '_time': FeatureInfo(dtype='string', drop=False, is_input=False),
-        'bearer_0_dl_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False, process=['delta']),
-        'bearer_0_ul_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False, process=['delta']),
-        'bearer_1_dl_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False, process=['delta']),
-        'bearer_1_ul_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False, process=['delta']),
+        'bearer_0_dl_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False),
+        'bearer_0_ul_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False),
+        'bearer_1_dl_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False),
+        'bearer_1_ul_total_bytes': FeatureInfo(dtype='float', drop=True, is_input=False),
         'dl_bitrate': FeatureInfo(dtype='float', drop=False, is_input=True),
         'dl_err': FeatureInfo(dtype='float', drop=True, is_input=False),
         'dl_mcs': FeatureInfo(dtype='float', drop=False, is_input=False),
@@ -180,10 +237,37 @@ class MetadataRegistry:
 
 
 class MetadataConfig:
-    """Configuration class that uses Python objects instead of YAML files"""
+    """
+    Configuration interface for metadata access and feature extraction.
+
+    This class provides a structured interface for accessing dataset metadata
+    through Python objects, maintaining type safety. The configuration
+    supports comprehensive feature categorization, device characterization,
+    and attack scenario specifications essential for privacy-preserving
+    anomaly detection in 5G networks.
+
+    The implementation centralizes metadata management to ensure consistency
+    across federated learning scenarios while providing convenient accessor
+    methods for different metadata categories. This approach facilitates
+    reproducible experiments and standardized data processing workflows
+    throughout the PRIVATEER analytics framework.
+
+    Attributes:
+        devices (Dict[str, DeviceInfo]): Device configuration registry mapping
+                                       device identifiers to comprehensive
+                                       device specifications
+        attacks (Dict[int, AttackInfo]): Attack scenario definitions providing
+                                       temporal boundaries for malicious
+                                       activity periods
+        features (Dict[str, FeatureInfo]): Feature processing specifications
+                                         controlling data preparation and
+                                         model input selection
+    """
+
+
 
     def __init__(self):
-        """Initialize with predefined metadata"""
+        """Initialize metadata configuration with defined specifications"""
         self.devices = MetadataRegistry.DEVICES
         self.attacks = MetadataRegistry.ATTACKS
         self.features = MetadataRegistry.FEATURES
@@ -192,10 +276,14 @@ class MetadataConfig:
         """Get list of input features"""
         return [feat for feat, info in self.features.items() if info.is_input]
 
+    def get_input_size(self):
+        """Get input features size"""
+        return len(self.get_input_features())
+
     def get_drop_features(self) -> List[str]:
-        """Get list of features to drop"""
+        """Get list of features designated for exclusion"""
         return [feat for feat, info in self.features.items() if info.drop]
 
     def get_features_dtypes(self) -> Dict[str, str]:
-        """Get feature data types mapping"""
+        """Get data type specifications for proper DataFrame construction"""
         return {feat: info.dtype for feat, info in self.features.items()}

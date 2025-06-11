@@ -17,9 +17,23 @@ from privateer_ad.utils import log_model
 
 class TrainPipeline:
     """
-    Training pipeline.
+    Comprehensive training pipeline for privacy-preserving anomaly detection models.
 
-    This class provides an interface for training models.
+    Orchestrates the complete machine learning workflow from data processing through
+    model training to evaluation and artifact logging. Supports differential privacy,
+    experiment tracking, and configurable training strategies with proper resource
+    management and cleanup.
+
+    The pipeline handles complex configurations including federated learning setups,
+    privacy-preserving mechanisms, and comprehensive experiment tracking through MLflow
+    integration. Designed for both standalone training and integration within larger
+    federated learning systems.
+
+    Attributes:
+        device (torch.device): Computational device for training operations
+        model (TransformerAD): The anomaly detection model being trained
+        optimizer: PyTorch optimizer for training
+        train_dl, val_dl, test_dl: Data loaders for different training phases
     """
 
     def __init__(
@@ -32,7 +46,19 @@ class TrainPipeline:
             privacy_config: PrivacyConfig | None = None
     ):
         """
-        Initialize the training pipeline.
+        Initialize training pipeline with comprehensive configuration management.
+
+        Sets up all necessary components including data processing, model architecture,
+        privacy mechanisms, and experiment tracking. Handles device selection and
+        resource allocation with proper error handling and cleanup.
+
+        Args:
+            paths_config (PathConfig, optional): File system path configurations
+            mlflow_config (MLFlowConfig, optional): Experiment tracking settings
+            training_config (TrainingConfig, optional): Training parameters and optimization
+            data_config (DataConfig, optional): Data processing and loading configuration
+            model_config (ModelConfig, optional): Model architecture specifications
+            privacy_config (PrivacyConfig, optional): Differential privacy settings
         """
         logging.info('Initialize training pipeline.')
         # Setup configurations
@@ -58,10 +84,19 @@ class TrainPipeline:
             self._cleanup_mlflow()
             raise e
 
-
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
-        Train the model with current configuration.
+        Execute model training with comprehensive configuration logging and privacy support.
+
+        Runs the complete training process including differential privacy application
+        when enabled, progress tracking, and best model checkpoint management. Integrates
+        with experiment tracking for detailed training analysis.
+
+        Args:
+            start_epoch (int): Starting epoch for training continuation or federated rounds
+
+        Returns:
+            Dict[str, Any]: Best checkpoint containing model state and training metrics
         """
         try:
             self.model.train()
@@ -101,13 +136,16 @@ class TrainPipeline:
 
     def evaluate_model(self, step: int = 0) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
-        Evaluate the trained model.
+        Comprehensive model evaluation with metrics computation and visualization.
+
+        Performs thorough model assessment on test data, generating performance
+        metrics and visualizations for analysis and reporting.
 
         Args:
-            step: Current training step/epoch
+            step (int): Current training step for tracking evaluation progression
 
         Returns:
-            Evaluation metrics
+            Tuple[Dict[str, Any], Dict[str, Any]]: Evaluation metrics and visualization figures
         """
         try:
             self.model.eval()
@@ -121,13 +159,17 @@ class TrainPipeline:
 
     def train_eval(self, start_epoch: int = 0) -> Tuple[Dict[str, float], Dict[str, Any]]:
         """
-        Complete training and evaluation pipeline.
+        Complete training and evaluation workflow with model logging.
+
+        Executes full machine learning pipeline from training through evaluation
+        to model artifact preservation. Handles champion model selection and
+        comprehensive result logging for experiment tracking.
 
         Args:
-            start_epoch: Starting epoch for training
+            start_epoch (int): Starting epoch for training process
 
         Returns:
-            Evaluation metrics and figures
+            Tuple[Dict[str, float], Dict[str, Any]]: Combined metrics and visualizations
         """
         try:
             best_checkpoint = self.train_model(start_epoch=start_epoch)
@@ -165,7 +207,7 @@ class TrainPipeline:
             self._cleanup_resources()
 
     def _setup_data_and_model(self):
-        """Setup datasets and model"""
+        """Configure data processing pipeline and model architecture with privacy support."""
         # Setup datasets
         logging.info('Setup dataloaders.')
 
@@ -218,7 +260,7 @@ class TrainPipeline:
             logging.info('Early stopping enabled.')
 
     def _setup_mlflow(self):
-        """Setup MLFlow with proper nested run handling"""
+        """Initialize MLflow experiment tracking with nested run support."""
         mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
         mlflow.set_experiment(self.mlflow_config.experiment_name)
 
@@ -241,7 +283,7 @@ class TrainPipeline:
         logging.info(f'Started MLFlow run: {run.info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
     def _cleanup_mlflow(self):
-        """Ensure MLflow run is properly ended"""
+        """Ensure proper MLflow run termination."""
         try:
             if mlflow.active_run() and mlflow.active_run().info.run_id == self.mlflow_config.child_run_id:
                 mlflow.end_run()
@@ -250,7 +292,7 @@ class TrainPipeline:
             logging.warning(f"Error during MLflow cleanup: {e}")
 
     def _cleanup_resources(self):
-        """Clean up all resources"""
+        """Release computational resources and clear memory."""
         try:
             for dl in [self.train_dl, self.val_dl, self.test_dl]:
                 if hasattr(dl, '_iterator') and dl._iterator is not None:
@@ -277,6 +319,6 @@ class TrainPipeline:
 
 
 def main():
-    """Main function with Fire integration for CLI usage."""
+    """CLI entry point for training pipeline execution."""
     from fire import Fire
     Fire(TrainPipeline)
