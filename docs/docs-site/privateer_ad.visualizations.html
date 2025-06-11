@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.visualizations package &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.visualizations.device_info module" href="privateer_ad.visualizations.device_info.html" />
+    <link rel="prev" title="privateer_ad.train.trainer module" href="privateer_ad.train.trainer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="privateer_ad.html">privateer_ad package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.html">privateer_ad package</a></li>
+      <li class="breadcrumb-item active">privateer_ad.visualizations package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.visualizations.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad.visualizations">
+<span id="privateer-ad-visualizations-package"></span><h1>privateer_ad.visualizations package<a class="headerlink" href="#module-privateer_ad.visualizations" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.visualizations.</span></span><span class="sig-name descname"><span class="pre">Visualizer</span></span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Comprehensive visualization toolkit for anomaly detection model evaluation.</p>
+<p>Generates plots including confusion matrices, ROC curves,
+and score distribution visualizations. Configured with clean styling for
+professional presentation and analysis of model performance characteristics.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.figures">
+<span class="sig-name descname"><span class="pre">figures</span></span><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.figures" title="Link to this definition"></a></dt>
+<dd><p>Collection of generated matplotlib figures for export</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize visualizer with clean seaborn styling configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.create_confusion_matrix">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.create_confusion_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.create_confusion_matrix" title="Link to this definition"></a></dt>
+<dd><p>Generate normalized confusion matrix heatmap visualization.</p>
+<p>Creates confusion matrix with row normalization
+for percentage-based interpretation of classification performance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> (<em>array</em>) – True class labels</p></li>
+<li><p><strong>y_pred</strong> (<em>array</em>) – Predicted class labels</p></li>
+<li><p><strong>class_names</strong> (<em>list</em>) – Class names for axis labeling</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Confusion matrix heatmap</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.create_distribution_plot">
+<span class="sig-name descname"><span class="pre">create_distribution_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.create_distribution_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.create_distribution_plot" title="Link to this definition"></a></dt>
+<dd><p>Generate enhanced score distribution visualization with threshold analysis.</p>
+<p>Creates overlaid histograms showing score distributions for benign and
+malicious samples, with threshold line and decision regions highlighted
+for intuitive understanding of classification behavior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scores</strong> (<em>array</em>) – Continuous anomaly scores from model</p></li>
+<li><p><strong>y_true</strong> (<em>array</em>) – True binary labels (0=benign, 1=malicious)</p></li>
+<li><p><strong>threshold</strong> (<em>float</em>) – Decision threshold for anomaly classification</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Score distribution visualization with threshold</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.create_roc_curve">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_roc_curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_names</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.create_roc_curve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.create_roc_curve" title="Link to this definition"></a></dt>
+<dd><p>Generate ROC curve visualization for binary or multiclass classification.</p>
+<p>Creates ROC analysis with AUC computation, supporting both score-based
+evaluation and one-vs-rest multiclass scenarios.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> (<em>array</em>) – True class labels</p></li>
+<li><p><strong>y_pred</strong> (<em>array</em>) – Predicted labels or probabilities</p></li>
+<li><p><strong>scores</strong> (<em>array</em>) – Continuous prediction scores for ROC computation</p></li>
+<li><p><strong>class_names</strong> (<em>list</em>) – Class names for legend labeling</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>ROC curve visualization</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.figure.Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.plot_training_history">
+<span class="sig-name descname"><span class="pre">plot_training_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">history</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.plot_training_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.plot_training_history" title="Link to this definition"></a></dt>
+<dd><p>Generate training progression plots from model history.</p>
+<p>Creates individual plots for each metric tracked during training,
+displaying both training and validation curves when available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>history</strong> – Training history object containing metric evolution</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.visualizations.Visualizer.visualize">
+<span class="sig-name descname"><span class="pre">visualize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/visualizations/plotter.html#Visualizer.visualize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.visualizations.Visualizer.visualize" title="Link to this definition"></a></dt>
+<dd><p>Generate comprehensive evaluation visualizations for model assessment.</p>
+<p>Creates standard evaluation plots including confusion matrix and ROC curve,
+with optional score distribution analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y_true</strong> (<em>array</em>) – True binary labels</p></li>
+<li><p><strong>y_pred</strong> (<em>array</em>) – Predicted binary labels</p></li>
+<li><p><strong>scores</strong> (<em>array</em><em>, </em><em>optional</em>) – Continuous anomaly scores for distribution analysis</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Decision threshold for score visualization</p></li>
+<li><p><strong>target_names</strong> (<em>list</em><em>, </em><em>optional</em>) – Class names for plot labeling</p></li>
+<li><p><strong>prefix</strong> (<em>str</em><em>, </em><em>optional</em>) – Prefix for figure naming in collection</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer"><code class="docutils literal notranslate"><span class="pre">Visualizer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.figures"><code class="docutils literal notranslate"><span class="pre">Visualizer.figures</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.__init__"><code class="docutils literal notranslate"><span class="pre">Visualizer.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.plot_training_history"><code class="docutils literal notranslate"><span class="pre">Visualizer.plot_training_history()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.visualize"><code class="docutils literal notranslate"><span class="pre">Visualizer.visualize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.create_roc_curve"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_roc_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.create_confusion_matrix"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_confusion_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html#privateer_ad.visualizations.plotter.Visualizer.create_distribution_plot"><code class="docutils literal notranslate"><span class="pre">Visualizer.create_distribution_plot()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="privateer_ad.train.trainer.html" class="btn btn-neutral float-left" title="privateer_ad.train.trainer module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.visualizations.device_info.html" class="btn btn-neutral float-right" title="privateer_ad.visualizations.device_info module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

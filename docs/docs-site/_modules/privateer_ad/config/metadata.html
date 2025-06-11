@@ -1,0 +1,469 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.config.metadata &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../privateer_ad.html">privateer_ad package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">privateer_ad.config.metadata</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for privateer_ad.config.metadata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Metadata configuration as Python objects</span>
+<span class="sd">This replaces the metadata.yaml file to avoid packaging/distribution issues</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<div class="viewcode-block" id="DeviceInfo">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.DeviceInfo">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeviceInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Device characterization for network traffic analysis.</span>
+
+<span class="sd">    This dataclass encapsulates device properties within the, including identification parameters,</span>
+<span class="sd">    network configuration and attack participation metadata. The characterization supports both</span>
+<span class="sd">    malicious and benign device categories while tracking participation</span>
+<span class="sd">    patterns across different attack scenarios.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        imeisv (str): International Mobile Equipment Identity Software Version</span>
+<span class="sd">                     serving as unique device identifier within the network</span>
+<span class="sd">        ip (str): Assigned IP address for network communication and traffic</span>
+<span class="sd">                 correlation analysis</span>
+<span class="sd">        type (str): Hardware Device Type, e.g., &#39;raspberry&#39;, &#39;waveshare_5g_cpe_box&#39;,</span>
+<span class="sd">        malicious (bool): Binary indicator specifying whether device exhibits</span>
+<span class="sd">                         malicious behavior during attack scenarios</span>
+<span class="sd">        in_attacks (List[int]): Attack scenario identifiers where device participates, enabling temporal correlation</span>
+<span class="sd">                                of device behavior with attack patterns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">imeisv</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ip</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">malicious</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">in_attacks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="AttackInfo">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.AttackInfo">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AttackInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Temporal attack scenario specification for dataset annotation.</span>
+
+<span class="sd">    This dataclass defines precise temporal boundaries for attack events</span>
+<span class="sd">    within the network traffic dataset, enabling accurate labeling of</span>
+<span class="sd">    malicious versus benign traffic periods. The temporal precision</span>
+<span class="sd">    supports fine-grained anomaly detection training and evaluation</span>
+<span class="sd">    across different attack methodologies.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        start (str): Attack initiation timestamp in ISO format, marking</span>
+<span class="sd">                    the precise beginning of malicious activity within</span>
+<span class="sd">                    the network traffic timeline</span>
+<span class="sd">        stop (str): Attack termination timestamp in ISO format, defining</span>
+<span class="sd">                   the conclusion of malicious activity and return to</span>
+<span class="sd">                   benign traffic patterns</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">stop</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="FeatureInfo">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.FeatureInfo">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FeatureInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Feature processing configuration for machine learning pipeline integration.</span>
+
+<span class="sd">    This dataclass specifies comprehensive processing instructions for individual</span>
+<span class="sd">    network traffic features, controlling data type handling and inclusion criteria.</span>
+<span class="sd">    The configuration enables flexible feature engineering while maintaining</span>
+<span class="sd">    consistency across training and inference phases of the anomaly detection pipeline.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        dtype (str): Data type specification for proper pandas DataFrame</span>
+<span class="sd">                    construction and type validation during loading</span>
+<span class="sd">        drop (bool): Feature exclusion flag controlling whether feature</span>
+<span class="sd">                    should be removed during preprocessing pipeline</span>
+<span class="sd">        is_input (bool): Model input designation specifying whether feature</span>
+<span class="sd">                        serves as input to machine learning models</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;str&#39;</span>
+    <span class="n">drop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">is_input</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="MetadataRegistry">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataRegistry">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetadataRegistry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Centralized metadata repository for PRIVATEER dataset characterization.</span>
+
+<span class="sd">    This registry maintains comprehensive metadata specifications for the</span>
+<span class="sd">    network traffic dataset, including device configurations and attack</span>
+<span class="sd">    scenario definitions. The registry providing type-safe access to dataset</span>
+<span class="sd">    metadata throughout the analytics pipeline.</span>
+
+<span class="sd">    The registry encompasses three primary metadata categories: device</span>
+<span class="sd">    specifications defining network participants and their attack involvement,</span>
+<span class="sd">    attack timeline information enabling precise temporal labeling, and controlling data preparation workflows.</span>
+<span class="sd">    This centralized approach ensures consistency across distributed training scenarios.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Device configurations</span>
+    <span class="n">DEVICES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;1&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8642840401612300&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.2&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;raspberry&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8642840401624200&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.4&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;raspberry&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;3&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8642840401594200&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.6&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;waveshare_5g_cpe_box&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;4&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8677660403123800&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.8&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;waveshare_industrial_5g_router&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;5&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;3557821101183501&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.10&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;dwr_2101_5g&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;6&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8628490433231158&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.12&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;huawei_p40&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;7&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8609960480859058&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.16&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;huawei_p40&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;8&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8609960480666910&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.18&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;huawei_p40&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;9&#39;</span><span class="p">:</span> <span class="n">DeviceInfo</span><span class="p">(</span>
+            <span class="n">imeisv</span><span class="o">=</span><span class="s1">&#39;8609960468879057&#39;</span><span class="p">,</span>
+            <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;10.20.10.20&#39;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;huawei_p40&#39;</span><span class="p">,</span>
+            <span class="n">malicious</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">in_attacks</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Attack configurations</span>
+    <span class="n">ATTACKS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="n">AttackInfo</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-08-18 07:00:00.000&#39;</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="s1">&#39;2024-08-18 08:00:00.000&#39;</span><span class="p">),</span>
+        <span class="mi">2</span><span class="p">:</span> <span class="n">AttackInfo</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-08-19 07:00:00.000&#39;</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="s1">&#39;2024-08-19 09:41:00.000&#39;</span><span class="p">),</span>
+        <span class="mi">3</span><span class="p">:</span> <span class="n">AttackInfo</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-08-19 17:00:00.000&#39;</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="s1">&#39;2024-08-19 18:00:00.000&#39;</span><span class="p">),</span>
+        <span class="mi">4</span><span class="p">:</span> <span class="n">AttackInfo</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-08-21 12:00:00.000&#39;</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="s1">&#39;2024-08-21 13:00:00.000&#39;</span><span class="p">),</span>
+        <span class="mi">5</span><span class="p">:</span> <span class="n">AttackInfo</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-08-21 17:00:00.000&#39;</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="s1">&#39;2024-08-21 18:00:00.000&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Feature configurations</span>
+    <span class="n">FEATURES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;_time&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_dl_total_bytes&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_ul_total_bytes&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_dl_total_bytes&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_ul_total_bytes&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;dl_bitrate&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;dl_err&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;dl_mcs&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;dl_retx&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;dl_tx&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;ul_bitrate&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;ul_err&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ul_mcs&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;ul_path_loss&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ul_phr&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ul_retx&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;ul_tx&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;cqi&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;epre&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;initial_ta&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;p_ue&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;pusch_snr&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;turbo_decoder_avg&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s1">&#39;attack&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;malicious&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;attack_number&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;imeisv&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;5g_tmsi&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;amf_ue_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_apn&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_ip&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_ipv6&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_pdu_session_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_qos_flow_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_0_sst&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_apn&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_ip&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_ipv6&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_pdu_session_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_qos_flow_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;bearer_1_sst&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ran_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ran_plmn&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ran_ue_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;registered&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;rnti&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;t3512&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;tac&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;tac_plmn&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ue_aggregate_max_bitrate_dl&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ue_aggregate_max_bitrate_ul&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ul_n_layer&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ul_rank&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;ri&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;turbo_decoder_max&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;turbo_decoder_min&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s1">&#39;cell_id&#39;</span><span class="p">:</span> <span class="n">FeatureInfo</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_input</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="MetadataConfig">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MetadataConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration interface for metadata access and feature extraction.</span>
+
+<span class="sd">    This class provides a structured interface for accessing dataset metadata</span>
+<span class="sd">    through Python objects, maintaining type safety. The configuration</span>
+<span class="sd">    supports comprehensive feature categorization, device characterization,</span>
+<span class="sd">    and attack scenario specifications essential for privacy-preserving</span>
+<span class="sd">    anomaly detection in 5G networks.</span>
+
+<span class="sd">    The implementation centralizes metadata management to ensure consistency</span>
+<span class="sd">    across federated learning scenarios while providing convenient accessor</span>
+<span class="sd">    methods for different metadata categories. This approach facilitates</span>
+<span class="sd">    reproducible experiments and standardized data processing workflows</span>
+<span class="sd">    throughout the PRIVATEER analytics framework.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        devices (Dict[str, DeviceInfo]): Device configuration registry mapping</span>
+<span class="sd">                                       device identifiers to comprehensive</span>
+<span class="sd">                                       device specifications</span>
+<span class="sd">        attacks (Dict[int, AttackInfo]): Attack scenario definitions providing</span>
+<span class="sd">                                       temporal boundaries for malicious</span>
+<span class="sd">                                       activity periods</span>
+<span class="sd">        features (Dict[str, FeatureInfo]): Feature processing specifications</span>
+<span class="sd">                                         controlling data preparation and</span>
+<span class="sd">                                         model input selection</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+
+<div class="viewcode-block" id="MetadataConfig.__init__">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize metadata configuration with defined specifications&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">devices</span> <span class="o">=</span> <span class="n">MetadataRegistry</span><span class="o">.</span><span class="n">DEVICES</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attacks</span> <span class="o">=</span> <span class="n">MetadataRegistry</span><span class="o">.</span><span class="n">ATTACKS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">MetadataRegistry</span><span class="o">.</span><span class="n">FEATURES</span></div>
+
+
+<div class="viewcode-block" id="MetadataConfig.get_input_features">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig.get_input_features">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_input_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get list of input features&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">feat</span> <span class="k">for</span> <span class="n">feat</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">is_input</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MetadataConfig.get_input_size">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig.get_input_size">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_input_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get input features size&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_input_features</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="MetadataConfig.get_drop_features">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig.get_drop_features">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_drop_features</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get list of features designated for exclusion&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">feat</span> <span class="k">for</span> <span class="n">feat</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">drop</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="MetadataConfig.get_features_dtypes">
+<a class="viewcode-back" href="../../../privateer_ad.config.metadata.html#privateer_ad.config.metadata.MetadataConfig.get_features_dtypes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_features_dtypes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data type specifications for proper DataFrame construction&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">feat</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">dtype</span> <span class="k">for</span> <span class="n">feat</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

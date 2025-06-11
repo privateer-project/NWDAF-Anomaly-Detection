@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.fl.strategy module &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.fl.utils module" href="privateer_ad.fl.utils.html" />
+    <link rel="prev" title="privateer_ad.fl.server module" href="privateer_ad.fl.server.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="privateer_ad.html">privateer_ad package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.metadata.html">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.html">privateer_ad package</a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.fl.html">privateer_ad.fl package</a></li>
+      <li class="breadcrumb-item active">privateer_ad.fl.strategy module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.fl.strategy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad.fl.strategy">
+<span id="privateer-ad-fl-strategy-module"></span><h1>privateer_ad.fl.strategy module<a class="headerlink" href="#module-privateer_ad.fl.strategy" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.metrics_aggregation_fn">
+<span class="sig-prename descclassname"><span class="pre">privateer_ad.fl.strategy.</span></span><span class="sig-name descname"><span class="pre">metrics_aggregation_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/fl/strategy.html#metrics_aggregation_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.fl.strategy.metrics_aggregation_fn" title="Link to this definition"></a></dt>
+<dd><p>Aggregate performance metrics from multiple federated learning clients.
+Args:
+results (List[Tuple[int, Metrics]]): Collection of client results where</p>
+<blockquote>
+<div><p>each tuple contains the number of
+examples used by the client and a
+dictionary of computed metrics.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Weighted average of metrics across all participating clients,</dt><dd><p>where each metric value represents the dataset-size-weighted
+mean of individual client contributions.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.fl.strategy.</span></span><span class="sig-name descname"><span class="pre">CustomStrategy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlflow_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/fl/strategy.html#CustomStrategy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">FedAvg</span></code></p>
+<p>Advanced federated learning strategy with model tracking and adaptive coordination.</p>
+<p>This strategy extends the standard Federated Averaging approach with
+sophisticated model state management, comprehensive experiment tracking,
+and adaptive coordination capabilities tailored for anomaly detection
+scenarios. The implementation maintains a global model state that evolves
+through collaborative learning while preserving the best-performing model
+configurations throughout the federated training process.</p>
+<p>The strategy incorporates intelligent model selection based on aggregated
+performance metrics, ensuring that the global model consistently represents
+the best collaborative learning outcome achieved across all federation rounds.
+This approach prevents performance regression that might occur from temporary
+training fluctuations or suboptimal client contributions in specific rounds.</p>
+<p>The implementation integrates comprehensive experiment tracking through MLflow,
+providing detailed visibility into federated learning dynamics, model evolution,
+and client-specific contributions. This tracking capability proves invaluable
+for understanding collaborative learning behavior and optimizing federation
+configurations for specific deployment scenarios.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.mlflow_config">
+<span class="sig-name descname"><span class="pre">mlflow_config</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.mlflow_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for experiment tracking coordination</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig" title="privateer_ad.config.MLFlowConfig">MLFlowConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.training_config">
+<span class="sig-name descname"><span class="pre">training_config</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.training_config" title="Link to this definition"></a></dt>
+<dd><p>Training parameters and optimization settings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.TrainingConfig" title="privateer_ad.config.TrainingConfig">TrainingConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.model_config" title="Link to this definition"></a></dt>
+<dd><p>Model architecture and hyperparameter specifications</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig" title="privateer_ad.config.ModelConfig">ModelConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.model" title="Link to this definition"></a></dt>
+<dd><p>Global model instance maintained throughout federation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="privateer_ad.architectures.html#privateer_ad.architectures.TransformerAD" title="privateer_ad.architectures.TransformerAD">TransformerAD</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.best_target_metric">
+<span class="sig-name descname"><span class="pre">best_target_metric</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.best_target_metric" title="Link to this definition"></a></dt>
+<dd><p>Best achieved value for the optimization target</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.best_metrics">
+<span class="sig-name descname"><span class="pre">best_metrics</span></span><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.best_metrics" title="Link to this definition"></a></dt>
+<dd><p>Complete metric set from the best performing round</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">training_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mlflow_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/fl/strategy.html#CustomStrategy.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize the federated learning strategy with comprehensive configuration.
+:param training_config: Training parameters including</p>
+<blockquote>
+<div><p>optimization direction and target
+metrics. Defaults to standard
+configuration if not provided.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_config</strong> (<a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.ModelConfig" title="privateer_ad.config.ModelConfig"><em>ModelConfig</em></a><em>, </em><em>optional</em>) – Model architecture specifications
+including layer dimensions and
+hyperparameters. Uses default settings
+if not specified.</p></li>
+<li><p><strong>mlflow_config</strong> (<a class="reference internal" href="privateer_ad.config.html#privateer_ad.config.MLFlowConfig" title="privateer_ad.config.MLFlowConfig"><em>MLFlowConfig</em></a><em>, </em><em>optional</em>) – Experiment tracking configuration
+for coordinating with server-side
+experiment management. Defaults to
+standard tracking setup.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The strategy automatically determines the optimal metric direction
+(maximize or minimize) and initializes tracking variables accordingly.
+This setup ensures that model selection throughout federation consistently
+improves the target performance metric.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.aggregate_fit">
+<span class="sig-name descname"><span class="pre">aggregate_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server_round</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ClientProxy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FitRes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ClientProxy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FitRes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">BaseException</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Parameters</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/fl/strategy.html#CustomStrategy.aggregate_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.aggregate_fit" title="Link to this definition"></a></dt>
+<dd><p>Aggregate training results from federated clients with intelligent model selection.</p>
+<p>The method implements sophisticated model tracking that evaluates aggregated
+performance metrics after each round and updates the global model state only
+when improvements are achieved. This approach prevents performance regression
+from temporary training fluctuations while ensuring that the federation
+consistently progresses toward better collaborative learning outcomes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>server_round</strong> (<em>int</em>) – Current federation round number for tracking and
+coordination purposes.</p></li>
+<li><p><strong>results</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>ClientProxy</em><em>, </em><em>FitRes</em><em>]</em><em>]</em>) – Training results from
+participating clients containing
+model updates and performance metrics.</p></li>
+<li><p><strong>failures</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><em>Tuple</em><em>[</em><em>ClientProxy</em><em>, </em><em>FitRes</em><em>]</em><em>, </em><em>BaseException</em><em>]</em><em>]</em>) – Collection of client failures
+encountered during training
+for error handling and analysis.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Aggregated model parameters</dt><dd><p>and performance metrics for
+distribution to clients in
+subsequent federation rounds.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Optional[Parameters], dict[str, Scalar]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.fl.strategy.CustomStrategy.aggregate_evaluate">
+<span class="sig-name descname"><span class="pre">aggregate_evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server_round</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ClientProxy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">EvaluateRes</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ClientProxy</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">EvaluateRes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">BaseException</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/fl/strategy.html#CustomStrategy.aggregate_evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.fl.strategy.CustomStrategy.aggregate_evaluate" title="Link to this definition"></a></dt>
+<dd><p>Aggregate evaluation results from federated clients with comprehensive tracking.</p>
+<p>This method combines evaluation results from distributed clients to assess
+overall federation performance on test data. The aggregation provides insights
+into how well the collaborative model generalizes across different data
+distributions represented by federation participants, which is crucial for
+understanding federated learning effectiveness in heterogeneous environments.
+:param server_round: Current federation round for evaluation tracking</p>
+<blockquote>
+<div><p>and performance analysis coordination.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>results</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>ClientProxy</em><em>, </em><em>EvaluateRes</em><em>]</em><em>]</em>) – Evaluation results from
+participating clients containing
+performance metrics on local
+test data.</p></li>
+<li><p><strong>failures</strong> (<em>List</em><em>[</em><em>Union</em><em>[</em><em>Tuple</em><em>[</em><em>ClientProxy</em><em>, </em><em>EvaluateRes</em><em>]</em><em>, </em><em>BaseException</em><em>]</em><em>]</em>) – Collection of evaluation
+failures for error analysis
+and debugging support.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Aggregated evaluation loss</dt><dd><p>and comprehensive performance
+metrics for federation assessment
+and tracking purposes.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[Optional[float], dict[str, Scalar]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="privateer_ad.fl.server.html" class="btn btn-neutral float-left" title="privateer_ad.fl.server module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.fl.utils.html" class="btn btn-neutral float-right" title="privateer_ad.fl.utils module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

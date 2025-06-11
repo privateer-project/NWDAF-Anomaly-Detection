@@ -1,0 +1,498 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>privateer_ad.config.metadata module &mdash; PRIVATEER Anomaly Detection 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="privateer_ad.config.settings module" href="privateer_ad.config.settings.html" />
+    <link rel="prev" title="privateer_ad.config package" href="privateer_ad.config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PRIVATEER Anomaly Detection
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API Documentation:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="privateer_ad.html">privateer_ad package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.architectures.html">privateer_ad.architectures package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.layers.html">privateer_ad.architectures.layers package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="privateer_ad.architectures.layers.positional_encoding.html">privateer_ad.architectures.layers.positional_encoding module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.architectures.transformer_ad.html">privateer_ad.architectures.transformer_ad module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="privateer_ad.config.html">privateer_ad.config package</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">privateer_ad.config.metadata module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.config.settings.html">privateer_ad.config.settings module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.etl.html">privateer_ad.etl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.download.html">privateer_ad.etl.download module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.transform.html">privateer_ad.etl.transform module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.etl.utils.html">privateer_ad.etl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.evaluate.html">privateer_ad.evaluate package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.evaluate.evaluator.html">privateer_ad.evaluate.evaluator module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.fl.html">privateer_ad.fl package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.client.html">privateer_ad.fl.client module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.server.html">privateer_ad.fl.server module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.strategy.html">privateer_ad.fl.strategy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.fl.utils.html">privateer_ad.fl.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.predict.html">privateer_ad.predict package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.predict.predict.html">privateer_ad.predict.predict module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.train.html">privateer_ad.train package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotune.html">privateer_ad.train.autotune module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.autotuner.html">privateer_ad.train.autotuner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.train.html">privateer_ad.train.train module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.train.trainer.html">privateer_ad.train.trainer module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.visualizations.html">privateer_ad.visualizations package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.device_info.html">privateer_ad.visualizations.device_info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="privateer_ad.visualizations.plotter.html">privateer_ad.visualizations.plotter module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="privateer_ad.utils.html">privateer_ad.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PRIVATEER Anomaly Detection</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.html">privateer_ad package</a></li>
+          <li class="breadcrumb-item"><a href="privateer_ad.config.html">privateer_ad.config package</a></li>
+      <li class="breadcrumb-item active">privateer_ad.config.metadata module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/privateer_ad.config.metadata.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-privateer_ad.config.metadata">
+<span id="privateer-ad-config-metadata-module"></span><h1>privateer_ad.config.metadata module<a class="headerlink" href="#module-privateer_ad.config.metadata" title="Link to this heading"></a></h1>
+<p>Metadata configuration as Python objects
+This replaces the metadata.yaml file to avoid packaging/distribution issues</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.config.metadata.</span></span><span class="sig-name descname"><span class="pre">DeviceInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imeisv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">malicious</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_attacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#DeviceInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Device characterization for network traffic analysis.</p>
+<p>This dataclass encapsulates device properties within the, including identification parameters,
+network configuration and attack participation metadata. The characterization supports both
+malicious and benign device categories while tracking participation
+patterns across different attack scenarios.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.imeisv">
+<span class="sig-name descname"><span class="pre">imeisv</span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.imeisv" title="Link to this definition"></a></dt>
+<dd><p>International Mobile Equipment Identity Software Version
+serving as unique device identifier within the network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.ip">
+<span class="sig-name descname"><span class="pre">ip</span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.ip" title="Link to this definition"></a></dt>
+<dd><p>Assigned IP address for network communication and traffic
+correlation analysis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.type">
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.type" title="Link to this definition"></a></dt>
+<dd><p>Hardware Device Type, e.g., ‘raspberry’, ‘waveshare_5g_cpe_box’,</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.malicious">
+<span class="sig-name descname"><span class="pre">malicious</span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.malicious" title="Link to this definition"></a></dt>
+<dd><p>Binary indicator specifying whether device exhibits
+malicious behavior during attack scenarios</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.in_attacks">
+<span class="sig-name descname"><span class="pre">in_attacks</span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.in_attacks" title="Link to this definition"></a></dt>
+<dd><p>Attack scenario identifiers where device participates, enabling temporal correlation
+of device behavior with attack patterns</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">imeisv</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">ip</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">malicious</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">in_attacks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.DeviceInfo.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">imeisv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">malicious</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_attacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#privateer_ad.config.metadata.DeviceInfo.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.AttackInfo">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.config.metadata.</span></span><span class="sig-name descname"><span class="pre">AttackInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#AttackInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.AttackInfo" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Temporal attack scenario specification for dataset annotation.</p>
+<p>This dataclass defines precise temporal boundaries for attack events
+within the network traffic dataset, enabling accurate labeling of
+malicious versus benign traffic periods. The temporal precision
+supports fine-grained anomaly detection training and evaluation
+across different attack methodologies.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.AttackInfo.start">
+<span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#privateer_ad.config.metadata.AttackInfo.start" title="Link to this definition"></a></dt>
+<dd><p>Attack initiation timestamp in ISO format, marking
+the precise beginning of malicious activity within
+the network traffic timeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.AttackInfo.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><a class="headerlink" href="#privateer_ad.config.metadata.AttackInfo.stop" title="Link to this definition"></a></dt>
+<dd><p>Attack termination timestamp in ISO format, defining
+the conclusion of malicious activity and return to
+benign traffic patterns</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">start</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">stop</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.AttackInfo.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#privateer_ad.config.metadata.AttackInfo.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.FeatureInfo">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.config.metadata.</span></span><span class="sig-name descname"><span class="pre">FeatureInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'str'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#FeatureInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.FeatureInfo" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Feature processing configuration for machine learning pipeline integration.</p>
+<p>This dataclass specifies comprehensive processing instructions for individual
+network traffic features, controlling data type handling and inclusion criteria.
+The configuration enables flexible feature engineering while maintaining
+consistency across training and inference phases of the anomaly detection pipeline.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.FeatureInfo.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#privateer_ad.config.metadata.FeatureInfo.dtype" title="Link to this definition"></a></dt>
+<dd><p>Data type specification for proper pandas DataFrame
+construction and type validation during loading</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.FeatureInfo.drop">
+<span class="sig-name descname"><span class="pre">drop</span></span><a class="headerlink" href="#privateer_ad.config.metadata.FeatureInfo.drop" title="Link to this definition"></a></dt>
+<dd><p>Feature exclusion flag controlling whether feature
+should be removed during preprocessing pipeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.FeatureInfo.is_input">
+<span class="sig-name descname"><span class="pre">is_input</span></span><a class="headerlink" href="#privateer_ad.config.metadata.FeatureInfo.is_input" title="Link to this definition"></a></dt>
+<dd><p>Model input designation specifying whether feature
+serves as input to machine learning models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">dtype</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'str'</span></em><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">drop</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">is_input</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.FeatureInfo.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'str'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#privateer_ad.config.metadata.FeatureInfo.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataRegistry">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.config.metadata.</span></span><span class="sig-name descname"><span class="pre">MetadataRegistry</span></span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataRegistry" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Centralized metadata repository for PRIVATEER dataset characterization.</p>
+<p>This registry maintains comprehensive metadata specifications for the
+network traffic dataset, including device configurations and attack
+scenario definitions. The registry providing type-safe access to dataset
+metadata throughout the analytics pipeline.</p>
+<p>The registry encompasses three primary metadata categories: device
+specifications defining network participants and their attack involvement,
+attack timeline information enabling precise temporal labeling, and controlling data preparation workflows.
+This centralized approach ensures consistency across distributed training scenarios.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataRegistry.DEVICES">
+<span class="sig-name descname"><span class="pre">DEVICES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'1':</span> <span class="pre">DeviceInfo(imeisv='8642840401612300',</span> <span class="pre">ip='10.20.10.2',</span> <span class="pre">type='raspberry',</span> <span class="pre">malicious=True,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5]),</span> <span class="pre">'2':</span> <span class="pre">DeviceInfo(imeisv='8642840401624200',</span> <span class="pre">ip='10.20.10.4',</span> <span class="pre">type='raspberry',</span> <span class="pre">malicious=True,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5]),</span> <span class="pre">'3':</span> <span class="pre">DeviceInfo(imeisv='8642840401594200',</span> <span class="pre">ip='10.20.10.6',</span> <span class="pre">type='waveshare_5g_cpe_box',</span> <span class="pre">malicious=True,</span> <span class="pre">in_attacks=[5]),</span> <span class="pre">'4':</span> <span class="pre">DeviceInfo(imeisv='8677660403123800',</span> <span class="pre">ip='10.20.10.8',</span> <span class="pre">type='waveshare_industrial_5g_router',</span> <span class="pre">malicious=True,</span> <span class="pre">in_attacks=[5]),</span> <span class="pre">'5':</span> <span class="pre">DeviceInfo(imeisv='3557821101183501',</span> <span class="pre">ip='10.20.10.10',</span> <span class="pre">type='dwr_2101_5g',</span> <span class="pre">malicious=True,</span> <span class="pre">in_attacks=[5]),</span> <span class="pre">'6':</span> <span class="pre">DeviceInfo(imeisv='8628490433231158',</span> <span class="pre">ip='10.20.10.12',</span> <span class="pre">type='huawei_p40',</span> <span class="pre">malicious=False,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5]),</span> <span class="pre">'7':</span> <span class="pre">DeviceInfo(imeisv='8609960480859058',</span> <span class="pre">ip='10.20.10.16',</span> <span class="pre">type='huawei_p40',</span> <span class="pre">malicious=False,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5]),</span> <span class="pre">'8':</span> <span class="pre">DeviceInfo(imeisv='8609960480666910',</span> <span class="pre">ip='10.20.10.18',</span> <span class="pre">type='huawei_p40',</span> <span class="pre">malicious=False,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5]),</span> <span class="pre">'9':</span> <span class="pre">DeviceInfo(imeisv='8609960468879057',</span> <span class="pre">ip='10.20.10.20',</span> <span class="pre">type='huawei_p40',</span> <span class="pre">malicious=False,</span> <span class="pre">in_attacks=[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5])}</span></em><a class="headerlink" href="#privateer_ad.config.metadata.MetadataRegistry.DEVICES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataRegistry.ATTACKS">
+<span class="sig-name descname"><span class="pre">ATTACKS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{1:</span> <span class="pre">AttackInfo(start='2024-08-18</span> <span class="pre">07:00:00.000',</span> <span class="pre">stop='2024-08-18</span> <span class="pre">08:00:00.000'),</span> <span class="pre">2:</span> <span class="pre">AttackInfo(start='2024-08-19</span> <span class="pre">07:00:00.000',</span> <span class="pre">stop='2024-08-19</span> <span class="pre">09:41:00.000'),</span> <span class="pre">3:</span> <span class="pre">AttackInfo(start='2024-08-19</span> <span class="pre">17:00:00.000',</span> <span class="pre">stop='2024-08-19</span> <span class="pre">18:00:00.000'),</span> <span class="pre">4:</span> <span class="pre">AttackInfo(start='2024-08-21</span> <span class="pre">12:00:00.000',</span> <span class="pre">stop='2024-08-21</span> <span class="pre">13:00:00.000'),</span> <span class="pre">5:</span> <span class="pre">AttackInfo(start='2024-08-21</span> <span class="pre">17:00:00.000',</span> <span class="pre">stop='2024-08-21</span> <span class="pre">18:00:00.000')}</span></em><a class="headerlink" href="#privateer_ad.config.metadata.MetadataRegistry.ATTACKS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataRegistry.FEATURES">
+<span class="sig-name descname"><span class="pre">FEATURES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'5g_tmsi':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'_time':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'amf_ue_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'attack':</span> <span class="pre">FeatureInfo(dtype='int',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'attack_number':</span> <span class="pre">FeatureInfo(dtype='int',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_apn':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_dl_total_bytes':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_ip':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_ipv6':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_pdu_session_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_qos_flow_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_sst':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_0_ul_total_bytes':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_apn':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_dl_total_bytes':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_ip':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_ipv6':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_pdu_session_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_qos_flow_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_sst':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'bearer_1_ul_total_bytes':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'cell':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'cell_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'cqi':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'dl_bitrate':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'dl_err':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'dl_mcs':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'dl_retx':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'dl_tx':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'epre':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'imeisv':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'initial_ta':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'malicious':</span> <span class="pre">FeatureInfo(dtype='int',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'p_ue':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'pusch_snr':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'ran_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ran_plmn':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ran_ue_id':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'registered':</span> <span class="pre">FeatureInfo(dtype='bool',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ri':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'rnti':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'t3512':</span> <span class="pre">FeatureInfo(dtype='int',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'tac':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'tac_plmn':</span> <span class="pre">FeatureInfo(dtype='string',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'turbo_decoder_avg':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'turbo_decoder_max':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'turbo_decoder_min':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ue_aggregate_max_bitrate_dl':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ue_aggregate_max_bitrate_ul':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_bitrate':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'ul_err':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_mcs':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'ul_n_layer':</span> <span class="pre">FeatureInfo(dtype='str',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_path_loss':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_phr':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_rank':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=True,</span> <span class="pre">is_input=False),</span> <span class="pre">'ul_retx':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True),</span> <span class="pre">'ul_tx':</span> <span class="pre">FeatureInfo(dtype='float',</span> <span class="pre">drop=False,</span> <span class="pre">is_input=True)}</span></em><a class="headerlink" href="#privateer_ad.config.metadata.MetadataRegistry.FEATURES" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">privateer_ad.config.metadata.</span></span><span class="sig-name descname"><span class="pre">MetadataConfig</span></span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Configuration interface for metadata access and feature extraction.</p>
+<p>This class provides a structured interface for accessing dataset metadata
+through Python objects, maintaining type safety. The configuration
+supports comprehensive feature categorization, device characterization,
+and attack scenario specifications essential for privacy-preserving
+anomaly detection in 5G networks.</p>
+<p>The implementation centralizes metadata management to ensure consistency
+across federated learning scenarios while providing convenient accessor
+methods for different metadata categories. This approach facilitates
+reproducible experiments and standardized data processing workflows
+throughout the PRIVATEER analytics framework.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.devices">
+<span class="sig-name descname"><span class="pre">devices</span></span><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.devices" title="Link to this definition"></a></dt>
+<dd><p>Device configuration registry mapping
+device identifiers to comprehensive
+device specifications</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, <a class="reference internal" href="#privateer_ad.config.metadata.DeviceInfo" title="privateer_ad.config.metadata.DeviceInfo">DeviceInfo</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.attacks">
+<span class="sig-name descname"><span class="pre">attacks</span></span><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.attacks" title="Link to this definition"></a></dt>
+<dd><p>Attack scenario definitions providing
+temporal boundaries for malicious
+activity periods</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[int, <a class="reference internal" href="#privateer_ad.config.metadata.AttackInfo" title="privateer_ad.config.metadata.AttackInfo">AttackInfo</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.features">
+<span class="sig-name descname"><span class="pre">features</span></span><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.features" title="Link to this definition"></a></dt>
+<dd><p>Feature processing specifications
+controlling data preparation and
+model input selection</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, <a class="reference internal" href="#privateer_ad.config.metadata.FeatureInfo" title="privateer_ad.config.metadata.FeatureInfo">FeatureInfo</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.__init__" title="Link to this definition"></a></dt>
+<dd><p>Initialize metadata configuration with defined specifications</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.get_input_features">
+<span class="sig-name descname"><span class="pre">get_input_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig.get_input_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.get_input_features" title="Link to this definition"></a></dt>
+<dd><p>Get list of input features</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.get_input_size">
+<span class="sig-name descname"><span class="pre">get_input_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig.get_input_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.get_input_size" title="Link to this definition"></a></dt>
+<dd><p>Get input features size</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.get_drop_features">
+<span class="sig-name descname"><span class="pre">get_drop_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig.get_drop_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.get_drop_features" title="Link to this definition"></a></dt>
+<dd><p>Get list of features designated for exclusion</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="privateer_ad.config.metadata.MetadataConfig.get_features_dtypes">
+<span class="sig-name descname"><span class="pre">get_features_dtypes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/privateer_ad/config/metadata.html#MetadataConfig.get_features_dtypes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#privateer_ad.config.metadata.MetadataConfig.get_features_dtypes" title="Link to this definition"></a></dt>
+<dd><p>Get data type specifications for proper DataFrame construction</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="privateer_ad.config.html" class="btn btn-neutral float-left" title="privateer_ad.config package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="privateer_ad.config.settings.html" class="btn btn-neutral float-right" title="privateer_ad.config.settings module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, INFILI - EU Horizon Europe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
