@@ -10,7 +10,7 @@ from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
 
 from privateer_ad.architectures import TransformerAD
-from privateer_ad.config import TrainingConfig, MLFlowConfig
+from privateer_ad.config import TrainingConfig, MLFlowConfig, ModelConfig
 from privateer_ad.fl.utils import set_weights
 
 
@@ -31,7 +31,7 @@ def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
 class CustomStrategy(FedAvg):
     """Custom federated learning strategy."""
 
-    def __init__(self, training_config=None, mlflow_config=None):
+    def __init__(self, training_config=None, model_config=None, mlflow_config=None):
         """
         Initialize the custom strategy.
         """
@@ -40,6 +40,7 @@ class CustomStrategy(FedAvg):
         # Store server run ID
         self.mlflow_config = mlflow_config or MLFlowConfig()
         self.training_config = training_config or TrainingConfig()
+        self.model_config = model_config or ModelConfig()
         # Create model with proper configuration
         self.model = TransformerAD()
         initial_parameters = ndarrays_to_parameters([val.cpu().numpy() for _, val in self.model.state_dict().items()])

@@ -7,7 +7,7 @@ from flwr.common import Context
 from flwr.server import Grid, LegacyContext, ServerApp, ServerConfig
 from flwr.server.workflow import SecAggPlusWorkflow, DefaultWorkflow
 
-from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig, TrainingConfig
+from privateer_ad.config import FederatedLearningConfig, MLFlowConfig, PathConfig, TrainingConfig, ModelConfig
 from privateer_ad.etl import DataProcessor
 from privateer_ad.evaluate import ModelEvaluator
 from privateer_ad.fl.strategy import CustomStrategy
@@ -44,11 +44,11 @@ def main(grid: Grid, context: Context) -> None:
     mlflow.log_params(fl_config.__dict__)
     mlflow.log_params({'session_type': 'federated_learning'})
 
-    dp = DataProcessor()
-
-    test_dl = dp.get_dataloader('test', only_benign=False, train=False)
+    data_proc = DataProcessor()
+    model_config = ModelConfig(input_size=len(data_proc.input_features))
+    test_dl = data_proc.get_dataloader('test', only_benign=False, train=False)
     sample = next(iter(test_dl))[0]['encoder_cont'][:1].to('cpu')
-    strategy = CustomStrategy(training_config=training_config, mlflow_config=mlflow_config)
+    strategy = CustomStrategy(training_config=training_config, model_config=model_config, mlflow_config=mlflow_config)
 
     # Setup and run FL
     server_context = LegacyContext(

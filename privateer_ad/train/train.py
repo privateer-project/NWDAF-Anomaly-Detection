@@ -4,11 +4,10 @@ from typing import Dict, Any, Tuple
 
 import mlflow
 import torch
+
 from torchinfo import summary
 
-from privateer_ad.config import ModelConfig, MLFlowConfig, DataConfig, TrainingConfig, PathConfig, \
-    PrivacyConfig
-
+from privateer_ad.config import ModelConfig, MLFlowConfig, DataConfig, TrainingConfig, PathConfig, PrivacyConfig
 from privateer_ad.etl.transform import DataProcessor
 from privateer_ad.architectures import TransformerAD
 from privateer_ad.train.trainer import ModelTrainer
@@ -30,7 +29,7 @@ class TrainPipeline:
             training_config: TrainingConfig | None = None,
             data_config: DataConfig | None = None,
             model_config: ModelConfig | None = None,
-            privacy_config: PrivacyConfig | None = None,
+            privacy_config: PrivacyConfig | None = None
     ):
         """
         Initialize the training pipeline.
@@ -48,6 +47,10 @@ class TrainPipeline:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logging.info(f'Using device: {self.device}')
 
+        self.train_dl = None
+        self.val_dl = None
+        self.test_dl = None
+
         try:
             self._setup_mlflow()
             self._setup_data_and_model()
@@ -55,83 +58,6 @@ class TrainPipeline:
             self._cleanup_mlflow()
             raise e
 
-    def _setup_mlflow(self):
-        """Setup MLFlow with proper nested run handling"""
-        mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
-        mlflow.set_experiment(self.mlflow_config.experiment_name)
-
-        # Handle nested runs for autotuning
-        if self.mlflow_config.parent_run_id:
-            run = mlflow.start_run(
-                run_id=self.mlflow_config.child_run_id,
-                parent_run_id=self.mlflow_config.parent_run_id,
-                nested=True
-            )
-        else:
-            run = mlflow.start_run(
-                run_id=self.mlflow_config.child_run_id,
-                parent_run_id=self.mlflow_config.parent_run_id
-            )
-
-        if not self.mlflow_config.child_run_id:
-            self.mlflow_config.child_run_id = run.info.run_id
-
-        logging.info(f'Started MLFlow run: {run.info.run_name} (ID: {self.mlflow_config.child_run_id})')
-
-    def _setup_data_and_model(self):
-        """Setup datasets and model"""
-        # Setup datasets
-        logging.info('Setup dataloaders.')
-
-        self.data_proc = DataProcessor(data_config=self.data_config)
-        self.model_config.input_size = len(self.data_proc.input_features)
-        self.model_config.seq_len = self.data_proc.data_config.seq_len
-
-        # Create dataloaders with configuration
-        self.train_dl = self.data_proc.get_dataloader('train', only_benign=True, train=True)
-        self.val_dl = self.data_proc.get_dataloader('val', only_benign=False, train=False)
-        self.test_dl = self.data_proc.get_dataloader('test', only_benign=False, train=False)
-
-        # Setup model and optimizer
-        torch.serialization.add_safe_globals([TransformerAD])
-
-        self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
-        self.model = TransformerAD(self.model_config)
-        if mlflow.active_run():
-            mlflow.log_text(str(summary(model=self.model,
-                                        input_data=self.sample,
-                                        col_names=('input_size', 'output_size', 'num_params', 'params_percent'))),
-                            'model_summary.txt')
-        if self.privacy_config.dp_enabled:
-            from opacus.validators import ModuleValidator
-            ModuleValidator.validate(self.model, strict=True)
-            self.model_config.model_name += '_DP'
-            self.model = ModuleValidator.fix(self.model)
-
-        # Create optimizer
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config.learning_rate)
-
-        # Setup privacy if enabled
-        if not self.privacy_config.dp_enabled:
-            logging.info('Differential Privacy disabled.')
-        else:
-            logging.info('Differential Privacy enabled.')
-            from opacus import PrivacyEngine
-            self.privacy_engine = PrivacyEngine(accountant='rdp', secure_mode=self.privacy_config.secure_mode)
-
-            self.model, self.optimizer, self.train_dl = self.privacy_engine.make_private_with_epsilon(
-                module=self.model,
-                optimizer=self.optimizer,
-                data_loader=self.train_dl,
-                epochs=self.training_config.epochs,
-                target_epsilon=self.privacy_config.target_epsilon,
-                target_delta=self.privacy_config.target_delta,
-                max_grad_norm=self.privacy_config.max_grad_norm
-            )
-        if self.training_config.es_enabled:
-            logging.info('Early stopping enabled.')
-
-    # Add this debug code to your train_model method to understand the shape issue
 
     def train_model(self, start_epoch: int = 0) -> Dict[str, Any]:
         """
@@ -236,7 +162,83 @@ class TrainPipeline:
             return best_checkpoint['metrics'], figures
         finally:
             self._cleanup_mlflow()
+            self._cleanup_resources()
 
+    def _setup_data_and_model(self):
+        """Setup datasets and model"""
+        # Setup datasets
+        logging.info('Setup dataloaders.')
+
+        self.data_proc = DataProcessor(data_config=self.data_config)
+        self.model_config.input_size = len(self.data_proc.input_features)
+        self.model_config.seq_len = self.data_proc.data_config.seq_len
+
+        # Create dataloaders with configuration
+        self.train_dl = self.data_proc.get_dataloader('train', only_benign=True, train=True)
+        self.val_dl = self.data_proc.get_dataloader('val', only_benign=False, train=False)
+        self.test_dl = self.data_proc.get_dataloader('test', only_benign=False, train=False)
+
+        # Setup model and optimizer
+        torch.serialization.add_safe_globals([TransformerAD])
+
+        self.sample = next(iter(self.train_dl))[0]['encoder_cont'][:1].to('cpu')
+        self.model = TransformerAD(self.model_config)
+        if mlflow.active_run():
+            mlflow.log_text(str(summary(model=self.model,
+                                        input_data=self.sample,
+                                        col_names=('input_size', 'output_size', 'num_params', 'params_percent'))),
+                            'model_summary.txt')
+        if self.privacy_config.dp_enabled:
+            from opacus.validators import ModuleValidator
+            ModuleValidator.validate(self.model, strict=True)
+            self.model_config.model_name += '_DP'
+            self.model = ModuleValidator.fix(self.model)
+
+        # Create optimizer
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config.learning_rate)
+
+        # Setup privacy if enabled
+        if not self.privacy_config.dp_enabled:
+            logging.info('Differential Privacy disabled.')
+        else:
+            logging.info('Differential Privacy enabled.')
+            from opacus import PrivacyEngine
+            self.privacy_engine = PrivacyEngine(accountant='rdp', secure_mode=self.privacy_config.secure_mode)
+
+            self.model, self.optimizer, self.train_dl = self.privacy_engine.make_private_with_epsilon(
+                module=self.model,
+                optimizer=self.optimizer,
+                data_loader=self.train_dl,
+                epochs=self.training_config.epochs,
+                target_epsilon=self.privacy_config.target_epsilon,
+                target_delta=self.privacy_config.target_delta,
+                max_grad_norm=self.privacy_config.max_grad_norm
+            )
+        if self.training_config.es_enabled:
+            logging.info('Early stopping enabled.')
+
+    def _setup_mlflow(self):
+        """Setup MLFlow with proper nested run handling"""
+        mlflow.set_tracking_uri(self.mlflow_config.tracking_uri)
+        mlflow.set_experiment(self.mlflow_config.experiment_name)
+
+        # Handle nested runs for autotuning
+        if self.mlflow_config.parent_run_id:
+            run = mlflow.start_run(
+                run_id=self.mlflow_config.child_run_id,
+                parent_run_id=self.mlflow_config.parent_run_id,
+                nested=True
+            )
+        else:
+            run = mlflow.start_run(
+                run_id=self.mlflow_config.child_run_id,
+                parent_run_id=self.mlflow_config.parent_run_id
+            )
+
+        if not self.mlflow_config.child_run_id:
+            self.mlflow_config.child_run_id = run.info.run_id
+
+        logging.info(f'Started MLFlow run: {run.info.run_name} (ID: {self.mlflow_config.child_run_id})')
 
     def _cleanup_mlflow(self):
         """Ensure MLflow run is properly ended"""
@@ -246,6 +248,24 @@ class TrainPipeline:
                 logging.info(f"Ended MLflow run: {self.mlflow_config.child_run_id}")
         except Exception as e:
             logging.warning(f"Error during MLflow cleanup: {e}")
+
+    def _cleanup_resources(self):
+        """Clean up all resources"""
+        try:
+            for dl in [self.train_dl, self.val_dl, self.test_dl]:
+                if hasattr(dl, '_iterator') and dl._iterator is not None:
+                    try:
+                        dl._iterator._shutdown_workers()
+                    except:
+                        pass
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+            import gc
+            gc.collect()
+
+        except Exception as e:
+            logging.warning(f"Error during resource cleanup: {e}")
 
     def __del__(self):
         """Cleanup when object is destroyed"""
