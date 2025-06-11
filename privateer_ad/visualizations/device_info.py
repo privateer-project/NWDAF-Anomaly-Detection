@@ -5,10 +5,10 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 
-from privateer_ad.config import PathsConf
+from privateer_ad.config import PathConfig
 
 # Load the data
-df = pd.read_csv(PathsConf.raw_dataset)
+df = pd.read_csv(PathConfig.raw_dataset)
 df = df.sample(10000)
 
 # Convert _time to datetime format
