@@ -43,10 +43,10 @@ class AutotuneParam:
 
 # Parameter definitions
 DATA_PARAMS = [
-    AutotuneParam(name='seq_len', type='categorical', choices=[12]),  # [1, 2, 6, 12, 24, 120]
+    AutotuneParam(name='seq_len', type='int', low=1, high=500, step=1, log=True),  # [1, 2, 6, 12, 24, 120]
 ]
 MODEL_PARAMS = [
-    AutotuneParam(name='num_layers', type='categorical', choices=[1, 2, 3, 4]),
+    AutotuneParam(name='num_layers', type='categorical', choices=[1, 2, 4, 8, 16, 32]),
     AutotuneParam(name='hidden_dim', type='categorical', choices=[16, 32, 64, 128]),
     AutotuneParam(name='latent_dim', type='categorical', choices=[8, 16, 32, 64]),
     AutotuneParam(name='num_heads', type='categorical', choices=[1, 2, 4, 8]),

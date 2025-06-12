@@ -16,7 +16,7 @@ different execution environments.
 import importlib.resources as resources
 
 from pathlib import Path
-from typing import Optional, Literal, ClassVar
+from typing import Optional, Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
@@ -140,7 +140,7 @@ class DataConfig(BaseSettings):
     num_classes_per_partition: int = Field(default=1, ge=1, description="Number of classes per partition. Default: 1")
 
     batch_size: int = Field(default=4096, gt=0)
-    seq_len: int = Field(default=12, ge=1)
+    seq_len: int = Field(default=77, ge=1)
 
     num_workers: int = Field(default=16, ge=0)
     prefetch_factor: int | None = Field(default=16, ge=1)
@@ -178,12 +178,12 @@ class ModelConfig(BaseSettings):
     """
     model_name: str = Field(default='TransformerAD')
     input_size: int = Field(default=8, ge=1)
-    num_layers: int = Field(default=1, ge=1)
+    num_layers: int = Field(default=4, ge=1)
     embed_dim: int = Field(default=32, ge=1)
     latent_dim: int = Field(default=16, ge=1)
-    num_heads: int = Field(default=1, ge=1)
-    dropout: float = Field(default=0.2, ge=0.0, le=1.0)
-    seq_len: int = Field(default=12, ge=1)
+    num_heads: int = Field(default=8, ge=1)
+    dropout: float = Field(default=0., ge=0.0, le=1.0)
+    seq_len: int = Field(default=77, ge=1)
 
     model_config = {'env_prefix': 'PRIVATEER_MODEL_',
                     'env_file': '.env',
@@ -215,7 +215,7 @@ class TrainingConfig(BaseSettings):
     es_warmup: int = Field(default=10, gt=0)
 
     # Evaluation parameters
-    target_metric: str = Field(default='val_unbalanced_f1-score')
+    target_metric: str = Field(default='val_f1-score')
     direction: Literal['minimize', 'maximize'] = Field(default='maximize')
 
     model_config = {'env_prefix': 'PRIVATEER_TRAIN_',
@@ -247,7 +247,7 @@ class AutotuningConfig(BaseSettings):
     study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
     n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
     timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
-    target_metric: str = Field(default="val_unbalanced_f1-score", description="Metric to optimize")
+    target_metric: str = Field(default="val_f1-score", description="Metric to optimize")
     direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
     storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
@@ -316,9 +316,9 @@ class PrivacyConfig(BaseSettings):
     """
 
     dp_enabled: bool = Field(default=True)
-    target_epsilon: float = Field(default=0.3, gt=0.0)
-    target_delta: float = Field(default=1e-7, gt=0.0)
-    max_grad_norm: float = Field(default=.5, gt=0.0)
+    target_epsilon: float = Field(default=0.5, gt=0.0)
+    target_delta: float = Field(default=1e-6, gt=0.0)
+    max_grad_norm: float = Field(default=.7, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)
