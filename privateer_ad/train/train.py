@@ -105,13 +105,6 @@ class TrainPipeline:
                                    device=self.device,
                                    training_config=self.training_config)
 
-            # Debug the sample shape before trying summary
-            logging.info(f"Sample shape: {self.sample.shape}")
-            logging.info(
-                f"Model config - seq_len: {self.model_config.seq_len}, input_size: {self.model_config.input_size}")
-            logging.info(
-                f"Expected input shape: [batch_size, {self.model_config.seq_len}, {self.model_config.input_size}]")
-
             # Log configuration if MLFlow is enabled
             if mlflow.active_run():
                 mlflow.log_params({'device': str(self.device)})
@@ -122,8 +115,7 @@ class TrainPipeline:
 
             best_checkpoint = trainer.training(train_dl=self.train_dl, val_dl=self.val_dl, start_epoch=start_epoch)
             if self.privacy_config.dp_enabled:
-                best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(
-                    self.privacy_config.target_delta)
+                best_checkpoint['metrics']['epsilon'] = self.privacy_engine.get_epsilon(self.privacy_config.target_delta)
 
             self.model = trainer.model
             logging.info('Training Finished.')
@@ -150,6 +142,7 @@ class TrainPipeline:
         try:
             self.model.eval()
             evaluator = ModelEvaluator(loss_fn=self.training_config.loss_fn_name, device=self.device)
+            _, _ = evaluator.evaluate(self.model, self.val_dl, prefix='eval', step=step)
             metrics, figures = evaluator.evaluate(self.model, self.test_dl, prefix='test', step=step)
             return metrics, figures
         except Exception as e:
@@ -232,9 +225,9 @@ class TrainPipeline:
                             'model_summary.txt')
         if self.privacy_config.dp_enabled:
             from opacus.validators import ModuleValidator
+            self.model = ModuleValidator.fix(self.model)
             ModuleValidator.validate(self.model, strict=True)
             self.model_config.model_name += '_DP'
-            self.model = ModuleValidator.fix(self.model)
 
         # Create optimizer
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.training_config.learning_rate)
@@ -245,8 +238,7 @@ class TrainPipeline:
         else:
             logging.info('Differential Privacy enabled.')
             from opacus import PrivacyEngine
-            self.privacy_engine = PrivacyEngine(accountant='rdp', secure_mode=self.privacy_config.secure_mode)
-
+            self.privacy_engine = PrivacyEngine(secure_mode=self.privacy_config.secure_mode)
             self.model, self.optimizer, self.train_dl = self.privacy_engine.make_private_with_epsilon(
                 module=self.model,
                 optimizer=self.optimizer,

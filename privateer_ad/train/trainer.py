@@ -54,6 +54,7 @@ class ModelTrainer:
             training_config (TrainingConfig, optional): Training configuration parameters
         """
         logging.info('Instantiate ModelTrainer...')
+        self.rng = np.random.default_rng(seed=42)
 
         self.model = model
         self.optimizer = optimizer
@@ -81,6 +82,7 @@ class ModelTrainer:
             'optimizer_state_dict': deepcopy(self.optimizer.state_dict()),
             'metrics': {}
         }
+
 
     def training(self, train_dl, val_dl, start_epoch: int = 0) -> Dict[str, Any]:
         """
@@ -182,96 +184,78 @@ class ModelTrainer:
 
         with torch.no_grad():
             progress_bar = tqdm(val_dl, desc=' ' * 5 + 'Validation')
-            losses: List[torch.Tensor] | torch.Tensor = []
-            y_true: List[torch.Tensor] | torch.Tensor = []
+            x : List[float] = []
+            y_score: List[np.ndarray] | np.ndarray = []
+            y_true: List[np.ndarray] | np.ndarray = []
 
             for inputs in progress_bar:
-                x = inputs[0]['encoder_cont'].to(self.device)
-                targets = np.squeeze(inputs[1][0])
-                output = self.model(x)  # all samples
-                batch_losses = self.loss_fn(x, output)  # reconstruction loss
-                batch_loss_per_sample = torch.mean(input=batch_losses, dim=(1, 2))
-                y_true.append(targets)
-                losses.append(batch_loss_per_sample)  # reconstruction error per sample
-                progress_bar.set_postfix({'val_loss': torch.mean(batch_loss_per_sample).item()})
+                batch_input = inputs[0]['encoder_cont'].to(self.device)
+                batch_y_true = np.squeeze(inputs[1][0])
+                batch_output = self.model(batch_input)  # all samples
 
-            losses = torch.concatenate(losses)
-            y_true = torch.concatenate(y_true)
+                batch_loss = self.loss_fn(batch_input, batch_output)  # reconstruction loss
+                batch_y_score_per_sample = torch.mean(input=batch_loss, dim=(1, 2))
+
+                x.extend(batch_input.tolist())
+                y_true.extend(batch_y_true.tolist())
+                y_score.extend(batch_y_score_per_sample.cpu().tolist())  # reconstruction error per sample
+                progress_bar.set_postfix({'val_loss': torch.mean(batch_y_score_per_sample).item()})
+
+            y_score = np.array(y_score, dtype=np.float32)
+            y_true = np.array(y_true, dtype=np.int32)
+        target_names = ['benign', 'malicious']
 
         # Split benign and malicious samples
-        benign_rec_errors = losses[y_true == 0]
-        malicious_rec_errors = losses[y_true == 1]
-
+        benign_y_scores = y_score[y_true == 0]
+        malicious_y_scores = y_score[y_true == 1]
         # get min number of samples per class
-        n_samples_per_class = min(map(len, [benign_rec_errors, malicious_rec_errors]))
-
-        # shuffle samples
-        benign_rec_errors = benign_rec_errors[torch.randperm(benign_rec_errors.size()[0])]
-        malicious_rec_errors = malicious_rec_errors[torch.randperm(malicious_rec_errors.size()[0])]
-
-        # select min number of samples per class
-        benign_rec_errors = benign_rec_errors[:n_samples_per_class]
-        malicious_rec_errors = malicious_rec_errors[:n_samples_per_class]
+        n_samples_per_class = min(map(len, [benign_y_scores, malicious_y_scores]))
+        n_benign_y_scores = self.rng.permutation(x=benign_y_scores, axis=0)[:n_samples_per_class]
+        n_malicious_y_scores = self.rng.permutation(x=malicious_y_scores, axis=0)[:n_samples_per_class]
+        # shuffle and select min number of samples per class
 
         # concatenate benign and malicious samples to get balanced dataset
-        balanced_rec_errors = torch.concatenate([benign_rec_errors, malicious_rec_errors])
-        balanced_y_true = torch.concatenate([torch.zeros(n_samples_per_class, dtype=torch.int32),
-                                             torch.ones(n_samples_per_class, dtype=torch.int32)])
+        balanced_y_scores = np.concatenate([n_benign_y_scores, n_malicious_y_scores])
+        balanced_y_true = np.concatenate([np.zeros(n_samples_per_class, dtype=np.int32),
+                                             np.ones(n_samples_per_class, dtype=np.int32)])
 
-        # Offload to CPU
-        losses = losses.cpu()
-        y_true = y_true.cpu()
-        balanced_y_true = balanced_y_true.cpu()
-        balanced_rec_errors = balanced_rec_errors.cpu()
-
-        # Compute threshold
-        fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_rec_errors)
+        balanced_y_scores = balanced_y_scores
+        balanced_y_true = balanced_y_true
+        # Compute threshold from balanced data samples
+        fpr, tpr, thresholds = roc_curve(y_true=balanced_y_true, y_score=balanced_y_scores)
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
         threshold = thresholds[optimal_idx]
 
         # Compute metrics
-        balanced_y_pred = torch.where(balanced_rec_errors >= threshold, 1, 0)
-        y_pred = torch.where(losses >= threshold, 1, 0)
+        metrics = self.calculate_metrics(rec_errors=y_score,
+                                         y_true=y_true,
+                                         threshold=threshold,
+                                         target_names=target_names,
+                                         prefix='')
+        balanced_metrics = self.calculate_metrics(rec_errors=balanced_y_scores,
+                                                  y_true=balanced_y_true,
+                                                  threshold=threshold,
+                                                  target_names=target_names,
+                                                  prefix='balanced')
 
-        target_names = ['benign', 'malicious']
-        balanced_metrics = classification_report(y_true=balanced_y_true,
-                                                 y_pred=balanced_y_pred,
-                                                 target_names=target_names,
-                                                 output_dict=True)['macro avg']
-
-        unbalanced_metrics = classification_report(y_true=y_true,
-                                                   y_pred=y_pred,
-                                                   target_names=target_names,
-                                                   output_dict=True)['macro avg']
-
-        balanced_roc = roc_auc_score(y_true=balanced_y_true, y_score=balanced_rec_errors)
-        roc = roc_auc_score(y_true=y_true, y_score=losses)
-
-        report_dict = {'loss': torch.mean(losses).item(),
+        report_dict = {'loss': np.mean(y_score),
                        'threshold': float(threshold)}
 
-        balanced_metrics = {'balanced_' + k: v for k, v in balanced_metrics.items()}
-        balanced_metrics['balanced_roc'] = balanced_roc
-
-        unbalanced_metrics = {'unbalanced_' + k: v for k, v in unbalanced_metrics.items()}
-        unbalanced_metrics['unbalanced_roc'] = roc
-
-        report_dict |= balanced_metrics | unbalanced_metrics
-        report_dict = {f'val_' + k: v for k, v in report_dict.items()}
-
+        report_dict |= metrics | balanced_metrics
+        report_dict = {f'_'.join(['val', k]) :  v for k, v in report_dict.items()}
         return report_dict
 
-    def _is_best_checkpoint(self) -> bool:
-        """Determine if current metrics represent the best checkpoint based on target metric."""
-        current_value = self.metrics[self.training_config.target_metric]
-        best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
-                                                         -np.inf if self.training_config.direction == 'maximize'
-                                                         else np.inf)
+    def calculate_metrics(self, rec_errors, y_true, threshold, target_names, prefix=''):
+        y_pred = np.where(rec_errors >= threshold, 1, 0)
+        macro_metrics = classification_report(y_true=y_true,
+                                              y_pred=y_pred,
+                                              target_names=target_names,
+                                              output_dict=True)['macro avg']
+        macro_metrics.update({'roc_auc': roc_auc_score(y_true=y_true, y_score=rec_errors)})
 
-        if self.training_config.direction == 'maximize':
-            return current_value > best_value
-        else:  # minimize
-            return current_value < best_value
+        if prefix != '':
+            macro_metrics = {'_'.join([prefix, k]): v for k, v in macro_metrics.items()}
+        return macro_metrics
 
     def log_metrics(self, metrics: Dict[str, float], epoch: int):
         """Update internal metrics and log to MLflow and console."""
@@ -284,6 +268,18 @@ class ModelTrainer:
         # Format and log to console
         formatted_metrics = [f'{key}: {str(round(value, 5))}' for key, value in self.metrics.items()]
         logging.info(f'Metrics: {" ".join(formatted_metrics)}')
+
+    def _is_best_checkpoint(self) -> bool:
+        """Determine if current metrics represent the best checkpoint based on target metric."""
+        current_value = self.metrics[self.training_config.target_metric]
+        best_value = self.best_checkpoint['metrics'].get(self.training_config.target_metric,
+                                                         -np.inf if self.training_config.direction == 'maximize'
+                                                         else np.inf)
+
+        if self.training_config.direction == 'maximize':
+            return current_value > best_value
+        else:  # minimize
+            return current_value < best_value
 
     def _check_early_stopping(self, epoch: int, is_best: bool) -> bool:
         """
