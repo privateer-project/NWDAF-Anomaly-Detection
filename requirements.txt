@@ -28,3 +28,4 @@ joblib==1.5.1
 kafka-python==2.2.10
 sphinx==8.2.3
 sphinx-rtd-theme==3.0.2
+kaleido==0.2.1
