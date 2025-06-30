@@ -265,17 +265,12 @@ class TrainPipeline:
         mlflow.set_experiment(self.mlflow_config.experiment_name)
 
         # Handle nested runs for autotuning
-        if self.mlflow_config.parent_run_id:
-            run = mlflow.start_run(
-                run_id=self.mlflow_config.child_run_id,
-                parent_run_id=self.mlflow_config.parent_run_id,
-                nested=True
-            )
-        else:
-            run = mlflow.start_run(
-                run_id=self.mlflow_config.child_run_id,
-                parent_run_id=self.mlflow_config.parent_run_id
-            )
+        run = mlflow.start_run(
+            run_id=self.mlflow_config.child_run_id,
+            parent_run_id=self.mlflow_config.parent_run_id,
+            nested=self.mlflow_config.parent_run_id is None
+        )
+
 
         if not self.mlflow_config.child_run_id:
             self.mlflow_config.child_run_id = run.info.run_id
