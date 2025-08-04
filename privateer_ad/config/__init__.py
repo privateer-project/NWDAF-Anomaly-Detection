@@ -14,10 +14,6 @@ Usage Examples:
 
     # Override with environment variables
     config = ModelConfig() # Automatically loads PRIVATEER_MODEL_* env vars
-
-The configuration system supports environment variable overrides with the PRIVATEER_ prefix,
-enabling flexible deployment across different environments while maintaining type safety
-and validation through Pydantic models.
 """
 from .metadata import MetadataConfig
 from .settings import (
