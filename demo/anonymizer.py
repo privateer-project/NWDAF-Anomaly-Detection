@@ -16,17 +16,12 @@ import sys
 sys.path.append('/app')
 
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import DataConfig
 
 
 class AnonymizerPreprocessor:
     def __init__(self):
         self.device_buffers = defaultdict(list)
-
-        # Initialize DataProcessor
-        self.data_config = DataConfig()
-        self.data_config.seq_len = 12
-        self.data_processor = DataProcessor(self.data_config)
+        self.data_processor = DataProcessor()
 
     def anonymize(self, data):
         """Apply anonymization to sensitive fields"""
@@ -40,12 +35,12 @@ class AnonymizerPreprocessor:
 
         # Mask IP addresses
         for field in ['ip', 'bearer_0_ip', 'bearer_1_ip']:
-            if field in anonymized and anonymized[field]:
+            if field in anonymized:
                 anonymized[field] = "xxx.xxx.xxx.xxx"
 
         # Hash other identifiers
         for field in ['amf_ue_id', '5g_tmsi']:
-            if field in anonymized and anonymized[field]:
+            if field in anonymized:
                 anonymized[field] = f"anon-{hash(str(anonymized[field])) % 10000}"
 
         return anonymized
@@ -114,9 +109,9 @@ class AnonymizerPreprocessor:
 
 
 def main():
-    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-    input_topic = os.environ.get('INPUT_TOPIC', 'raw-network-data')
-    output_topic = os.environ.get('OUTPUT_TOPIC', 'preprocessed-data')
+    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', None)
+    input_topic = os.environ.get('INPUT_TOPIC', None)
+    output_topic = os.environ.get('OUTPUT_TOPIC', None)
 
     print("Starting anonymizer with DataProcessor preprocessing...")
 
@@ -124,7 +119,7 @@ def main():
         input_topic,
         bootstrap_servers=bootstrap_servers,
         value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-        auto_offset_reset='earliest'  # Start from beginning
+        auto_offset_reset='latest'
     )
 
     producer = KafkaProducer(
@@ -136,7 +131,7 @@ def main():
     processed_count = 0
 
     print(f"Input features: {processor.data_processor.input_features}")
-    print(f"Sequence length: {processor.data_config.seq_len}")
+    print(f"Sequence length: {processor.data_processor.data_config.seq_len}")
 
     for message in consumer:
         try:
