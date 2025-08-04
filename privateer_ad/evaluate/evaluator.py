@@ -185,8 +185,10 @@ class ModelEvaluator:
                                              y_pred=y_pred,
                                              target_names=target_names,
                                              output_dict=True)['macro avg'])
-        metrics = {f'{prefix}_' + k: v for k, v in metrics.items()}
-        metrics[f'{prefix}_threshold'] = float(threshold)
+
+        metrics['threshold'] = float(threshold)
+        if prefix != '':
+            metrics = {f'_'.join([prefix, k]): v for k, v in metrics.items()}
         self.visualizer.visualize(y_true=y_true,
                                   y_pred=y_pred,
                                   scores=anomaly_scores,

@@ -123,9 +123,9 @@ def create_demo_sequence(df):
     ]
 
     demo_data = []
-    current_time = datetime.now()
 
     for i, window in enumerate(demo_windows):
+        current_time = datetime.now()
         print(f"📊 Preparing {window['name']} window...")
 
         # Filter data for this window
@@ -141,7 +141,7 @@ def create_demo_sequence(df):
 
         # Sample data for this window
         if len(window_df) > window['sample_size']:
-            window_samples = window_df.sample(n=window['sample_size'], random_state=42)
+            window_samples = window_df.iloc[:window['sample_size']]
         else:
             # Repeat samples if not enough data
             repeats = (window['sample_size'] // len(window_df)) + 1
@@ -149,11 +149,10 @@ def create_demo_sequence(df):
 
         # Create synthetic temporal progression for demo
         window_samples = window_samples.copy()
-        start_time = current_time + timedelta(seconds=i * window['duration'])
 
         # Create evenly spaced timestamps for this window
         timestamps = pd.date_range(
-            start=start_time,
+            start=datetime.now(),
             periods=len(window_samples),
             freq=f"{window['duration'] / len(window_samples)}s"
         )
@@ -202,8 +201,8 @@ def main():
         print(f"📅 Time range: {df['_time'].min()} to {df['_time'].max()}")
 
         # Count attack types
-        attack_count = df[df['attack'] == 1].shape[0]
-        benign_count = df[df['attack'] == 0].shape[0]
+        attack_count = len(df[df['attack'] == 1])
+        benign_count = len(df[df['attack'] == 0])
         print(f"🟢 Benign samples: {benign_count}")
         print(f"🔴 Attack samples: {attack_count}")
 
@@ -242,12 +241,6 @@ def main():
                     record[k] = v.isoformat() if hasattr(v, 'isoformat') else str(v)
                 elif hasattr(v, 'isoformat'):
                     record[k] = v.isoformat()
-                elif isinstance(v, (bool, np.bool_)):
-                    record[k] = bool(v)
-                elif isinstance(v, (np.integer, int)):
-                    record[k] = int(v)
-                elif isinstance(v, (np.floating, float)):
-                    record[k] = float(v)
                 else:
                     record[k] = v
 
