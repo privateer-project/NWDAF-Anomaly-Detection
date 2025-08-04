@@ -1,8 +1,3 @@
-"""
-Metadata configuration as Python objects
-This replaces the metadata.yaml file to avoid packaging/distribution issues
-"""
-
 from typing import Dict, List
 from dataclasses import dataclass
 

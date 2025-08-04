@@ -15,8 +15,20 @@ services:
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
     restart: unless-stopped
-    networks:
-      - privateer-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: "unless-stopped"
+    ports:
+      - "9094:9094"
+    depends_on:
+      kafka:
+        condition: service_started
+    environment:
+      - SERVER_PORT=9094
+      - KAFKA_CLUSTERS_0_NAME=kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
 
   # MLflow for model registry
   mlflow:
@@ -28,13 +40,10 @@ services:
       - ./mlruns:/mlruns
       - ./mlartifacts:/mlartifacts
     command: mlflow server --host 0.0.0.0 --port 5001
-    networks:
-      - privateer-net
 
   # Data Producer
   data-producer:
     build:
-      context: .
       dockerfile: Dockerfile.producer
     container_name: privateer-producer
     depends_on:
@@ -43,18 +52,14 @@ services:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - KAFKA_TOPIC=raw-network-data
       - CSV_PATH=/app/data/raw/amari_ue_data_merged_with_attack_number.csv
-      - INTERVAL=0.01
       - DEMO_MODE=true
     volumes:
       - ../data:/app/data:ro
     restart: unless-stopped
-    networks:
-      - privateer-net
 
   # Anonymization & Preprocessing Service
   anonymizer:
     build:
-      context: .
       dockerfile: Dockerfile.anonymizer
     container_name: privateer-anonymizer
     depends_on:
@@ -67,8 +72,6 @@ services:
       - ../privateer_ad:/app/privateer_ad:ro
       - ../scalers:/app/scalers:ro
     restart: unless-stopped
-    networks:
-      - privateer-net
 
 # demo/docker-compose.yml - detector service update
   anomaly-detector:
@@ -92,23 +95,3 @@ services:
       - ../models:/app/models:ro
       - ../scalers:/app/scalers:ro
     restart: unless-stopped
-    networks:
-      - privateer-net
-#  # Alert Monitor (for testing)
-#  alert-monitor:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.monitor
-#    container_name: privateer-monitor
-#    depends_on:
-#      - kafka
-#    environment:
-#      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-#      - ALERT_TOPIC=anomaly-alerts
-#    restart: unless-stopped
-#    networks:
-#      - privateer-net
-
-networks:
-  privateer-net:
-    driver: bridge
