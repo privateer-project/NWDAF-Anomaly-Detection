@@ -6,115 +6,123 @@ Anonymization and Preprocessing Service
 
 import os
 import json
+import sys
+import logging
+from datetime import datetime, timedelta
+
+import numpy as np
 import pandas as pd
 
 from kafka import KafkaConsumer, KafkaProducer
-from collections import defaultdict
-from datetime import datetime
-import sys
 
 sys.path.append('/app')
-
 from privateer_ad.etl import DataProcessor
+
+
+def default_serializer(data: dict) -> bytes:
+    try:
+        # Convert numpy types and serialize to JSON
+        return json.dumps(data, cls=NumpyEncoder).encode('utf-8')
+    except Exception as e:
+        logging.error(f"Serialization error: {e}")
+        raise
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        elif isinstance(obj, (pd.Timestamp, datetime)):
+            return obj.isoformat()
+        elif isinstance(obj, (pd.Timedelta, timedelta)):
+            return obj.total_seconds()
+        return super().default(obj)
 
 
 class AnonymizerPreprocessor:
     def __init__(self):
-        self.device_buffers = defaultdict(list)
+        """Initialize the anonymizer with timestamp-based batching"""
         self.data_processor = DataProcessor()
+        self.data_config = self.data_processor.data_config
 
-    def anonymize(self, data):
-        """Apply anonymization to sensitive fields"""
-        anonymized = data.copy()
-
-        # Hash device identifier
-        if 'imeisv' in anonymized:
-            original_imeisv = anonymized['imeisv']
-            anonymized['_original_device_id'] = original_imeisv  # Keep for buffering
-            anonymized['imeisv'] = f"anon-{hash(anonymized['imeisv']) % 10000}"
-
-        # Mask IP addresses
-        for field in ['ip', 'bearer_0_ip', 'bearer_1_ip']:
-            if field in anonymized:
-                anonymized[field] = "xxx.xxx.xxx.xxx"
-
-        # Hash other identifiers
-        for field in ['amf_ue_id', '5g_tmsi']:
-            if field in anonymized:
-                anonymized[field] = f"anon-{hash(str(anonymized[field])) % 10000}"
-
-        return anonymized
+        # Timestamp-based buffering for aggregation
+        self.buffer = []  # timestamp -> list of device samples
+        self.max_timestamp_age = 30  # seconds - maximum age before processing incomplete batches
 
     def process_sample(self, data):
-        """Process incoming sample and return sequences when ready"""
-        device_id = data.get('_original_device_id', data.get('imeisv', 'unknown'))
+        """Process incoming sample using timestamp-based batching approach"""
+        # Extract timestamp - normalize to the same second for batching
+        df = pd.DataFrame.from_dict(data)
+        df = self.data_processor.clean_data(df)
+        df['_time'] = pd.to_datetime(df['_time'])
+        df = df.sort_values(by=['_time']).reset_index(drop=True)
+        df = self.data_processor.aggregate_by_time(df)
+        df = self.data_processor.scale_data(df)
 
-        # Add to device buffer
-        self.device_buffers[device_id].append(data)
+        aggregated_point = self._process_timestamp_batch(df['_time'].values, df)
 
-        # Keep only last seq_len samples
-        if len(self.device_buffers[device_id]) > self.data_config.seq_len:
-            self.device_buffers[device_id] = self.device_buffers[device_id][-self.data_config.seq_len:]
+        if aggregated_point is not None:
+            self.buffer.append(aggregated_point)
 
-        # Check if we have enough samples
-        if len(self.device_buffers[device_id]) == self.data_config.seq_len:
-            try:
-                # Create DataFrame from buffered samples
-                df = pd.DataFrame(self.device_buffers[device_id])
-
-                # Ensure _time column is datetime
-                if '_time' in df.columns:
-                    df['_time'] = pd.to_datetime(df['_time'])
-                elif '_timestamp' in df.columns:
-                    # Use our added timestamp if original _time is missing
-                    df['_time'] = pd.to_datetime(df['_timestamp'])
-                else:
-                    # Create timestamps if missing
-                    df['_time'] = pd.date_range(
-                        end=datetime.now(),
-                        periods=len(df),
-                        freq='1s'
-                    )
-
-                # Apply DataProcessor's cleaning and preprocessing
-                df = self.data_processor.clean_data(df)
-                df_processed = self.data_processor.scale_data(df=df)
-
-                # Extract processed features in correct order
-                # Create tensor format [1, seq_len, features]
-                feature_df = df_processed[self.data_processor.input_features]
-                feature_values = feature_df.to_dict(orient='list')
-                # Get metadata from the last sample
-                last_sample = self.device_buffers[device_id][-1]
-
-                return {
-                    'device_id': last_sample['imeisv'],  # Use anonymized ID
-                    'feature_values': feature_values,
-                    'timestamp': last_sample.get('_timestamp', datetime.now().isoformat()),
-                    'metadata': {
-                        'attack': int(last_sample.get('attack', 0)),
-                        'malicious': int(last_sample.get('malicious', 0)),
-                        'cell': last_sample.get('cell', 'unknown'),
-                        'attack_number': int(last_sample.get('attack_number', 0))
-                    }
-                }
-
-            except Exception as e:
-                print(f"Error processing sequence for device {device_id}: {e}")
-                # Clear buffer on error to start fresh
-                self.device_buffers[device_id] = []
-                return None
-
+            # Keep only last seq_len aggregated points
+            if len(self.buffer) >= self.data_config.seq_len:
+                self.buffer = self.buffer[-self.data_config.seq_len:]
+                seq = self._build_sequence()
+                return seq
         return None
 
+    def _process_timestamp_batch(self, timestamp_key, df):
+        """Process a complete timestamp batch across devices"""
+        try:
+            if len(df) > 0:
+                aggregated_point = {
+                    'timestamp': timestamp_key,
+                    'features': df[self.data_processor.input_features].to_dict(orient='list'),
+                    'metadata': {
+                        'attack': int(df.get('attack', pd.Series([0])).iloc[0]),
+                        'malicious': int(df.get('malicious', pd.Series([0])).iloc[0]),
+                        'cell': df.get('cell', pd.Series(['unknown'])).iloc[0],
+                        'attack_number': int(df.get('attack_number', pd.Series([0])).iloc[0])
+                    }
+                }
+                return aggregated_point
+            return None
+
+        except Exception as e:
+            print(f"Error processing timestamp batch {timestamp_key}: {e}")
+            # Remove failed batch
+            self.buffer.remove(df)
+            return None
+
+    def _build_sequence(self):
+        """Build a complete sequence from aggregated timestamp points"""
+        # Extract features in temporal sequence order
+        features = {}
+        for feature in self.data_processor.input_features:
+            features[feature] = [point['features'][feature] for point in self.buffer]
+
+        # Get metadata from the last (most recent) point
+        last_point = self.buffer[-1]
+        return {
+            'device_id': 'network_aggregated',  # This represents the entire network
+            'features': features,
+            'timestamp': last_point['timestamp'],
+            'metadata': last_point['metadata']
+        }
 
 def main():
-    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', None)
-    input_topic = os.environ.get('INPUT_TOPIC', None)
-    output_topic = os.environ.get('OUTPUT_TOPIC', None)
+    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
+    input_topic = os.environ.get('INPUT_TOPIC', 'raw-network-data')
+    output_topic = os.environ.get('OUTPUT_TOPIC', 'preprocessed-data')
 
     print("Starting anonymizer with DataProcessor preprocessing...")
-
+    print('bootstrap_servers')
     consumer = KafkaConsumer(
         input_topic,
         bootstrap_servers=bootstrap_servers,
@@ -124,7 +132,7 @@ def main():
 
     producer = KafkaProducer(
         bootstrap_servers=bootstrap_servers,
-        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        value_serializer=default_serializer
     )
 
     processor = AnonymizerPreprocessor()
@@ -137,31 +145,19 @@ def main():
         try:
             raw_data = message.value
 
-            # Anonymize first
-            anonymized_data = processor.anonymize(raw_data)
+            # TODO: Implement actual anonymization here
+            anonymized_data = raw_data
 
             # Process and check if sequence is ready
-            result = processor.process_sample(anonymized_data)
-
-            if result:
-                # Send preprocessed tensor to detector
-                producer.send(output_topic, value=result)
+            sequence = processor.process_sample(anonymized_data)
+            if sequence:  # We get ONE network sequence when ready
+                producer.send(output_topic, value=sequence)
                 processed_count += 1
-
-                if processed_count % 10 == 0:
-                    print(f"Processed {processed_count} sequences")
-
-                # Log first few for debugging
-                if processed_count <= 3:
-                    print(f"Sent tensor for device {result['device_id']}")
-                    print(f"  Shape: [1, {len(result['feature_values']['ul_retx'])}, {len(result['feature_values'])}]")
-                    print(f"  Metadata: {result['metadata']}")
-
         except Exception as e:
             print(f"Error processing message: {e}")
             import traceback
             traceback.print_exc()
-            continue
+            exit()
 
     consumer.close()
     producer.close()

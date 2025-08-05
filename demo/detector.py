@@ -10,6 +10,7 @@ import threading
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import numpy as np
 import torch
 import pandas as pd
 import dash
@@ -69,6 +70,7 @@ class AnomalyDetectorWithUI:
             self.alert_threshold = 5
 
             # Kafka setup
+            print(os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'))
             self.bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
             self.input_topic = os.environ.get('INPUT_TOPIC', 'preprocessed-data')
             self.alert_topic = os.environ.get('ALERT_TOPIC', 'anomaly-alerts')
@@ -156,12 +158,28 @@ class AnomalyDetectorWithUI:
             logging.info("Kafka consumer stopped")
 
     def process_message(self, input_data):
-        """Process a single message from Kafka"""
+        """Process a single message from Kafka - Updated for network sequences"""
         try:
-            # Detect anomaly
-            input_features = pd.DataFrame(input_data['feature_values'])
+            # Input data format from anonymizer:
+            # {
+            #     'device_id': 'network_aggregated',
+            #     'features': {
+            #         'ul_retx': [0.1, 0.2, 0.15, ...],  # seq_len values
+            #         'dl_bitrate': [1.5, 1.8, 1.2, ...], # seq_len values
+            #     },
+            #     'timestamp': 'latest_timestamp',
+            #     'metadata': {'attack': 1}
+            # }
+
+            # Create DataFrame from feature sequences
+            # Create tensor for model input [batch_size=1, seq_len, features]
+            print("input_data['features']", input_data['features'])
+            input_features = pd.DataFrame(input_data['features'])
+            print("input_features", input_features.values)
             input_tensor = torch.tensor(input_features.values, dtype=torch.float32).to(self.device)
-            input_tensor = input_tensor.reshape(1, len(input_features), len(input_features.columns))
+            print('input_tensor',input_tensor)
+            print('input_tensor.shape', input_tensor.shape)
+            input_tensor = input_tensor.reshape(1, -1, len(self.input_features))
 
             detection_results = self.detect_anomaly(input_tensor)
             if detection_results is None:
@@ -186,6 +204,7 @@ class AnomalyDetectorWithUI:
                     self.stats['true_negatives'] += 1
                 else:
                     self.stats['false_positives'] += 1
+
             if is_anomaly_detected:
                 self.stats['anomalies_detected'] += 1
 
@@ -197,7 +216,7 @@ class AnomalyDetectorWithUI:
                     alert = {
                         'alert_id': f"alert-{datetime.now().timestamp()}",
                         'device_id': input_data['device_id'],
-                        'cell': input_data['metadata']['cell'],
+                        'cell': input_data['metadata'].get('cell', 'unknown'),
                         'feature_values': input_data['feature_values'],
                         'timestamp': input_data['timestamp'],
                         'reconstruction_error': detection_results['reconstruction_error'],
@@ -209,9 +228,14 @@ class AnomalyDetectorWithUI:
 
                     self.producer.send(self.alert_topic, value=alert)
                     self.stats['alerts_sent'] += 1
-                    logging.info(f"ALERT sent for device {input_data['device_id']}")
+                    logging.info(f"ALERT sent for network sequence")
 
-            # Queue data for UI update
+            # Queue data for UI update - use latest values from sequence
+            ui_feature_values = {}
+            for feature_name, feature_sequence in input_data['feature_values'].items():
+                if feature_name in self.input_features:
+                    ui_feature_values[feature_name] = feature_sequence[-1]  # Latest value
+
             ui_data = {
                 'timestamp': input_data['timestamp'],
                 'sample_index': self.sample_count,
@@ -219,7 +243,7 @@ class AnomalyDetectorWithUI:
                 'is_anomaly': is_anomaly_detected,
                 'true_label': true_label,
                 'device_id': input_data['device_id'],
-                'feature_values': {k: v[-1] for k, v in input_data['feature_values'].items()}
+                'feature_values': ui_feature_values
             }
 
             # Non-blocking put
@@ -231,12 +255,16 @@ class AnomalyDetectorWithUI:
 
         except Exception as e:
             logging.error(f"Error processing message: {e}")
+            logging.error(f"Input data type: {type(input_data)}")
+            logging.error(f"Input data sample: {str(input_data)[:500]}...")
 
     def detect_anomaly(self, input_tensor):
         """Run anomaly detection on incoming data"""
         try:
             with torch.no_grad():
+                print('input_tensor', np.shape(input_tensor))
                 output = self.model(input_tensor)
+                print('output', output)
                 reconstruction_error = self.loss_fn(input_tensor, output)
                 reconstruction_error = reconstruction_error.mean().item()
             is_anomaly = reconstruction_error > self.threshold
@@ -371,8 +399,8 @@ app.layout = dbc.Container([
                     ], className="mb-3"),
                     html.Div([
                         html.Label("🔐 Privacy Protection: ", className="form-label"),
-                        dbc.Badge("Kafka Pipeline Active", color="success", className="ms-2"),
-                        html.Small(" - Real-time processing", className="text-muted ms-2")
+                        dbc.Badge("Network Aggregation Active", color="success", className="ms-2"),
+                        html.Small(" - Cross-device aggregated analytics", className="text-muted ms-2")
                     ]),
                     html.Div(id="status-indicator", className="mt-3")
                 ])
@@ -393,7 +421,7 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("🚨 Anomaly Detection Results", className="card-title"),
+                    html.H4("🚨 Network Anomaly Detection", className="card-title"),
                     dcc.Graph(id="anomaly-detection", style={'height': '400px'})
                 ])
             ])
@@ -413,8 +441,8 @@ app.layout = dbc.Container([
         dbc.Col([
             dbc.Card([
                 dbc.CardBody([
-                    html.H4("🔒 Anonymized Devices", className="card-title"),
-                    html.Div(id="device-list", style={'max-height': '200px', 'overflow-y': 'auto'})
+                    html.H4("🌐 Network Status", className="card-title"),
+                    html.Div(id="network-status", style={'max-height': '200px', 'overflow-y': 'auto'})
                 ])
             ])
         ], width=4)
@@ -474,14 +502,14 @@ def update_status_indicator(threshold, state):
     [Output('feature-display', 'figure'),
      Output('anomaly-detection', 'figure'),
      Output('stats-display', 'children'),
-     Output('device-list', 'children')],
+     Output('network-status', 'children')],
     [Input('interval-component', 'n_intervals')],
     [State('detector-state', 'data')]
 )
 def update_graphs(n, state):
     if not state.get('running', False):
         empty_fig = create_empty_figure("Detection Stopped - Click Start to begin")
-        return empty_fig, empty_fig, html.P("Start detection to see statistics"), html.P("No devices yet")
+        return empty_fig, empty_fig, html.P("Start detection to see statistics"), html.P("Network monitoring inactive")
 
     # Get new data
     latest_data = detector.get_latest_data()
@@ -495,9 +523,9 @@ def update_graphs(n, state):
         detector.realtime_data['device_id'].append(data_point['device_id'])
 
         # Add feature values
-        for feature, values in data_point['feature_values'].items():
+        for feature, value in data_point['feature_values'].items():
             if feature in detector.realtime_data['feature_values']:
-                detector.realtime_data['feature_values'][feature].append(data_point['feature_values'][feature])
+                detector.realtime_data['feature_values'][feature].append(value)
 
     # Limit data size
     if len(detector.realtime_data['timestamp']) > detector.max_points:
@@ -508,7 +536,7 @@ def update_graphs(n, state):
                 for feature in detector.realtime_data[key]:
                     detector.realtime_data[key][feature] = \
                         detector.realtime_data[key][feature][-detector.max_points:]
-    return create_feature_figure(), create_anomaly_figure(), create_statistics(), create_device_list()
+    return create_feature_figure(), create_anomaly_figure(), create_statistics(), create_network_status()
 
 
 def create_feature_figure():
@@ -530,7 +558,7 @@ def create_feature_figure():
             ))
 
     fig.update_layout(
-        title="Network Feature Values",
+        title="Aggregated Network Feature Values",
         xaxis_title="Time",
         yaxis_title="Feature Value",
         hovermode='x unified'
@@ -549,7 +577,6 @@ def create_anomaly_figure():
     errors = detector.realtime_data['reconstruction_error']
     predictions = detector.realtime_data['is_anomaly']
     true_labels = detector.realtime_data['true_label']
-    device_ids = detector.realtime_data['device_id']
 
     # Create lists for each category
     tp_times, tp_errors = [], []
@@ -557,33 +584,11 @@ def create_anomaly_figure():
     fp_times, fp_errors = [], []
     fn_times, fn_errors = [], []
 
-    # Get unique devices and assign colors
-    unique_devices = list(set(device_ids))
-    device_colors = [
-        'purple', 'darkblue', 'darkgreen', 'brown', 'pink',
-        'gray', 'olive', 'cyan', 'magenta', 'navy'
-    ]
-
-    # Create device-specific data
-    device_data = {}
-    for device in unique_devices:
-        device_data[device] = {
-            'timestamps': [],
-            'errors': [],
-            'color': device_colors[len(device_data) % len(device_colors)]
-        }
-
-    # Organize data by device and category
+    # Categorize for confusion matrix visualization
     for i in range(len(timestamps)):
         is_anomaly = predictions[i]
         actual_label = true_labels[i]
-        device_id = device_ids[i]
 
-        # Add to device-specific data
-        device_data[device_id]['timestamps'].append(timestamps[i])
-        device_data[device_id]['errors'].append(errors[i])
-
-        # Categorize for confusion matrix visualization
         if is_anomaly and actual_label == 1:  # True Positive
             tp_times.append(timestamps[i])
             tp_errors.append(errors[i])
@@ -597,25 +602,16 @@ def create_anomaly_figure():
             fn_times.append(timestamps[i])
             fn_errors.append(errors[i])
 
-    # Add device-specific baseline lines
-    for device_id, data in device_data.items():
-        if len(data['timestamps']) > 1:  # Only show line if we have multiple points
-            # Sort by timestamp to ensure proper line connection
-            sorted_indices = sorted(range(len(data['timestamps'])),
-                                  key=lambda k: data['timestamps'][k])
-            sorted_times = [data['timestamps'][i] for i in sorted_indices]
-            sorted_errors = [data['errors'][i] for i in sorted_indices]
-
-            fig.add_trace(go.Scatter(
-                x=sorted_times,
-                y=sorted_errors,
-                mode='lines',
-                name=f'Device {device_id}',
-                line=dict(color=data['color'], width=2, dash='solid'),
-                hoverinfo='skip',
-                legendgroup='devices',
-                legendgrouptitle_text="Devices"
-            ))
+    # Add baseline line
+    if len(timestamps) > 1:
+        fig.add_trace(go.Scatter(
+            x=timestamps,
+            y=errors,
+            mode='lines',
+            name='Network Reconstruction Error',
+            line=dict(color='lightblue', width=2),
+            hoverinfo='skip'
+        ))
 
     # Add True Positives (Correctly detected attacks)
     if tp_times:
@@ -624,15 +620,8 @@ def create_anomaly_figure():
             y=tp_errors,
             mode='markers',
             name='True Positive (TP)',
-            marker=dict(
-                color='green',
-                size=10,
-                symbol='circle',
-                line=dict(width=2, color='darkgreen')
-            ),
-            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
-            legendgroup='confusion',
-            legendgrouptitle_text="Detection Results"
+            marker=dict(color='green', size=10, symbol='circle'),
+            hovertemplate='<b>True Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
         ))
 
     # Add True Negatives (Correctly identified benign)
@@ -642,14 +631,8 @@ def create_anomaly_figure():
             y=tn_errors,
             mode='markers',
             name='True Negative (TN)',
-            marker=dict(
-                color='blue',
-                size=6,
-                symbol='circle',
-                line=dict(width=1, color='darkblue')
-            ),
-            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
-            legendgroup='confusion'
+            marker=dict(color='blue', size=6, symbol='circle'),
+            hovertemplate='<b>True Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
         ))
 
     # Add False Positives (Incorrectly flagged as attacks)
@@ -659,14 +642,8 @@ def create_anomaly_figure():
             y=fp_errors,
             mode='markers',
             name='False Positive (FP)',
-            marker=dict(
-                color='orange',
-                size=10,
-                symbol='triangle-up',
-                line=dict(width=2, color='darkorange')
-            ),
-            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
-            legendgroup='confusion'
+            marker=dict(color='orange', size=10, symbol='triangle-up'),
+            hovertemplate='<b>False Positive</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
         ))
 
     # Add False Negatives (Missed attacks)
@@ -676,14 +653,8 @@ def create_anomaly_figure():
             y=fn_errors,
             mode='markers',
             name='False Negative (FN)',
-            marker=dict(
-                color='red',
-                size=10,
-                symbol='triangle-down',
-                line=dict(width=2, color='darkred')
-            ),
-            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>',
-            legendgroup='confusion'
+            marker=dict(color='red', size=10, symbol='triangle-down'),
+            hovertemplate='<b>False Negative</b><br>Time: %{x}<br>Error: %{y:.4f}<extra></extra>'
         ))
 
     # Add threshold line
@@ -696,47 +667,18 @@ def create_anomaly_figure():
         annotation_position="top right"
     )
 
-    # Update layout
     fig.update_layout(
-        title=f"{detector.model_name} - Device-Separated Anomaly Detection",
+        title=f"{detector.model_name} - Network Anomaly Detection",
         xaxis_title="Time",
         yaxis_title="Reconstruction Error",
-        hovermode='closest',
-        legend=dict(
-            orientation="v",
-            yanchor="top",
-            y=1,
-            xanchor="left",
-            x=1.02,
-            groupclick="toggleitem"
-        ),
-        margin=dict(r=200),  # Extra space for legend
-        showlegend=True
+        hovermode='closest'
     )
-
-    # Add performance summary as annotation
-    total_points = len(timestamps)
-    device_count = len(unique_devices)
-    if total_points > 0:
-        summary_text = (f"Devices: {device_count} | Points: TP={len(tp_times)} "
-                       f"TN={len(tn_times)} FP={len(fp_times)} FN={len(fn_times)}")
-        fig.add_annotation(
-            text=summary_text,
-            xref="paper", yref="paper",
-            x=0.02, y=0.98,
-            xanchor='left', yanchor='top',
-            showarrow=False,
-            font=dict(size=11, color="black"),
-            bgcolor="rgba(255,255,255,0.9)",
-            bordercolor="gray",
-            borderwidth=1
-        )
 
     return fig
 
 
 def create_statistics():
-    """FIXED: Proper TPR/FPR calculation and display"""
+    """Proper TPR/FPR calculation and display"""
     if detector.stats['total'] == 0:
         return html.P("No data processed yet")
 
@@ -797,34 +739,33 @@ def create_statistics():
     ])
 
 
-def create_device_list():
+def create_network_status():
     if not detector.realtime_data['device_id']:
-        return html.P("No devices detected yet", className="text-muted")
+        return html.P("Network monitoring inactive", className="text-muted")
 
-    device_counts = {}
-    for i, device_id in enumerate(detector.realtime_data['device_id']):
-        if device_id not in device_counts:
-            device_counts[device_id] = {'total': 0, 'anomalies': 0}
-        device_counts[device_id]['total'] += 1
-        if detector.realtime_data['is_anomaly'][i]:
-            device_counts[device_id]['anomalies'] += 1
+    # Since we're doing network aggregation, show network-level stats
+    total_sequences = len(detector.realtime_data['device_id'])
+    anomaly_sequences = sum(detector.realtime_data['is_anomaly'])
+    anomaly_rate = (anomaly_sequences / total_sequences) * 100 if total_sequences > 0 else 0
 
-    device_items = []
-    for device_id, counts in sorted(device_counts.items())[-10:]:
-        anomaly_rate = (counts['anomalies'] / counts['total']) * 100 if counts['total'] > 0 else 0
-        color = "danger" if anomaly_rate > 50 else "warning" if anomaly_rate > 20 else "success"
+    color = "danger" if anomaly_rate > 50 else "warning" if anomaly_rate > 20 else "success"
 
-        device_items.append(
-            dbc.ListGroupItem([
-                html.Div([
-                    html.Span(f"Device: {device_id}", className="fw-bold"),
-                    dbc.Badge(f"{anomaly_rate:.0f}%", color=color, className="float-end")
-                ]),
-                html.Small(f"Samples: {counts['total']}, Anomalies: {counts['anomalies']}")
-            ])
-        )
-
-    return dbc.ListGroup(device_items, flush=True)
+    return dbc.ListGroup([
+        dbc.ListGroupItem([
+            html.Div([
+                html.Span("Network Aggregated Analytics", className="fw-bold"),
+                dbc.Badge(f"{anomaly_rate:.1f}%", color=color, className="float-end")
+            ]),
+            html.Small(f"Total Sequences: {total_sequences}, Anomalous: {anomaly_sequences}")
+        ]),
+        dbc.ListGroupItem([
+            html.Div([
+                html.Span("Privacy Status", className="fw-bold"),
+                dbc.Badge("Active", color="success", className="float-end")
+            ]),
+            html.Small("Cross-device data aggregation enabled")
+        ])
+    ], flush=True)
 
 
 def create_empty_figure(title):

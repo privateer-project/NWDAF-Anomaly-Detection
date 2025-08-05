@@ -361,7 +361,7 @@ class DataProcessor:
             benign_train_df = clean_train_df
 
             # Get mean values per timestep for scaler fitting (benign only)
-            mean_train_df = self._aggregate_by_time(benign_train_df)
+            mean_train_df = self.aggregate_by_time(benign_train_df)
 
             # Create time index
             mean_train_df['time_idx'] = range(len(mean_train_df))
@@ -504,7 +504,7 @@ class DataProcessor:
                 logging.warning('Cannot get benign data. No column named `attack` in dataset.')
 
         # Aggregate by time to get mean values per timestep
-        df = self._aggregate_by_time(df)
+        df = self.aggregate_by_time(df)
 
         # Create time index
         df['time_idx'] = range(len(df))
@@ -558,7 +558,7 @@ class DataProcessor:
             prefetch_factor=self.data_config.prefetch_factor,
             persistent_workers=self.data_config.persistent_workers)
 
-    def _aggregate_by_time(self, df: pd.DataFrame) -> pd.DataFrame:
+    def aggregate_by_time(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Perform temporal aggregation of network metrics across devices.
 
@@ -591,11 +591,6 @@ class DataProcessor:
         agg_dict['attack'] = 'max'
 
         aggregated_df = df.groupby('_time').agg(agg_dict).reset_index()
-
-        logging.info(f'Aggregated data shape: {aggregated_df.shape}')
-        logging.info(f'Attack samples after aggregation: {len(aggregated_df[aggregated_df["attack"] == 1])}')
-        logging.info(f'Benign samples after aggregation: {len(aggregated_df[aggregated_df["attack"] == 0])}')
-
         return aggregated_df
 
 if __name__ == '__main__':
