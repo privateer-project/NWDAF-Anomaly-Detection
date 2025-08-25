@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
+import privkit as pk
 
 from kafka import KafkaConsumer, KafkaProducer
 
@@ -54,6 +55,42 @@ class AnonymizerPreprocessor:
         # Timestamp-based buffering for aggregation
         self.buffer = []  # timestamp -> list of device samples
         self.max_timestamp_age = 30  # seconds - maximum age before processing incomplete batches
+
+    def anonymize(self, data, epsilon: float = 0.01, sensitivity: float = 1):
+        """Apply anonymization to sensitive fields
+
+        :param float epsilon: privacy parameter for the Laplace mechanism. Default value = 0.01.
+        :param float sensitivity: sensitivity parameter. Default value = 1.
+        """
+        anonymized = data.copy()
+
+        # Hash device identifier
+        if 'imeisv' in anonymized:
+            original_imeisv = anonymized['imeisv']
+
+            anonymized['_original_device_id'] = original_imeisv  # Keep for buffering
+
+            anonymized['imeisv'] = anonymized['imeisv'].apply(lambda x: f"{pk.Hash.get_obfuscated_data(x) % 10000}")
+
+        # Mask IP addresses
+        for field in ['ip', 'bearer_0_ip', 'bearer_1_ip']:
+            if field in anonymized:
+                anonymized[field] = "xxx.xxx.xxx.xxx"
+
+        # Hash other identifiers
+        for field in ['amf_ue_id', '5g_tmsi']:
+            if field in anonymized:
+                anonymized[field] = anonymized[field].apply(lambda x: f"{pk.Hash.get_obfuscated_data(x) % 10000}")
+
+        # Obfuscate sensitive features with Laplace
+        for field in ['dl_bitrate', 'ul_bitrate']:
+            if field in anonymized:
+                results = anonymized[field].apply(
+                    pk.Laplace(epsilon=epsilon, sensitivity=sensitivity).get_obfuscated_point)
+                obf_data = pd.DataFrame(results.tolist(), index=anonymized.index)
+                anonymized[[f"{field}", f"{constants.QUALITY_LOSS}_{field}"]] = obf_data
+
+        return anonymized
 
     def process_sample(self, data):
         """Process incoming sample using timestamp-based batching approach"""
@@ -145,8 +182,7 @@ def main():
         try:
             raw_data = message.value
 
-            # TODO: Implement actual anonymization here
-            anonymized_data = raw_data
+            anonymized_data = processor.anonymize(raw_data)
 
             # Process and check if sequence is ready
             sequence = processor.process_sample(anonymized_data)
