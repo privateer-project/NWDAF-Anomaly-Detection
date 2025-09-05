@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.22.0
+    pull_policy: always
+    network_mode: host
+    container_name: mlflow-service
+    restart: unless-stopped
+    volumes:
+      # Persist MLflow artifacts (models, plots) on the host
+      - ${PRIVATEER_MLFLOW_ARTIFACT_PATH}:/mlruns
+      # Persist the MLflow database on the host
+      - ${PRIVATEER_MLFLOW_DB_PATH}:/database
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////database/mlflow.db
+      --default-artifact-root /mlruns
+      --host ${PRIVATEER_MLFLOW_SERVER_IP}
+      --port ${PRIVATEER_MLFLOW_SERVER_PORT}
+    environment:
+      # Pass the MLflow server IP to the container (used in command)
+      - MLFLOW_SERVER_IP=${PRIVATEER_MLFLOW_SERVER_IP}
+
+  app:
+    image: aimilefth/privateer-ad:app
+    pull_policy: always
+    # # Use this if wanting to build
+    # build:
+    #   context: ./docker/app
+    network_mode: host
+    container_name: privateer-ad-app
+    volumes:
+    # Mount the entire project directory into the container at /app
+    # This allows for live code changes without rebuilding the image.
+      - .:/app
+      # Mount the same artifact path as the mlflow service
+      - ${PRIVATEER_MLFLOW_ARTIFACT_PATH}:/mlruns
+    command: ["sleep", "infinity"] 
+    env_file:
+      - .env
+    depends_on:
+      - mlflow
+    shm_size: "8gb"
+    ulimits:
+      memlock: -1
+      stack: 67108864

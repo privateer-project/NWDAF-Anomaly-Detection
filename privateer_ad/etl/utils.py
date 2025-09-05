@@ -50,7 +50,8 @@ def check_existing_datasets():
         >>> check_existing_datasets()  # Raises FileExistsError if train.csv exists
         FileExistsError: File /path/to/processed/train.csv exists.
     """
+    paths_config = PathConfig()
     for mode in ['train', 'val', 'test']:
-        path = get_dataset_path(mode)
-        if os.path.exists(path):
+        path = paths_config.processed_dir.joinpath(f"{mode}.csv")
+        if path.exists():
             raise FileExistsError(f'File {path} exists.')

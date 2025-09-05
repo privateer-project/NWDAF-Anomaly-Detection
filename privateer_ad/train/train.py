@@ -309,3 +309,6 @@ def main():
     """CLI entry point for training pipeline execution."""
     from fire import Fire
     Fire(TrainPipeline)
+
+if __name__ == '__main__':
+    main()
