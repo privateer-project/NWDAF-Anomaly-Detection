@@ -301,14 +301,14 @@ class DataProcessor:
         # Ensure a processed directory exists
         self.paths_config.processed_dir.mkdir(parents=True, exist_ok=True)
 
-        # Setup and save scalers using training data
-        self.setup_scalers()
-
         logging.info('Save datasets...')
         for k, df in datasets.items():
-            save_path = get_dataset_path(k)
+            save_path = self.paths_config.processed_dir.joinpath(f"{k}.csv")
             df.to_csv(save_path, index=False)
             logging.info(f'{k} saved at {save_path}')
+        
+        # Setup and save scalers using training data
+        self.setup_scalers()
 
     def setup_scalers(self) -> None:
         """Sets up data scalers using only benign training samples for normalization.
@@ -595,6 +595,8 @@ class DataProcessor:
 
 if __name__ == '__main__':
     dp = DataProcessor()
+    # Uncomment it to prepare the dataset, from the raw data
+    # dp.prepare_datasets()
     dl = dp.get_dataloader('val', train=False)
     for i, sample in enumerate(dl):
         print(sample[0]['encoder_cont'][0, 0])

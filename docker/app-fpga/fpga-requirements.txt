@@ -1,0 +1,8 @@
+pynq
+ipython
+marimo
+matplotlib
+pandas
+numpy==1.26.4
+# PYNQ Metadata fix for Py3.11
+pynqmetadata @ git+https://github.com/Xilinx/PYNQ-Metadata.git@81950f84f7f1ebf3b2a8dac5418f792871b9cfec
