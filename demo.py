@@ -5,6 +5,9 @@ import time
 import threading
 import queue
 import logging
+import os
+import json
+from pathlib import Path
 
 from datetime import datetime
 
@@ -18,8 +21,9 @@ from dash import dcc, html, Input, Output, State
 
 from privateer_ad.config.metadata import MetadataConfig
 from privateer_ad.etl import DataProcessor
-from privateer_ad.config import DataConfig, MLFlowConfig
-from privateer_ad.utils import load_champion_model
+from privateer_ad.config import DataConfig, MLFlowConfig, ModelConfig, TrainingConfig, PathConfig
+from privateer_ad.utils import load_champion_model, load_model_weights
+from privateer_ad.architectures.transformer_ad import TransformerAD
 
 
 class PrivateerAnomalyDetector:
@@ -46,16 +50,51 @@ class PrivateerAnomalyDetector:
         self.test_dl = self.data_processor.get_dataloader('test', only_benign=False, train=True)
         self.threshold = 0.061  # Default threshold
 
-        # Load model
-        logging.info(f"Loading {self.model_name} model...")
-        self.model, self.threshold, self.loss_fn = load_champion_model(tracking_uri=self.mlflow_config.tracking_uri,
-                                                                       model_name=self.model_name)
-        self.model.to(self.device)
-        self.model.eval()
-
-        # Get input features from metadata
+        # Get input features from metadata (needed if we build model locally)
         self.input_features = self.metadata.get_input_features()
         logging.info(f"input features: {self.input_features}")
+
+        # Load model: prefer optional local .pt (adversarial model) if provided/present, else MLflow
+        local_model_path = os.getenv('PRIVATEER_MODEL_LOCAL_PATH', 'adv_trained_model.pt')
+        try:
+            if local_model_path and Path(local_model_path).exists():
+                logging.info(f"Loading local model weights from: {local_model_path}")
+                # Build architecture matching current input size
+                model_cfg = ModelConfig(input_size=len(self.input_features))
+                self.model = TransformerAD(model_config=model_cfg)
+                # Load cleaned state dict (handles 'module.' prefixes)
+                state_dict = load_model_weights(local_model_path, PathConfig())
+                self.model.load_state_dict(state_dict, strict=True)
+
+                # Loss function and threshold
+                self.loss_fn = getattr(torch.nn, TrainingConfig().loss_fn_name)(reduction='none')
+                # Try to read threshold from metrics JSON if available
+                metrics_path = Path('analysis_results/TransformerAD_DP_val_metrics.json')
+                if metrics_path.exists():
+                    try:
+                        with metrics_path.open('r') as f:
+                            metrics = json.load(f)
+                        self.threshold = float(metrics.get('val_threshold', self.threshold))
+                        logging.info(f"Loaded threshold from metrics: {self.threshold:.6f}")
+                    except Exception as e:
+                        logging.warning(f"Could not read threshold from metrics file: {e}")
+                else:
+                    logging.info(f"Metrics file not found at {metrics_path}, using default threshold: {self.threshold}")
+
+            else:
+                # Fallback to MLflow champion/latest as before
+                logging.info(f"Loading {self.model_name} model from MLflow...")
+                self.model, self.threshold, self.loss_fn = load_champion_model(
+                    tracking_uri=self.mlflow_config.tracking_uri,
+                    model_name=self.model_name
+                )
+
+            # Finalize model
+            self.model.to(self.device)
+            self.model.eval()
+        except Exception as e:
+            logging.error(f"Failed to load model: {e}")
+            raise
 
     def detect_anomaly(self, input_batch):
         """
@@ -693,7 +732,7 @@ if __name__ == '__main__':
     logging.info("🔐 Privacy Protection: Anonymization Active")
     logging.info("=" * 50)
     logging.info("Starting web server...")
-    logging.info("Open your browser and go to: http://127.0.0.1:8050")
+    logging.info("Open your browser and go to: http://127.0.0.1:8051")
     logging.info("=" * 50)
 
-    app.run(host='127.0.0.1', port=8050, debug=True)
+    app.run(host='127.0.0.1', port=8051, debug=True)

@@ -90,7 +90,50 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
     client = mlflow.tracking.MlflowClient()
 
     # Determine sort direction for finding best run
-    current_target_metric = current_metrics[target_metric]
+    # Be robust: if the requested target_metric is not present (e.g., server has only
+    # global_test_* metrics after aggregation), fall back to a sensible available metric.
+    selected_metric_key = target_metric
+    if target_metric not in current_metrics:
+        # Try common alternates in order of preference
+        candidates = []
+        try:
+            if target_metric.startswith('val_'):
+                suffix = target_metric[len('val_'):]
+                candidates.extend([
+                    f'global_test_{suffix}',
+                    f'test_{suffix}',
+                    suffix,
+                ])
+        except Exception:
+            pass
+        # Generic fallbacks commonly produced by server/client eval
+        candidates.extend([
+            'global_test_f1-score',
+            'test_f1-score',
+            'val_f1-score',
+            'f1-score',
+        ])
+
+        for cand in candidates:
+            if cand in current_metrics:
+                selected_metric_key = cand
+                logging.warning(
+                    f"Requested target_metric '{target_metric}' not found in current_metrics. "
+                    f"Falling back to '{selected_metric_key}'."
+                )
+                break
+        else:
+            # As a last resort, pick any numeric metric
+            for k, v in current_metrics.items():
+                if isinstance(v, (int, float)):
+                    selected_metric_key = k
+                    logging.warning(
+                        f"Requested target_metric '{target_metric}' not found. "
+                        f"Falling back to first numeric metric '{selected_metric_key}'."
+                    )
+                    break
+
+    current_target_metric = current_metrics[selected_metric_key]
     sorting = 'DESC' if direction == 'maximize' else 'ASC'
 
     # Check if this is a new champion
@@ -113,8 +156,8 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
             else:
                 is_champion = current_target_metric <= best_target_metric
 
-            logging.info(f'Previous best {target_metric}: {best_target_metric}')
-            logging.info(f'Current {target_metric}: {current_target_metric}')
+            logging.info(f'Previous best {selected_metric_key}: {best_target_metric}')
+            logging.info(f'Current {selected_metric_key}: {current_target_metric}')
             logging.info(f'Is new champion: {is_champion}')
 
         # Find previous champion versions to remove tag
@@ -170,7 +213,8 @@ def log_model(model, model_name, sample, direction, target_metric, current_metri
         logging.info(f"Model performance ({current_target_metric}) did not exceed "
                      f"previous best ({best_target_metric}). No champion tag added.")
 
-    client.set_model_version_tag(model_name, current_version, target_metric, str(current_target_metric))
+    # Record which metric was actually used for champion decision
+    client.set_model_version_tag(model_name, current_version, selected_metric_key, str(current_target_metric))
 
 
 def get_signature(model, sample):
