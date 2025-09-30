@@ -1,0 +1,77 @@
+<div class="container">
+  <!-- Título -->
+  <h1 class="title">Graphics - SHAP - Time Series</h1>
+
+  <!-- Description -->
+  <div class="description">
+    <div class="explanation-text">
+      SHAP **attribute** plots are useful for visualizing which features have the most impact on the model’s predictions.
+      These plots identify the **most problematic attributes**, meaning those that have the most significant influence on predictions,
+      whether positive or negative. They display the contribution of each feature to the model's output, allowing us to observe
+      which variables are most relevant and how they affect the prediction overall.
+      <br />
+      <br />
+      The **features** shown in the plots are the model's input variables, with each having a SHAP value indicating its contribution.
+      Depending on the plot, features can be presented with positive values when they increase the model's prediction,
+      or negative values when they decrease it. These plots help to understand the model's behavior by showing which characteristics
+      most influence the model’s decision, enabling adjustments to improve accuracy and interpretability.
+    </div>
+  </div>
+
+  <!-- Exibição dos gráficos -->
+  <div class="graphics-container">
+    <!-- Mensagem de erro acima dos gráficos -->
+    @if (errorMessage) {
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
+    }
+
+    @for (graphicUrl of graphicsUrls; track graphicUrl) {
+      <div class="graphic-item">
+        <a [href]="graphicUrl" target="_blank">
+          <img [src]="graphicUrl" alt="SHAP Graphic" class="graphic-image zoomable" />
+        </a>
+      </div>
+    }
+
+    @if (graphicsUrls.length === 0 && !errorMessage) {
+      <p>No graphics available</p>
+    }
+  </div>
+
+  <!-- Seção para selecionar parâmetros -->
+  <div class="parameter-section mt-5">
+    <!-- Selecionar Feature -->
+    <div class="form-group">
+      <label class="instance-label" for="feature-name">📊 Feature Name</label>
+      @if (modelNames.length > 0) {
+        <select
+          id="feature-name"
+          [(ngModel)]="featureName"
+          class="form-control"
+          >
+          @for (model of modelNames; track model) {
+            <option [value]="model">{{ model }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <!-- Digitar o valor da instância -->
+    <div class="form-group">
+      <label class="instance-label" for="instance-value">🔢 Instance Value</label>
+      <input
+        type="number"
+        id="instance-value"
+        class="form-control"
+        [(ngModel)]="featureValue"
+        min="0"
+        placeholder="Enter instance value"
+        />
+      </div>
+
+      <!-- Botão para atualizar gráficos -->
+      <button class="btn btn-primary mt-3" (click)="fetchGraphics()">Update Graphics</button>
+    </div>
+  </div>

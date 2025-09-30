@@ -1,0 +1,128 @@
+/* Main Container */
+.container {
+    font-family: 'Arial', sans-serif;
+    margin: 30px auto;
+    padding: 20px;
+    max-width: 1200px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Title */
+  .title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #444;
+    margin-bottom: 20px;
+  }
+  
+/* Description */
+.description {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.explanation-text {
+  width: 100%;
+  height: auto; /* Removei o tamanho fixo para o texto */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  color: #555;
+  background-color: #f7f7f7;
+  text-align: justify; /* Justifica o texto */
+  line-height: 1.6; /* Adiciona altura de linha para melhor legibilidade */
+  overflow-y: auto; /* Permite rolagem caso o texto ultrapasse a altura disponível */
+}
+  
+  /* Flex Layout for Sections */
+  .shap-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  
+  /* Left Section */
+  .left {
+    flex: 1 1 calc(33.333% - 20px); /* Responsive columns */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  /* Instance Label */
+  .instance-label {
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 5px;
+  }
+  
+  /* Input Fields */
+  input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  input:focus {
+    box-shadow: 0 0 5px #007bff;
+    outline: none;
+  }
+  
+  /* Buttons */
+  button {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+  }
+  
+  /* Lists */
+  ul {
+    list-style: none;
+    padding: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+  }
+  
+  li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  li:last-child {
+    border-bottom: none;
+  }
+  
+  li:hover {
+    background-color: #f0f8ff;
+    color: #007bff;
+  }
+  

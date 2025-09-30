@@ -1,0 +1,39 @@
+# Node modules (avoid copying local dependencies, as they are installed in the container)
+node_modules
+
+# Angular build output (dist folder, created during ng build)
+dist
+
+# Local development files
+.git
+.gitignore
+README.md
+LICENSE
+
+# Editor and IDE files
+.vscode
+.idea
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.log
+npm-debug.log
+yarn-error.log
+.tmp
+temp/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files (optional, include if sensitive data should not be copied)
+.env
+.env.local
+.env.*.local
+
+# Test-related files (optional, exclude if not needed in the container)
+coverage/
+e2e/
+test/
+*.spec.ts

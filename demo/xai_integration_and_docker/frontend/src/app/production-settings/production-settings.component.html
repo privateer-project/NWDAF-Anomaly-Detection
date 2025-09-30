@@ -1,0 +1,91 @@
+<div class="container">
+  <!-- Título da Página -->
+  <h1 class="title">⚙️ Settings</h1>
+
+  <!-- Texto Explicativo -->
+  <div class="description">
+    <div class="explanation-text">
+      <!-- Descrição não deve desaparecer -->
+      This page allows you to generate graphics based on preloaded models, datasets, and instance values. By default, the model and dataset are cached, and the instance is set to 0. You can directly generate graphics by clicking the <strong>"Generate Graphics"</strong> button. If you want to generate graphics for a different instance, enter a value greater than 0 in the <strong>Instance</strong> field, click <strong>"Load Instance"</strong>, and wait for the feedback confirming the instance has been loaded. Afterward, click <strong>"Generate Graphics"</strong> to create the graphics for the selected instance.
+      <br><br>
+      If you need to change the dataset or model, click <strong>"Fetch Datasets"</strong> to retrieve available datasets, select the desired one, and do the same for models by clicking <strong>"Fetch Models"</strong>. After selecting both, click <strong>"Load Data"</strong> to load the new configuration and wait for confirmation that the data has been loaded. Then, you can proceed by selecting the desired instance value and generating the graphics as described earlier.
+      <br><br>
+      This straightforward process ensures you can seamlessly switch datasets, models, and instance values while generating the necessary visualizations.
+    </div>
+  </div>
+
+  <!-- DB Names -->
+  <div class="shap-container">
+    <div class="left">
+      <button (click)="fetchDbNames()" class="fetch-btn">
+        📂 Fetch Dataset Names
+      </button>
+      <ul>
+        @for (db of dbNames; track db) {
+          <li (click)="setDbName(db)">
+            🗄️ {{ db }}
+          </li>
+        }
+      </ul>
+    </div>
+
+    <!-- Model Names -->
+    <div class="left">
+      <button (click)="fetchModelNames()" class="fetch-btn">
+        🧠 Fetch Model Names
+      </button>
+      <ul>
+        @for (model of modelNames; track model) {
+          <li (click)="setModelName(model)">
+            📊 {{ model }}
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+
+  <!-- SHAP One, Eight, and LIME -->
+  <div class="shap-container">
+    <div class="left">
+      <input type="text" placeholder="📂 Dataset Name" [(ngModel)]="nameDBOne" />
+      <input type="text" placeholder="📊 Model Name" [(ngModel)]="nameModelOne" />
+      <button (click)="sendDataRequestOne()">⚡ Load Data - Shap One Service</button>
+    </div>
+
+    <div class="left">
+      <input type="text" placeholder="📂 Dataset Name" [(ngModel)]="nameDBEight" />
+      <input type="text" placeholder="📊 Model Name" [(ngModel)]="nameModelEight" />
+      <button (click)="sendDataRequestEight()">⚡ Load Model - Shap Eight Service</button>
+    </div>
+
+    <div class="left">
+      <input type="text" placeholder="📂 Dataset Name" [(ngModel)]="nameDBLime" />
+      <input type="text" placeholder="📊 Model Name" [(ngModel)]="nameModelLime" />
+      <button (click)="sendDataRequestLime()">⚡ Load Model - Lime Service</button>
+    </div>
+  </div>
+
+  <!-- Instance Input -->
+  <div class="shap-container">
+    <div class="left">
+      <label for="instance-one" class="instance-label">🔢 Instance (Default: 0)</label>
+      <input id="instance-one" type="number" [(ngModel)]="InstanceOne" value="0" />
+      <button (click)="performShapOneCalculation()">🚀 Load Instance - Shap One Service</button>
+      <button (click)="generateGraphicsOne()">📈 Generate Graphics - Shap One Service</button>
+    </div>
+
+    <div class="left">
+      <label for="instance-eight" class="instance-label">🔢 Instance (Default: 0)</label>
+      <input id="instance-eight" type="number" [(ngModel)]="InstanceEight" value="0" />
+      <button (click)="performShapEightCalculation()">🚀 Load Instance - Shap Eight Service</button>
+      <button (click)="generateGraphicsEight()">📈 Generate Graphics - Shap Eight Service</button>
+    </div>
+
+    <div class="left">
+      <label for="instance-lime" class="instance-label">🔢 Instance (Default: 0)</label>
+      <input id="instance-lime" type="number" [(ngModel)]="InstanceLime" value="0" />
+      <button (click)="performLimeCalculation()">🚀 Load Instance - Lime Service</button>
+      <button (click)="generateGraphicsLime()">📈 Generate Graphics - Lime Service</button>
+    </div>
+  </div>
+</div>

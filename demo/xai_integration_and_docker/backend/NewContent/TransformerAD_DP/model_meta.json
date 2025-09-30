@@ -1,0 +1,10 @@
+{
+  "model_name": "TransformerAD_DP",
+  "version": 15,
+  "run_id": "da029b53144c4f0e9614cec7561b20db",
+  "source_uri": "mlflow-artifacts:/304908286791224575/da029b53144c4f0e9614cec7561b20db/artifacts/TransformerAD_DP",
+  "threshold": 0.3879797160625458,
+  "threshold_key": "val_threshold",
+  "loss_fn_name": "L1Loss",
+  "tracking_uri": "http://localhost:5001"
+}

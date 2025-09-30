@@ -1,0 +1,67 @@
+<div class="container">
+  <h1 class="title">⚙️ Settings</h1>
+
+  <div class="description">
+    <div class="explanation-text">
+      <div class="explanation-text">
+        This page allows you to generate graphics based on preloaded models, datasets, and instance payloads.
+        <br><br>
+        By default, the model and dataset are cached. To generate graphics, you need to provide a valid
+        <strong>JSON payload</strong> in the <strong>Instance Payload</strong> field. 
+        This payload must follow the required structure, including fields such as 
+        <code>data</code>, <code>device</code>, <code>requires_grad</code>, and <code>shape</code>.
+        <br><br>
+        After entering the payload, click <strong>"Load Instance"</strong> to process the instance.
+        The system will first calculate <strong>SHAP</strong> values and then <strong>LIME</strong> values.
+        Once completed, a confirmation message will appear.
+        <br><br>
+        If you need to change the dataset or model, click <strong>"Fetch Datasets"</strong> to retrieve
+        available datasets, select the desired one, and do the same for models by clicking
+        <strong>"Fetch Models"</strong>. After selecting both, click <strong>"Load Data"</strong> to load
+        the new configuration and wait for confirmation that the data has been loaded. Then, you can
+        provide a new JSON payload and generate the corresponding visualizations.
+        <br><br>
+        This streamlined process ensures you can seamlessly switch datasets, models, and instance
+        payloads while generating the necessary visualizations.
+      </div>        
+    </div>
+  </div>
+
+
+  <!-- Input Fields and Buttons -->
+  <div class="single-column">
+    <label class="instance-label" for="dataset-name">📂 Dataset Name</label>
+
+    <div>
+      <label for="">Load CSV data file</label>
+      <input type="file" (change)="onDataFileSelected($event)">
+      <button (click)="submitDataFile()">⚡ Load dataset</button>
+    </div>
+
+    <label class="instance-label" for="model-name">📊 Model Name</label>
+    <div>
+      <label for="">Model File .pth</label>
+      <input type="file" (change)="onModelFileSelected($event)">
+      <button (click)="submitModelFile()">⚡ Load model</button>
+    </div>
+<!-- Instance JSON -->
+<label class="instance-label" for="instancePayload">🔢 Instance (JSON)</label>
+<textarea id="instancePayload" rows="6" placeholder='{
+  "data": {},
+  "device": "string",
+  "requires_grad": "string",
+  "shape": {}
+}'
+          [(ngModel)]="instancePayload"></textarea>
+
+<!-- Load Instance Button -->
+<button (click)="loadInstance()">🚀 Load Instance</button>
+
+<!-- Feedback Message -->
+@if (performCalculationMessage) {
+  <div class="feedback-message">
+    {{ performCalculationMessage }}
+  </div>
+}
+
+</div>

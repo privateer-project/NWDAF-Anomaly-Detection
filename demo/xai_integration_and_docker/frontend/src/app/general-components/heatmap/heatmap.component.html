@@ -1,0 +1,21 @@
+<div class="heatmap-grid" [ngStyle]="{'grid-template-columns': '50px repeat(' + columns + ', 1fr)'}">
+  <div class="row-container">
+    <div class="empty-cell"></div>
+    @for (col of columnLabels; track col) {
+      <div class="column-legend legend-item">{{ col }}</div>
+    }
+    @for (row of data; track $index; let i = $index) {
+      <div class="legend-item">{{ i+1 }}</div>
+      @for (cell of row; track $index) {
+        <div
+          class="heatmap-cell"
+          [ngStyle]="{
+            'background-color': getColor(cell),
+            'color': cell > threshold ? '#000' : '#fff'
+          }">
+          {{ cell | number:'1.2-2'}}
+        </div>
+      }
+    }
+  </div>
+</div>

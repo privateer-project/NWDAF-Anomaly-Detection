@@ -1,0 +1,90 @@
+<div class="container">
+  <h1 class="title">Graphics - LIME - Time Series</h1>
+
+  <div class="description">
+    <div class="explanation-text">
+      <strong>LIME</strong> (Local Interpretable Model-agnostic Explanations) plots are used to understand the contribution of variables to a model's prediction.
+      These plots provide a <strong>local, interpretable explanation</strong> for the prediction of a specific instance, meaning they show how each feature impacts the prediction for a single example, rather than the model's global behavior.
+      <br /><br />
+      LIME generates a simple, interpretable model that approximates the complex model around the instance being explained, allowing us to visualize how features influence that prediction.
+      <br /><br />
+      In LIME plots, the <strong>features</strong> are the model's input variables, and their contribution is shown in the form of <strong>bars or points</strong>.
+      Features with <strong>positive values increase</strong> the prediction, while features with <strong>negative values reduce</strong> the model's prediction.
+    </div>
+  </div>
+
+  <!-- Aviso -->
+  @if (noGraphicsMessage) {
+    <div class="alert alert-warning text-center mt-3">
+      {{ noGraphicsMessage }}
+    </div>
+  }
+
+  <!-- Gráficos -->
+  <div class="graphics-container">
+    <!-- Bar Plot -->
+    @if (barGraphicUrl) {
+      <div class="graphic-item">
+        <h3>📊 Bar Plot</h3>
+        <img [src]="barGraphicUrl" alt="LIME Bar Plot" class="graphic-image zoomable" />
+      </div>
+    }
+
+    <!-- Table -->
+    @if (tableGraphicUrl) {
+      <div class="graphic-item">
+        <h3>📋 Table</h3>
+        <img [src]="tableGraphicUrl" alt="LIME Table" class="graphic-image zoomable" />
+      </div>
+    }
+
+    <!-- HTML -->
+    @if (htmlExplanationUrlSafe) {
+      <div class="graphic-item">
+        <h3>🔍 Interactive Explanation</h3>
+        <iframe
+          [src]="htmlExplanationUrlSafe"
+          width="100%"
+          height="500px"
+          style="border: 1px solid #ccc; border-radius: 8px;">
+        </iframe>
+      </div>
+    }
+  </div>
+
+  <!-- Parâmetros -->
+  <div class="parameter-section">
+    <div class="row-params">
+      <!-- Instância -->
+      <div class="form-group compact-input">
+        <label class="instance-label" for="instance-value">🔢 Instance Value</label>
+        <input
+          type="number"
+          id="instance-value"
+          class="form-control form-control-sm"
+          [(ngModel)]="instanceValue"
+          min="0"
+          placeholder="Enter instance"
+          />
+        </div>
+
+        <!-- Botão atualizar -->
+        <button class="btn btn-primary small-btn" (click)="updateLimeGraphics()">Update Graphics</button>
+
+        <!-- Ver ficheiros -->
+        <button class="btn btn-outline-secondary small-btn" (click)="toggleFileList()">📂 View Files</button>
+      </div>
+
+      <!-- Lista de ficheiros -->
+      @if (showFileList) {
+        <div class="file-list mt-3">
+          <strong>Available Files:</strong>
+          <ul>
+            @for (file of availableFiles; track file) {
+              <li>{{ file }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  </div>

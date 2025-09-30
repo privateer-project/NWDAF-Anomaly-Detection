@@ -1,0 +1,24 @@
+<div class="flex-container">
+      <h1 class="flex-item-all">Feature influence across time series data</h1>
+
+      <div class="flex-item-left" >
+            <div>
+                  <h2>Feature influence SHAP</h2>
+                  <div style="width: 400px;">
+                        <app-heatmap [data]="shap_data" [columnLabels]="columnLabels" [colors]="colors"
+                              [threshold]="threshold">
+                        </app-heatmap>
+                  </div>
+            </div>
+      </div>
+      <div class="flex-item-right">
+            <div>
+                  <h2>Feature influence LIME</h2>
+                  <div style="width: 400px;">
+                        <app-heatmap [data]="lime_data" [columnLabels]="columnLabels" [colors]="colors"
+                              [threshold]="threshold">
+                        </app-heatmap>
+                  </div>
+            </div>
+      </div>
+</div>
