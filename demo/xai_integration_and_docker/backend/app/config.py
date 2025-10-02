@@ -26,8 +26,9 @@ logger = logging.getLogger(__name__)
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 DATASETS_DIR = os.path.join(BASE_DIR, 'datasets')
 
-DATASET_PATH = os.path.join(DATASETS_DIR, 'timeseries_dataset.json')
-MODEL_PATH = os.path.join(BASE_DIR, 'NewContent', 'TransformerAD_DP', 'data', 'model.pth')
+DATASET_PATH = os.path.join(DATASETS_DIR, 'startup_dataset.json')
+EXAMPLE_INSTANCE = os.path.join(DATASETS_DIR, 'one_instance.json')
+MODEL_PATH = os.path.join(MODELS_DIR, 'original_model.pt')
 
 # Ensure directories exist
 os.makedirs(MODELS_DIR, exist_ok=True)
@@ -39,8 +40,8 @@ if new_content_dir not in sys.path:
     sys.path.insert(0, new_content_dir)
 
 # === Allowed file extensions ===
-ALLOWED_MODEL_EXTENSIONS = {'pth'}
-ALLOWED_DATASET_EXTENSIONS = {'json','csv'}
+ALLOWED_MODEL_EXTENSIONS = {'pt'}
+ALLOWED_DATASET_EXTENSIONS = {'json'}
 
 # === Feature Name Constants ===
 XAI_FEATURE_NAMES: List[str] = [

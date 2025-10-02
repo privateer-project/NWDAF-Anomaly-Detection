@@ -8,7 +8,7 @@ import { MockData } from '../models/mockData';
 })
 export class LimeApiService {
 
-  readonly endpointLIMETimeseriesAPI = "http://127.0.0.1:5000/api/lime"
+  readonly endpointLIMETimeseriesAPI = "/api/lime"
 
   limeReport:any
   featureValue_lime: number = 0;

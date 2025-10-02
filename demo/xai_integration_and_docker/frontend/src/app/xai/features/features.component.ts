@@ -1,10 +1,10 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
 import { ShapApiService } from '../../services/shap-api.service';
 import { HeatmapComponent } from '../../general-components/heatmap/heatmap.component';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartEvent } from 'chart.js';
 import { LimeApiService } from '../../services/lime-api.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-features',
@@ -38,36 +38,57 @@ export class FeaturesComponent {
   private shapLoaded: boolean = false
   private limeLoaded: boolean = false
 
-  constructor(private shap: ShapApiService, private limeService:LimeApiService) {
-    this.shapvalues = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
+  constructor(private shap: ShapApiService, private limeService:LimeApiService, @Inject(PLATFORM_ID) private platformId: Object) {
+    console.log('Constructor - shap.shapReport:', this.shap.shapReport);
+    console.log('Constructor - shap.shapReport.shap_values:', this.shap.shapReport?.shap_values);
+    
+    if (this.shap.shapReport?.shap_values) {
+      this.shapvalues = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
+    } else {
+      console.log('Constructor - shap_values not available, using empty array');
+      this.shapvalues = [];
+    }
+    
     this.limeValues = this.limeService.fillMissingValuesLimeReport()
     this.columnLabels = this.shap.labels
+    console.log('Constructor - columnLabels initialized:', this.columnLabels);
+    console.log('Constructor - shapvalues initialized:', this.shapvalues);
 
     // Initialize with existing mock/local values to preserve current behavior
     // this.refreshCharts(this.shapvalues, this.limeValues)
+  }
 
-    // Fetch last results from backend and update charts when available
-    this.shap.getLastResult().subscribe({
-      next: (resp: any) => {
-        const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
-        this.shapvalues = shapMatrix
-        this.shapLoaded = true
-        // this.refreshCharts(this.shapvalues, this.limeValues)
-        this.refreshShapCharts(this.shapvalues)
-      },
-      error: () => {}
-    })
+  ngOnInit(): void {
+    // Only make HTTP requests in the browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      // Fetch last results from backend and update charts when available
+      this.shap.getLastResult().subscribe({
+        next: (resp: any) => {
+          console.log('SHAP response from backend (features):', resp);
+          const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
+          console.log('SHAP matrix after mapping (features):', shapMatrix);
+          console.log('SHAP matrix dimensions (features):', shapMatrix?.length, 'x', shapMatrix?.[0]?.length);
+          this.shapvalues = shapMatrix
+          this.shapLoaded = true
+          console.log('About to call refreshShapCharts with:', this.shapvalues);
+          this.refreshShapCharts(this.shapvalues)
+        },
+        error: (err) => {
+          console.error('Error fetching SHAP data (features):', err);
+        }
+      })
 
-    this.limeService.getLastResult().subscribe({
-      next: (resp: any) => {
-        const limeMatrix = this.limeService.mapLimeLastResultToMatrix(resp)
-        this.limeValues = limeMatrix
-        this.limeLoaded = true
-        // this.refreshCharts(this.shapvalues, this.limeValues)
-        this.refreshLimeCharts(this.limeValues)
-      },
-      error: () => {}
-    })
+      this.limeService.getLastResult().subscribe({
+        next: (resp: any) => {
+          const limeMatrix = this.limeService.mapLimeLastResultToMatrix(resp)
+          this.limeValues = limeMatrix
+          this.limeLoaded = true
+          // this.refreshCharts(this.shapvalues, this.limeValues)
+          this.refreshLimeCharts(this.limeValues)
+        },
+        error: () => {}
+      })
+    }
   }
 
   private refreshCharts(shapData: number[][], limeData: number[][]){
@@ -82,10 +103,25 @@ export class FeaturesComponent {
   }
 
   private refreshShapCharts(shapData: number[][]){
-    if (!this.shapLoaded) { return }
+    console.log('refreshShapCharts called with data:', shapData);
+    console.log('shapLoaded:', this.shapLoaded);
+    console.log('columnLabels:', this.columnLabels);
+    if (!this.shapLoaded) { 
+      console.log('SHAP not loaded, returning');
+      return 
+    }
+    
+    if (!shapData || shapData.length === 0) {
+      console.log('refreshShapCharts: shapData is empty, returning');
+      return;
+    }
+    
     const initShapCharts = this.init_feature_data_graphic(shapData)
+    console.log('initShapCharts:', initShapCharts);
     this.barChartDataShap = initShapCharts.barChartData
     this.featureChartDataShap=this.generateFeatureChartData(shapData,this.columnLabels)
+    console.log('barChartDataShap after refresh:', this.barChartDataShap);
+    console.log('featureChartDataShap after refresh:', this.featureChartDataShap);
   }
 
   private refreshLimeCharts(limeData: number[][]){
@@ -96,12 +132,23 @@ export class FeaturesComponent {
   }
 
   private init_feature_data_graphic(data:number[][]){
+    console.log('init_feature_data_graphic called with data:', data);
     let graph_data = this.calculateStats(data)
+    console.log('init_feature_data_graphic: graph_data:', graph_data);
+    
+    if (!graph_data) {
+      console.log('init_feature_data_graphic: graph_data is null, returning empty chart');
+      return {
+        barChartData: { labels: [], datasets: [] },
+        barChartOptions: { plugins: { legend: { display: true } } }
+      };
+    }
+    
     let barChartData = {
       labels: this.columnLabels,
       datasets: [
-        { data: graph_data!.means, label: 'Mean' },
-        { data: graph_data!.stdDevs, label: 'Standard Deviation' },
+        { data: graph_data.means, label: 'Mean' },
+        { data: graph_data.stdDevs, label: 'Standard Deviation' },
       ],
     }
     let barChartOptions = {
@@ -111,6 +158,7 @@ export class FeaturesComponent {
         },
       },
     };
+    console.log('init_feature_data_graphic: barChartData:', barChartData);
     return {barChartData, barChartOptions}
   }
 
@@ -140,8 +188,15 @@ export class FeaturesComponent {
   
 
   convertTo2DArray(obj: any, groupSize = 8) {
+    console.log('convertTo2DArray called with obj:', obj);
+    if (!obj) {
+      console.log('convertTo2DArray: obj is null/undefined, returning empty array');
+      return [];
+    }
+    
     // Get all values from the object in order
     const values = Object.values(obj);
+    console.log('convertTo2DArray: values extracted:', values);
 
     // Create 2D array by grouping consecutive values
     const result = [];
@@ -152,6 +207,7 @@ export class FeaturesComponent {
       result.push(group);
     }
 
+    console.log('convertTo2DArray: result:', result);
     return result;
   }
 
@@ -182,8 +238,10 @@ export class FeaturesComponent {
   }
 
   private calculateStats(data: number[][]) {
+    console.log('calculateStats called with data:', data);
     if (!data || data.length === 0 || data[0].length === 0) {
-      return;
+      console.log('calculateStats: invalid data, returning undefined');
+      return undefined;
     }
 
     const numRows = data.length;

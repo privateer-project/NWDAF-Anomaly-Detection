@@ -1,7 +1,8 @@
-import { Component } from '@angular/core'; // Imports the base Angular component class for building components
+import { Component, Inject, PLATFORM_ID } from '@angular/core'; // Imports the base Angular component class for building components
  // Provides common Angular directives such as ngIf and ngFor
 import { FormsModule } from '@angular/forms'; // Provides forms-related functionality such as two-way data binding
 import { ShapApiService } from '../services/shap-api.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-shap-1',
@@ -19,10 +20,13 @@ export class Shap1Component {
   graphicsUrls: string[] = []; // Lista de URLs dos gráficos
   noGraphicsMessage: string = ''; // Mensagem de erro para gráficos inexistentes
 
-  constructor(private shapService:ShapApiService) {}
+  constructor(private shapService:ShapApiService, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   ngOnInit(): void {
-    this.fetchFeatures(); // Obter a lista de features
+    // Only make HTTP requests in the browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.fetchFeatures(); // Obter a lista de features
+    }
   }
 
   // Método para carregar a lista de features

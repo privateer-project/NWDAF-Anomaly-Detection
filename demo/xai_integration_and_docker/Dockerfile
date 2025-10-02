@@ -17,7 +17,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # ---------- Stage 2: Python Flask runtime ----------
-FROM python:3.9-slim
+FROM python:3.11-slim
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 # Set working directory
@@ -59,4 +59,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/swagger.json || exit 1
 
 # Run the application
-CMD ["python", "backend/api_xAI.py"]
+CMD ["python", "backend/api_xai.py"]

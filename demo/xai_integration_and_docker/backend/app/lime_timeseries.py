@@ -12,6 +12,7 @@ import logging
 import numpy as np
 import torch
 from lime import lime_tabular
+from app.config import XAI_FEATURE_NAMES
 
 
 logger = logging.getLogger(__name__)
@@ -78,16 +79,7 @@ class LimeInTimeSeries:
         self.mode: str = mode
 
         if feature_columns is None:
-            feature_columns = (
-                "dl_bitrate",
-                "ul_bitrate",
-                "cell_x_dl_retx",
-                "cell_x_dl_tx",
-                "cell_x_ul_retx",
-                "cell_x_ul_tx",
-                "ul_total_bytes_non_incr",
-                "dl_total_bytes_non_incr",
-            )
+            feature_columns = XAI_FEATURE_NAMES
         if len(feature_columns) != self.num_features:
             raise ValueError(
                 "feature_columns length must equal num_features: "

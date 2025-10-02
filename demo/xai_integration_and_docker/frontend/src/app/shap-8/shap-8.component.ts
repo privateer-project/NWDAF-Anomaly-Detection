@@ -1,8 +1,9 @@
-import { Component } from '@angular/core'; // Imports the base Angular component class for building components
+import { Component, Inject, PLATFORM_ID } from '@angular/core'; // Imports the base Angular component class for building components
 import { HttpClient } from '@angular/common/http'; // Imports HttpClient to make HTTP requests
- // Provides common Angular directives such as ngIf and ngFor
+// Provides common Angular directives such as ngIf and ngFor
 import { FormsModule } from '@angular/forms'; // Provides forms-related functionality such as two-way data binding
 import { HttpClientModule } from '@angular/common/http'; // Imports HttpClientModule for making HTTP requests (module version of HttpClient)
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-shap-8',
@@ -23,10 +24,13 @@ export class Shap8Component {
 
   private apiUrl = 'http://127.0.0.5:5000/api_shap_8';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
 
   ngOnInit(): void {
-    this.fetchFeatures();
+    // Only make HTTP requests in the browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.fetchFeatures();
+    }
   }
 
   fetchFeatures(): void {

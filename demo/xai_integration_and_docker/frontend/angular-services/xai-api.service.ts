@@ -83,6 +83,25 @@ export class XAIApiService {
     return this.http.post<SHAPResponse>(`${this.baseUrl}/shap/calculate`, data, { headers });
   }
 
+  // Instance Management
+  uploadInstanceFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/dataset`, formData);
+  }
+
+  // LIME Analysis with String JSON
+  calculateLIMEString(data: XAIInput): Observable<LIMEResponse> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post<LIMEResponse>(`${this.baseUrl}/lime/calculate/string_json`, data, { headers });
+  }
+
+  // SHAP Analysis with String JSON
+  calculateSHAPString(data: XAIInput): Observable<SHAPResponse> {
+    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post<SHAPResponse>(`${this.baseUrl}/shap/calculate/string_json`, data, { headers });
+  }
+
   // Health Check
   healthCheck(): Observable<any> {
     return this.http.get(`${this.baseUrl}/model`);

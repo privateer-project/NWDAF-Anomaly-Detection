@@ -141,3 +141,129 @@ textarea:focus {
   box-shadow: 0 0 5px #007bff;
   outline: none;
 }
+
+/* Status Container Styles */
+.status-container {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.status-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  border-left: 4px solid;
+}
+
+.status-item.processing {
+  background-color: #fff3cd;
+  border-left-color: #ffc107;
+}
+
+.status-item.completed {
+  background-color: #d4edda;
+  border-left-color: #28a745;
+}
+
+.status-indicator {
+  font-size: 20px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.status-text {
+  flex: 1;
+}
+
+.status-text strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #495057;
+}
+
+.status-text div {
+  margin: 2px 0;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Button disabled state */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #6c757d;
+}
+
+button:disabled:hover {
+  background-color: #6c757d;
+  transform: none;
+}
+
+/* Custom File Input Styles */
+.file-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+.file-select-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.file-select-btn:hover {
+  background-color: #0056b3;
+}
+
+.file-name {
+  color: #6c757d;
+  font-size: 14px;
+  font-style: italic;
+  flex: 1;
+}
+
+/* Upload Feedback Styles */
+.upload-feedback {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid;
+}
+
+.upload-feedback.uploading {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.upload-feedback.success {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.upload-feedback.error {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}

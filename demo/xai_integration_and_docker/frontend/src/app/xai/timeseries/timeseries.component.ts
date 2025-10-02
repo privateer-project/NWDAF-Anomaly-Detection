@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { HeatmapComponent } from '../../general-components/heatmap/heatmap.component';
 import { ShapApiService } from '../../services/shap-api.service';
 import { LimeApiService } from '../../services/lime-api.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'; // Para funcionar os graficos com extensão html
 
 @Component({
@@ -33,33 +33,47 @@ shapHtmlUrlSafe: SafeResourceUrl | null = null;
   graphicsUrls: string[] = []; // Lista de URLs dos gráficos
   noGraphicsMessage: string = ''; // Mensagem de erro para gráficos inexistentes
 
-  constructor(private shapService: ShapApiService, public lime:LimeApiService, private sanitizer: DomSanitizer) {
-    // this.data = this.convertTo2DArray(this.shapService.shapReport.shap_values) as number[][]
+  constructor(private shapService: ShapApiService, public lime:LimeApiService, private sanitizer: DomSanitizer, @Inject(PLATFORM_ID) private platformId: Object) {
+    console.log('Timeseries Constructor - shapService.shapReport:', this.shapService.shapReport);
     this.columnLabels = this.shapService.labels
-    // this.limeFeaturesData = this.lime.fillMissingValuesLimeReport()
+    console.log('Timeseries Constructor - columnLabels:', this.columnLabels);
 
-    // Only render once backend is available
+    // Initialize with empty arrays - will be populated from backend
     this.shap_data = []
     this.lime_data = []
-
-    // Fetch backend last results and update local data
-    this.shapService.getLastResult().subscribe({
-      next: (resp: any) => {
-        this.shap_data = this.shapService.mapShapLastResultToMatrix(resp)
-      },
-      error: () => {}
-    })
-    this.lime.getLastResult().subscribe({
-      next: (resp: any) => {
-        this.lime_data = this.lime.mapLimeLastResultToMatrix(resp)
-      },
-      error: () => {}
-    })
   }
 
   ngOnInit(): void {
-    this.fetchFeatures(); // Obter a lista de features
-    this.fetchLimeGraphics();
+    // Only make HTTP requests in the browser, not during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      // Fetch backend last results and update local data
+      this.shapService.getLastResult().subscribe({
+        next: (resp: any) => {
+          console.log('SHAP response from backend (timeseries):', resp);
+          this.shap_data = this.shapService.mapShapLastResultToMatrix(resp)
+          console.log('SHAP data after mapping (timeseries):', this.shap_data);
+          console.log('SHAP data dimensions (timeseries):', this.shap_data?.length, 'x', this.shap_data?.[0]?.length);
+          console.log('SHAP data sample (timeseries):', this.shap_data?.[0]?.slice(0, 3));
+          console.log('SHAP data for heatmap (timeseries):', this.shap_data);
+        },
+        error: (err) => {
+          console.error('Error fetching SHAP data (timeseries):', err);
+        }
+      })
+      this.lime.getLastResult().subscribe({
+        next: (resp: any) => {
+          console.log('LIME response from backend (timeseries):', resp);
+          this.lime_data = this.lime.mapLimeLastResultToMatrix(resp)
+          console.log('LIME data after mapping (timeseries):', this.lime_data);
+        },
+        error: (err) => {
+          console.error('Error fetching LIME data (timeseries):', err);
+        }
+      })
+      
+      this.fetchFeatures(); // Obter a lista de features
+      this.fetchLimeGraphics();
+    }
   }
 
   // Método para carregar a lista de features

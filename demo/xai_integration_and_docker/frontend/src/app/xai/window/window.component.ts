@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
 import { HeatmapComponent } from '../../general-components/heatmap/heatmap.component';
 import { ShapApiService } from '../../services/shap-api.service';
 import { ChartConfiguration, ChartData, ChartEvent } from 'chart.js';
 import { LimeApiService } from '../../services/lime-api.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-window',
@@ -35,7 +35,7 @@ export class WindowComponent {
   public barChartDataShap: ChartData<'bar'> = { labels: [], datasets: [] }
   public barChartDataLime: ChartData<'bar'> = { labels: [], datasets: [] } 
   
-    constructor(private shap: ShapApiService, private limeService:LimeApiService) {
+    constructor(private shap: ShapApiService, private limeService:LimeApiService, @Inject(PLATFORM_ID) private platformId: Object) {
         // this.shapvalues = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
         // this.limeValues = this.limeService.fillMissingValuesLimeReport()
         this.shapvalues = []
@@ -44,28 +44,39 @@ export class WindowComponent {
     
         this.columnLabels = this.shap.labels
         // Delay chart build until backend returns
+    }
 
-        // Fetch backend last results and update local charts
-        this.shap.getLastResult().subscribe({
-          next: (resp: any) => {
-            this.shapvalues = this.transpose(this.shap.mapShapLastResultToMatrix(resp))
-            // rebuild charts
-            const initShapCharts = this.init_feature_data_graphic(this.shapvalues)
-            this.barChartDataShap = initShapCharts.barChartData
-            this.barChartOptions = initShapCharts.barChartOptions
-            this.windowChartDataShap=this.generateFeatureChartData(this.shapvalues,this.columnLabels)
-          },
-          error: () => {}
-        })
-        this.limeService.getLastResult().subscribe({
-          next: (resp: any) => {
-            this.limeValues = this.transpose(this.limeService.mapLimeLastResultToMatrix(resp))
-            const initLimeCharts = this.init_feature_data_graphic(this.limeValues)
-            this.barChartDataLime = initLimeCharts.barChartData
-            this.windowChartDataLime=this.generateFeatureChartData(this.limeValues,this.columnLabels)
-          },
-          error: () => {}
-        })
+    ngOnInit(): void {
+        // Only make HTTP requests in the browser, not during SSR
+        if (isPlatformBrowser(this.platformId)) {
+            // Fetch backend last results and update local charts
+            this.shap.getLastResult().subscribe({
+              next: (resp: any) => {
+                console.log('SHAP response from backend (window):', resp);
+                const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
+                console.log('SHAP matrix after mapping (window):', shapMatrix);
+                this.shapvalues = this.transpose(shapMatrix)
+                console.log('SHAP values after transpose (window):', this.shapvalues);
+                // rebuild charts
+                const initShapCharts = this.init_feature_data_graphic(this.shapvalues)
+                this.barChartDataShap = initShapCharts.barChartData
+                this.barChartOptions = initShapCharts.barChartOptions
+                this.windowChartDataShap=this.generateFeatureChartData(this.shapvalues,this.columnLabels)
+              },
+              error: (err) => {
+                console.error('Error fetching SHAP data (window):', err);
+              }
+            })
+            this.limeService.getLastResult().subscribe({
+              next: (resp: any) => {
+                this.limeValues = this.transpose(this.limeService.mapLimeLastResultToMatrix(resp))
+                const initLimeCharts = this.init_feature_data_graphic(this.limeValues)
+                this.barChartDataLime = initLimeCharts.barChartData
+                this.windowChartDataLime=this.generateFeatureChartData(this.limeValues,this.columnLabels)
+              },
+              error: () => {}
+            })
+        }
     }
 
     private init_feature_data_graphic(data:number[][]){
