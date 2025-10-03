@@ -1,24 +1,28 @@
-<div class="container">
-  <h1 class="title">⚙️ Settings</h1>
+<app-sidebar>
 
-  <div class="description">
-    <div class="explanation-text">
+  <div class="container">
+    <h1 class="title">⚙️ Settings</h1>
+
+    <div class="description">
       <div class="explanation-text">
-        This page allows you to process instances and generate XAI (eXplainable AI) visualizations using SHAP and LIME algorithms.
+        This page allows you to process instances and generate XAI (eXplainable AI) visualizations using SHAP and LIME
+        algorithms.
         <br><br>
-        <strong>🔄 Real-time Processing Status:</strong> The interface provides live feedback during processing, showing the progress of both SHAP and LIME calculations with timestamps and status indicators.
+        <strong>🔄 Real-time Processing Status:</strong> The interface provides live feedback during processing,
+        showing the progress of both SHAP and LIME calculations with timestamps and status indicators.
         <br><br>
-        <strong>💾 Persistent State:</strong> Your processing status is automatically saved and restored when navigating between pages, so you won't lose progress if you switch to other sections.
+        <strong>💾 Persistent State:</strong> Your processing status is automatically saved and restored when
+        navigating between pages, so you won't lose progress if you switch to other sections.
         <br><br>
         You can load instance data in two ways:
         <br><br>
-        <strong>1. 📁 Load dataset:</strong> Upload a JSON file containing dataset using the 
-        <strong>"Load dataset"</strong> button. This will send the file to the backend via 
+        <strong>1. 📁 Load dataset:</strong> Upload a JSON file containing dataset using the
+        <strong>"Load dataset"</strong> button. This will send the file to the backend via
         <code>/api/dataset</code>.
         <br><br>
-        <strong>2. 📝 Load Instance String JSON:</strong> Provide a valid JSON payload in the 
-        <strong>Instance Payload</strong> field and click <strong>"🚀 Explained Instance"</strong>. 
-        This will process the instance using <code>/api/shap/calculate/string_json</code> and 
+        <strong>2. 📝 Load Instance String JSON:</strong> Provide a valid JSON payload in the
+        <strong>Instance Payload</strong> field and click <strong>"🚀 Explained Instance"</strong>.
+        This will process the instance using <code>/api/shap/calculate/string_json</code> and
         <code>/api/lime/calculate/string_json</code> endpoints.
         <br><br>
         <strong>📊 Processing Flow:</strong>
@@ -29,18 +33,20 @@
           <li>Data available for visualization in other components</li>
         </ul>
         <br>
-        The JSON payload must follow the required structure, including fields such as 
+        The JSON payload must follow the required structure, including fields such as
         <code>data</code>, <code>device</code>, <code>requires_grad</code>, and <code>shape</code>.
         An example instance from startup_dataset.json is pre-loaded for demonstration.
         <br><br>
-        <strong>🎯 Visual Feedback:</strong> The interface shows processing status with color-coded indicators, progress messages, and completion timestamps. The button becomes disabled during processing to prevent multiple simultaneous requests.
+        <strong>🎯 Visual Feedback:</strong> The interface shows processing status with color-coded indicators,
+        progress messages, and completion timestamps. The button becomes disabled during processing to prevent
+        multiple simultaneous requests.
         <br><br>
         If you need to change the dataset or model, upload new files using the respective file inputs.
         This streamlined process ensures you can seamlessly switch datasets, models, and instance
         payloads while generating the necessary XAI visualizations.
-      </div>        
+      </div>
+
     </div>
-  </div>
 
     <label class="instance-label" for="model-name">📊 Model Name</label>
     <div>
@@ -54,111 +60,109 @@
       </div>
       <button (click)="submitModelFile()" [disabled]="isModelUploading">
         @if (isModelUploading) {
-          ⌛ Uploading...
+        ⌛ Uploading...
         } @else {
-          ⚡ Load model
+        ⚡ Load model
         }
       </button>
-      
+
       <!-- Model Upload Feedback -->
       @if (modelUploadMessage) {
-        <div class="upload-feedback" 
-             [class.uploading]="isModelUploading"
-             [class.success]="modelUploadMessage.includes('✅')"
-             [class.error]="modelUploadMessage.includes('❌')">
-          {{ modelUploadMessage }}
-        </div>
+      <div class="upload-feedback" [class.uploading]="isModelUploading"
+        [class.success]="modelUploadMessage.includes('✅')" [class.error]="modelUploadMessage.includes('❌')">
+        {{ modelUploadMessage }}
+      </div>
       }
     </div>
-<!-- Dataset JSON -->
-   <!-- Input Fields and Buttons -->
-   <div class="single-column">
-    <label class="instance-label" for="dataset-name">📂 New Dataset Json File</label>
+    <!-- Dataset JSON -->
+    <!-- Input Fields and Buttons -->
+    <div class="single-column">
+      <label class="instance-label" for="dataset-name">📂 New Dataset Json File</label>
 
-    <div>
-      <label for="">Load Dataset</label>
-      <div class="file-input-container">
-        <input type="file" id="instanceFile" accept=".json" (change)="onInstanceFileSelected($event)" style="display: none;">
-        <button type="button" class="file-select-btn" (click)="selectInstanceFile()">
-          📁 Choose File
-        </button>
-        <span class="file-name">{{ instanceFile ? instanceFile.name : 'No file chosen' }}</span>
-      </div>
-      <button (click)="submitInstanceFile()" [disabled]="isInstanceUploading">
-        @if (isInstanceUploading) {
+      <div>
+        <label for="">Load Dataset</label>
+        <div class="file-input-container">
+          <input type="file" id="instanceFile" accept=".json" (change)="onInstanceFileSelected($event)"
+            style="display: none;">
+          <button type="button" class="file-select-btn" (click)="selectInstanceFile()">
+            📁 Choose File
+          </button>
+          <span class="file-name">{{ instanceFile ? instanceFile.name : 'No file chosen' }}</span>
+        </div>
+        <button (click)="submitInstanceFile()" [disabled]="isInstanceUploading">
+          @if (isInstanceUploading) {
           ⌛ Uploading...
-        } @else {
+          } @else {
           🚀 Load dataset example
-        }
-      </button>
-      
-      <!-- Instance Upload Feedback -->
-      @if (instanceUploadMessage) {
-        <div class="upload-feedback" 
-             [class.uploading]="isInstanceUploading"
-             [class.success]="instanceUploadMessage.includes('✅')"
-             [class.error]="instanceUploadMessage.includes('❌')">
+          }
+        </button>
+
+        <!-- Instance Upload Feedback -->
+        @if (instanceUploadMessage) {
+        <div class="upload-feedback" [class.uploading]="isInstanceUploading"
+          [class.success]="instanceUploadMessage.includes('✅')" [class.error]="instanceUploadMessage.includes('❌')">
           {{ instanceUploadMessage }}
         </div>
-      }
-    </div>
+        }
+      </div>
 
-<label class="instance-label" for="instancePayload">🔢 Calculate Instance Json String</label>
-<textarea id="instancePayload" rows="6" placeholder='{"data": [[[]]],}'
-          [(ngModel)]="instancePayload"></textarea>
+      <label class="instance-label" for="instancePayload">🔢 Calculate Instance Json String</label>
+      <textarea id="instancePayload" rows="6" placeholder='{"data": [[[]]],}' [(ngModel)]="instancePayload"></textarea>
 
-<!-- Load Instance Button -->
-<button (click)="loadInstance()" [disabled]="isProcessing">
-  @if (isProcessing) {
-    ⌛ Processing...
-  } @else {
-    🚀 Explained instance
-  }
-</button>
+      <!-- Load Instance Button -->
+      <button (click)="loadInstance()" [disabled]="isProcessing">
+        @if (isProcessing) {
+        ⌛ Processing...
+        } @else {
+        🚀 Explained instance
+        }
+      </button>
 
-<!-- Status Information -->
-@if (isProcessing || isFullyCompleted || performCalculationMessage) {
-  <div class="status-container">
-    <!-- Processing Status -->
-    @if (isProcessing) {
-      <div class="status-item processing">
-        <div class="status-indicator">⌛</div>
-        <div class="status-text">
-          <strong>Processing Status:</strong>
-          <div>Started: {{ lastProcessedTime }}</div>
-          @if (isShapCompleted) {
+      <!-- Status Information -->
+      @if (isProcessing || isFullyCompleted || performCalculationMessage) {
+      <div class="status-container">
+        <!-- Processing Status -->
+        @if (isProcessing) {
+        <div class="status-item processing">
+          <div class="status-indicator">⌛</div>
+          <div class="status-text">
+            <strong>Processing Status:</strong>
+            <div>Started: {{ lastProcessedTime }}</div>
+            @if (isShapCompleted) {
             <div>✅ SHAP completed</div>
-          } @else {
+            } @else {
             <div>⏳ SHAP in progress...</div>
-          }
-          @if (isLimeCompleted) {
+            }
+            @if (isLimeCompleted) {
             <div>✅ LIME completed</div>
-          } @else if (isShapCompleted) {
+            } @else if (isShapCompleted) {
             <div>⏳ LIME in progress...</div>
-          }
+            }
+          </div>
         </div>
-      </div>
-    }
-    
-    <!-- Completion Status -->
-    @if (isFullyCompleted) {
-      <div class="status-item completed">
-        <div class="status-indicator">✅</div>
-        <div class="status-text">
-          <strong>Processing Completed!</strong>
-          <div>Finished: {{ lastProcessedTime }}</div>
-          <div>Both SHAP and LIME calculations are complete.</div>
-        </div>
-      </div>
-    }
-    
-    <!-- Message -->
-    @if (performCalculationMessage) {
-      <div class="feedback-message">
-        {{ performCalculationMessage }}
-      </div>
-    }
-  </div>
-}
+        }
 
-</div>
+        <!-- Completion Status -->
+        @if (isFullyCompleted) {
+        <div class="status-item completed">
+          <div class="status-indicator">✅</div>
+          <div class="status-text">
+            <strong>Processing Completed!</strong>
+            <div>Finished: {{ lastProcessedTime }}</div>
+            <div>Both SHAP and LIME calculations are complete.</div>
+          </div>
+        </div>
+        }
+
+        <!-- Message -->
+        @if (performCalculationMessage) {
+        <div class="feedback-message">
+          {{ performCalculationMessage }}
+        </div>
+        }
+      </div>
+      }
+
+    </div>
+  </div>
+</app-sidebar>

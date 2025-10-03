@@ -4,16 +4,17 @@ import { ShapApiService } from '../../services/shap-api.service';
 import { LimeApiService } from '../../services/lime-api.service';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'; // Para funcionar os graficos com extensão html
+import { SidebarComponent } from '../../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-timeseries',
-  imports: [CommonModule, HeatmapComponent],
+  imports: [CommonModule, HeatmapComponent, SidebarComponent],
   templateUrl: './timeseries.component.html',
   styleUrl: './timeseries.component.css'
 })
 export class TimeseriesComponent {
 
-  shap_data: number[][]
+  shap_data: any
   columnLabels: string[]
   colors: string[] = ['#f5f5f5', '#e0f7fa', '#80deea', '#00acc1', '#006064'];
   threshold: number = 50;
@@ -39,18 +40,17 @@ shapHtmlUrlSafe: SafeResourceUrl | null = null;
     console.log('Timeseries Constructor - columnLabels:', this.columnLabels);
 
     // Initialize with empty arrays - will be populated from backend
-    this.shap_data = []
+    
     this.lime_data = []
   }
 
   ngOnInit(): void {
-    // Only make HTTP requests in the browser, not during SSR
-    if (isPlatformBrowser(this.platformId)) {
       // Fetch backend last results and update local data
       this.shapService.getLastResult().subscribe({
         next: (resp: any) => {
           console.log('SHAP response from backend (timeseries):', resp);
-          this.shap_data = this.shapService.mapShapLastResultToMatrix(resp)
+          //this.shap_data = this.shapService.mapShapLastResultToMatrix(resp)
+          this.shap_data = this.convertTo2DArray(resp.shap_values)
           console.log('SHAP data after mapping (timeseries):', this.shap_data);
           console.log('SHAP data dimensions (timeseries):', this.shap_data?.length, 'x', this.shap_data?.[0]?.length);
           console.log('SHAP data sample (timeseries):', this.shap_data?.[0]?.slice(0, 3));
@@ -63,7 +63,9 @@ shapHtmlUrlSafe: SafeResourceUrl | null = null;
       this.lime.getLastResult().subscribe({
         next: (resp: any) => {
           console.log('LIME response from backend (timeseries):', resp);
-          this.lime_data = this.lime.mapLimeLastResultToMatrix(resp)
+          // this.lime_data = this.lime.mapLimeLastResultToMatrix(resp)
+          this.lime.limeReport = resp
+          this.lime_data = this.lime.fillMissingValuesLimeReport()
           console.log('LIME data after mapping (timeseries):', this.lime_data);
         },
         error: (err) => {
@@ -73,7 +75,7 @@ shapHtmlUrlSafe: SafeResourceUrl | null = null;
       
       this.fetchFeatures(); // Obter a lista de features
       this.fetchLimeGraphics();
-    }
+    
   }
 
   // Método para carregar a lista de features

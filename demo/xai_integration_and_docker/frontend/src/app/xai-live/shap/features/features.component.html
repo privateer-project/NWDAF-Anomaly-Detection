@@ -1,0 +1,10 @@
+<div class="flex-container">
+    <h1 class="flex-item-all">Feature contribution to Decision</h1>
+    <div class="flex-item-all">
+        <div>
+            <canvas baseChart [data]="barChartDataShap" [options]="barChartOptions" [type]="barChartType"
+                (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+            </canvas>
+        </div>
+    </div>
+</div>

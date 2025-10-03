@@ -149,7 +149,7 @@ class ShapTimeSeries:
                     f"Got input {tuple(x_tensor.shape)}, output {tuple(output.shape)}"
                 )
 
-            mse_per_instance = ((x_tensor - output) ** 2).mean(dim=(1, 2))
+            mse_per_instance = ((x_tensor - output) ** 2).mean(axis=1).mean(axis=1)
             return mse_per_instance.detach().cpu().numpy()
 
         return predict
@@ -176,26 +176,26 @@ class ShapTimeSeries:
         if not isinstance(instance, torch.Tensor):
             raise TypeError("instance must be a torch.Tensor")
 
-        if instance.ndim == 2:
-            instance = instance.unsqueeze(0)
-        elif instance.ndim != 3:
-            raise ValueError(
-                f"instance must be 2D or 3D tensor, got shape {tuple(instance.shape)}"
-            )
+        # if instance.ndim == 2:
+        #     instance = instance.unsqueeze(0)
+        # elif instance.ndim != 3:
+        #     raise ValueError(
+        #         f"instance must be 2D or 3D tensor, got shape {tuple(instance.shape)}"
+        #     )
 
-        if (instance.shape[1], instance.shape[2]) != (self.sequence_length, self.num_features):
-            raise ValueError(
-                "instance shape does not match expected (sequence_length, num_features): "
-                f"expected ({self.sequence_length}, {self.num_features}), got "
-                f"({instance.shape[1]}, {instance.shape[2]})"
-            )
+        # if (instance.shape[1], instance.shape[2]) != (self.sequence_length, self.num_features):
+        #     raise ValueError(
+        #         "instance shape does not match expected (sequence_length, num_features): "
+        #         f"expected ({self.sequence_length}, {self.num_features}), got "
+        #         f"({instance.shape[1]}, {instance.shape[2]})"
+        #     )
 
         input_kernel_explainer = self._reshape_to_kernel(instance.detach().to(torch.float32).cpu())
         shap_values = self.explainer.shap_values(input_kernel_explainer)
 
-        if isinstance(shap_values, list):
-            logger.info("KernelExplainer returned list, using shap_values[0]")
-            shap_values = shap_values[0]
+        # if isinstance(shap_values, list):
+        #     logger.info("KernelExplainer returned list, using shap_values[0]")
+        #     shap_values = shap_values[0]
 
         return {
             "shap_values": shap_values,

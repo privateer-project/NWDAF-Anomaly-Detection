@@ -1,27 +1,30 @@
 import { Component } from '@angular/core';
 import { ShapApiService } from '../../services/shap-api.service';
 import { HeatmapComponent } from '../../general-components/heatmap/heatmap.component';
+import { SidebarComponent } from '../../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-classification-output',
-  imports: [HeatmapComponent],
+  imports: [HeatmapComponent, SidebarComponent],
   templateUrl: './classification-output.component.html',
   styleUrl: './classification-output.component.css'
 })
 export class ClassificationOutputComponent {
 
-  shapValues: number[][]
-  data: number[][]
-  columnLabels: string[]
+  shapValues: number[][]=[]
+  data: number[][]=[]
+  columnLabels: string[]=[]
   colors: string[] = ['#f5f5f5', '#e0f7fa', '#80deea', '#00acc1', '#006064'];
   threshold: number = 50;
 
   constructor(private shap: ShapApiService) {
-    console.log(JSON.stringify(this.shap.shapReport.model_output))
-    const input = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
-    this.shapValues = this.subtractMatrices(input, this.shap.shapReport.model_output) as number[][]
-    this.data = this.shapValues
-    this.columnLabels = this.shap.labels
+    // console.log(JSON.stringify(this.shap.shapReport.model_output))
+    if(shap.shapReport!=null){
+      const input = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
+      this.shapValues = this.subtractMatrices(input, this.shap.shapReport.model_output) as number[][]
+      this.data = this.shapValues
+      this.columnLabels = this.shap.labels
+    }
   }
 
   convertTo2DArray(obj: any, groupSize = 8) {

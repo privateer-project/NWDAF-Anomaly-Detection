@@ -1,20 +1,20 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { BaseChartDirective } from 'ng2-charts';
-import { HeatmapComponent } from '../../general-components/heatmap/heatmap.component';
 import { ShapApiService } from '../../services/shap-api.service';
 import { ChartConfiguration, ChartData, ChartEvent } from 'chart.js';
 import { LimeApiService } from '../../services/lime-api.service';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { SidebarComponent } from '../../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-window',
-  imports: [BaseChartDirective, CommonModule],
+  imports: [BaseChartDirective, CommonModule, SidebarComponent],
   templateUrl: './window.component.html',
   styleUrl: './window.component.css'
 })
 export class WindowComponent {
   
-  shapvalues: number[][]
+  shapvalues: any
   limeValues:number [][]
 
   featureLabels
@@ -48,14 +48,15 @@ export class WindowComponent {
 
     ngOnInit(): void {
         // Only make HTTP requests in the browser, not during SSR
-        if (isPlatformBrowser(this.platformId)) {
+        // if (isPlatformBrowser(this.platformId)) {
             // Fetch backend last results and update local charts
             this.shap.getLastResult().subscribe({
               next: (resp: any) => {
                 console.log('SHAP response from backend (window):', resp);
-                const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
-                console.log('SHAP matrix after mapping (window):', shapMatrix);
-                this.shapvalues = this.transpose(shapMatrix)
+                //const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
+                // console.log('SHAP matrix after mapping (window):', shapMatrix);
+                //this.shapvalues = this.transpose(shapMatrix)
+                this.shapvalues = this.convertTo2DArray(resp.shap_values)
                 console.log('SHAP values after transpose (window):', this.shapvalues);
                 // rebuild charts
                 const initShapCharts = this.init_feature_data_graphic(this.shapvalues)
@@ -69,14 +70,16 @@ export class WindowComponent {
             })
             this.limeService.getLastResult().subscribe({
               next: (resp: any) => {
-                this.limeValues = this.transpose(this.limeService.mapLimeLastResultToMatrix(resp))
+                this.limeService.limeReport = resp
+                this.limeValues = this.limeService.fillMissingValuesLimeReport()
+                // this.limeValues = this.transpose(this.limeService.mapLimeLastResultToMatrix(resp))
                 const initLimeCharts = this.init_feature_data_graphic(this.limeValues)
                 this.barChartDataLime = initLimeCharts.barChartData
                 this.windowChartDataLime=this.generateFeatureChartData(this.limeValues,this.columnLabels)
               },
               error: () => {}
             })
-        }
+        // }
     }
 
     private init_feature_data_graphic(data:number[][]){

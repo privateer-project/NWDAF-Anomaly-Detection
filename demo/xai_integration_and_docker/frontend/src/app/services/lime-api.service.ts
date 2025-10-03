@@ -8,7 +8,7 @@ import { MockData } from '../models/mockData';
 })
 export class LimeApiService {
 
-  readonly endpointLIMETimeseriesAPI = "/api/lime"
+  readonly endpointLIMETimeseriesAPI = "http://localhost:5000/api/lime"
 
   limeReport:any
   featureValue_lime: number = 0;
@@ -33,7 +33,7 @@ export class LimeApiService {
 
 
   public fillMissingValuesLimeReport(){
-    let data = this.limeReport.contribution
+    let data = this.limeReport.lime_values
     let limeDenseReport = Array.from({ length: 12 }, () => Array(8).fill(0));
     for(let elem of data){
       // for (const [key, value] of Object.entries(elem)){

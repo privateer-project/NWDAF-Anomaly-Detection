@@ -2,7 +2,7 @@
 FROM node:18-alpine AS angular-build
 
 # Working directory for Angular build
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copy Angular package files from local frontend
 COPY frontend/package*.json ./
@@ -13,7 +13,7 @@ RUN npm ci
 # Copy Angular source and build for production
 COPY frontend/ ./
 
-# Build Angular for production (outputs to /app/static due to angular.json)
+# Build Angular for production
 RUN npm run build
 
 # ---------- Stage 2: Python Flask runtime ----------
@@ -42,7 +42,7 @@ COPY backend/ ./backend/
 # Copy built Angular files from previous stage
 # angular.json outputs to /app/static; Flask expects /app/static (see backend/api_xAI.py)
 RUN mkdir -p /app/static
-COPY --from=angular-build /app/static/ /app/static/
+COPY --from=angular-build /app/dist/browser /app/static/
 
 # Create runtime data directories (mounted via volumes in compose)
 RUN mkdir -p /app/backend/models /app/backend/datasets
@@ -59,4 +59,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/swagger.json || exit 1
 
 # Run the application
-CMD ["python", "backend/api_xai.py"]
+CMD ["python", "backend/api_xAI.py"]

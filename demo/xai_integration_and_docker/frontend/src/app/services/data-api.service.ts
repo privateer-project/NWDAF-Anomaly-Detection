@@ -10,6 +10,8 @@ export class DataApiService {
   readonly endpointDatasetAPI = "http://127.0.0.1:5000/api/dataset"
   readonly endpointModelAPI = "http://127.0.0.1:5000/api/model"
 
+  mode="live_data"
+
   constructor(private http:HttpClient) { }
 
   uploadDataset(file:File){

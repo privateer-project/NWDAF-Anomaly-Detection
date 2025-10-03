@@ -190,42 +190,48 @@ class XAIApplication:
         """Compute LIME explanation for a given instance tensor and return JSON-serializable content."""
         if self.lime_timeseries is None:
             raise ValueError("LIME service is not initialized")
-        lime_result = self.lime_timeseries.lime_values_from_instance(instance)
-        lime_values = lime_result["lime_values"]
-        feature_names = lime_result["feature_names"]
+        lime_report = self.lime_timeseries.lime_values_from_instance(instance)
+        lime_values = lime_report["lime_values"]
+        feature_names = lime_report["feature_names"]
 
-        xai_feature_names = XAI_FEATURE_NAMES
-        instance_flat = instance.flatten()
+        # xai_feature_names = XAI_FEATURE_NAMES
+        # instance_flat = instance.flatten()
 
-        feature_importance: Dict[str, float] = {}
-        if lime_values:
-            for feature_idx, importance in lime_values:
-                if feature_idx < len(feature_names):
-                    feat_name = feature_names[feature_idx]
-                    main_feature = feat_name.rsplit('_', 1)[0] if '_' in feat_name else feat_name
-                    if main_feature in xai_feature_names:
-                        feature_importance[main_feature] = float(importance)
+        # feature_importance: Dict[str, float] = {}
+        # if lime_values:
+        #     for feature_idx, importance in lime_values:
+        #         if feature_idx < len(feature_names):
+        #             feat_name = feature_names[feature_idx]
+        #             main_feature = feat_name.rsplit('_', 1)[0] if '_' in feat_name else feat_name
+        #             if main_feature in xai_feature_names:
+        #                 feature_importance[main_feature] = float(importance)
 
-        for feature in xai_feature_names:
-            if feature not in feature_importance:
-                feature_importance[feature] = 0.0
+        # for feature in xai_feature_names:
+        #     if feature not in feature_importance:
+        #         feature_importance[feature] = 0.0
 
         # Convert tensor to list for JSON serialization
-        instance_flat_list = instance_flat.detach().cpu().numpy().tolist()
+        # instance_flat_list = instance_flat.detach().cpu().numpy().tolist()
         
         # Convert output tensor to list for JSON serialization
         output_list = self.output.tolist() if hasattr(self.output, 'tolist') else self.output
+
+        contribution_list = [
+            {"feature": feature, "value": float(weight)}
+            for feature, weight in lime_report["explanation"].as_list()
+        ]
+
         
         json_content = { 
             "message": "LIME explanation calculated successfully.",
-            "sample": {name: float(value) for name, value in zip(xai_feature_names, instance_flat_list[:8])},
-            "lime_values": feature_importance,
-            "contribution": [{"feature": name, "value": value} for name, value in feature_importance.items()],
-            "feature_names": xai_feature_names,
+            # "sample": {name: float(value) for name, value in zip(xai_feature_names, instance_flat_list[:8])},
+            "lime_values": contribution_list,
+            # "contribution": [{"feature": name, "value": value} for name, value in feature_importance.items()],
+            # "feature_names": xai_feature_names,
             "input_shape": list(instance.shape),
             "input": self.input,
             "output": output_list,
-            "explanation_available": lime_result.get("explanation") is not None
+            # "explanation_available": lime_report.get("explanation") is not None
         }
         return json_content
 
@@ -258,8 +264,9 @@ class XAIApplication:
         json_content = {
             "message": "SHAP values calculated successfully.",
             "sample": {name: safe_float(value) for name, value in zip(feature_names, instance_flat_list)},
-            "shap_values": {name: safe_float(val) for name, val in zip(feature_names, shap_vals_flat)},
-            "contribution": [{"feature": name, "value": safe_float(val)} for name, val in zip(feature_names, shap_vals_flat)],
+            "input2" : instance.numpy().tolist(),
+            "shap_values": shap_vals_flat.tolist(),
+            "contribution": shap_vals_flat.tolist(),
             "feature_names": feature_names,
             "input": self.input,
             "output": output_list,
@@ -295,7 +302,7 @@ class XAIApplication:
         
         return self.compute_shap_for_instance(instance)
 
-    def get_input_data_string(self, data: Dict[str, Any]) -> str:
+    def     get_input_data_string(self, data: Dict[str, Any]) -> str:
         """Return the input data as a string representation.
         
         Args:

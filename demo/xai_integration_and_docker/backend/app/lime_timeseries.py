@@ -129,10 +129,28 @@ class LimeInTimeSeries:
         return tensor_3d.cpu().numpy().reshape(n, l * f)
 
     def _generate_feature_names(self, feature_columns: Sequence[str]) -> List[str]:
-        names: List[str] = []
-        for t in range(self.sequence_length):
-            names.extend([f"{col}_{t}" for col in feature_columns])
-        return names
+        
+        feature_columns = [
+            "dl_bitrate",
+            "dl_retx",
+            "dl_tx",
+            "ul_bitrate",
+            "ul_mcs",
+            "ul_retx",
+            "ul_tx",
+            "turbo_decoder_avg"
+        ]
+
+        # Generate time-based feature names, e.g., dl_bitrate_0, dl_bitrate_1, ..., dl_bitrate_11
+        feature_names = []
+        for i in range(12):
+            feature_names += [f"{item}_{i}" for item in feature_columns]
+        return feature_names    
+        # names: List[str] = []
+        # Define base feature names
+        # for t in range(self.sequence_length):
+        #     names.extend([f"{col}_{t}" for col in feature_columns])
+        # return names
 
     def _init_lime(
         self,
@@ -173,12 +191,12 @@ class LimeInTimeSeries:
                     "Model output shape must match input shape to compute per-instance MSE. "
                     f"Got input {tuple(x_tensor.shape)}, output {tuple(output.shape)}"
                 )
-            mse_per_instance = ((x_tensor - output) ** 2).mean(dim=(1, 2))
+            mse_per_instance = ((x_tensor - output) ** 2).mean(axis=1).mean(axis=1)
             return mse_per_instance.detach().cpu().numpy()
 
         return predict
 
-    def lime_values_from_instance(self, instance: torch.Tensor, num_features: int = 10) -> Dict[str, Any]:
+    def lime_values_from_instance(self, instance: torch.Tensor, num_features: int = 8) -> Dict[str, Any]:
         """Compute LIME explanation for one instance or a small batch.
 
         Parameters
@@ -226,22 +244,22 @@ class LimeInTimeSeries:
         )
 
         lime_values = None
-        try:
-            # `local_exp` is a dict: key is class index (classification) or 0 (regression)
-            local_exp = getattr(explanation, "local_exp", None)
-            if isinstance(local_exp, dict) and len(local_exp) > 0:
-                first_key = sorted(local_exp.keys())[0]
-                lime_values = local_exp[first_key]
-            elif hasattr(explanation, "as_map"):
-                maps = explanation.as_map()
-                if isinstance(maps, dict) and len(maps) > 0:
-                    first_key = sorted(maps.keys())[0]
-                    lime_values = maps[first_key]
-        except Exception as exc:  # noqa: BLE001
-            logger.exception("Failed to parse LIME explanation: %s", exc)
+        # try:
+        #     # `local_exp` is a dict: key is class index (classification) or 0 (regression)
+        #     local_exp = getattr(explanation, "local_exp", None)
+        #     if isinstance(local_exp, dict) and len(local_exp) > 0:
+        #         first_key = sorted(local_exp.keys())[0]
+        #         lime_values = local_exp[first_key]
+        #     elif hasattr(explanation, "as_map"):
+        #         maps = explanation.as_map()
+        #         if isinstance(maps, dict) and len(maps) > 0:
+        #             first_key = sorted(maps.keys())[0]
+        #             lime_values = maps[first_key]
+        # except Exception as exc:  # noqa: BLE001
+        #     logger.exception("Failed to parse LIME explanation: %s", exc)
 
         return {
-            "lime_values": lime_values,
+            "lime_values": explanation,
             "x": instance,
             "explanation": explanation,
             "feature_names": self.feature_names,

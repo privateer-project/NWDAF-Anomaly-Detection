@@ -28,7 +28,7 @@ DATASETS_DIR = os.path.join(BASE_DIR, 'datasets')
 
 DATASET_PATH = os.path.join(DATASETS_DIR, 'startup_dataset.json')
 EXAMPLE_INSTANCE = os.path.join(DATASETS_DIR, 'one_instance.json')
-MODEL_PATH = os.path.join(MODELS_DIR, 'original_model.pt')
+MODEL_PATH = os.path.join(MODELS_DIR, 'model.pt')
 
 # Ensure directories exist
 os.makedirs(MODELS_DIR, exist_ok=True)

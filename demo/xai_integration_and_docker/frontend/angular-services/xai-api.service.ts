@@ -45,7 +45,7 @@ export interface SHAPResponse extends XAIResponse {
   providedIn: 'root'
 })
 export class XAIApiService {
-  private readonly baseUrl = '/api';
+  private readonly baseUrl = 'http://localhost:5000/api';
 
   constructor(private http: HttpClient) {}
 

@@ -5,16 +5,17 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartEvent } from 'chart.js';
 import { LimeApiService } from '../../services/lime-api.service';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { SidebarComponent } from '../../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-features',
-  imports: [CommonModule, BaseChartDirective],
+  imports: [CommonModule, BaseChartDirective, SidebarComponent],
   templateUrl: './features.component.html',
   styleUrl: './features.component.css'
 })
 export class FeaturesComponent {
 
-  shapvalues: number[][]
+  shapvalues: any
   limeValues:number [][]
 
   // HeatMap Component
@@ -65,10 +66,13 @@ export class FeaturesComponent {
       this.shap.getLastResult().subscribe({
         next: (resp: any) => {
           console.log('SHAP response from backend (features):', resp);
-          const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
-          console.log('SHAP matrix after mapping (features):', shapMatrix);
-          console.log('SHAP matrix dimensions (features):', shapMatrix?.length, 'x', shapMatrix?.[0]?.length);
-          this.shapvalues = shapMatrix
+          //const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
+          this.shapvalues = this.convertTo2DArray(resp.shap_values)
+
+          // const shapMatrix = this.shap.mapShapLastResultToMatrix(resp)
+          // console.log('SHAP matrix after mapping (features):', shapMatrix);
+          // console.log('SHAP matrix dimensions (features):', shapMatrix?.length, 'x', shapMatrix?.[0]?.length);
+          // this.shapvalues = shapMatrix
           this.shapLoaded = true
           console.log('About to call refreshShapCharts with:', this.shapvalues);
           this.refreshShapCharts(this.shapvalues)
@@ -80,11 +84,15 @@ export class FeaturesComponent {
 
       this.limeService.getLastResult().subscribe({
         next: (resp: any) => {
-          const limeMatrix = this.limeService.mapLimeLastResultToMatrix(resp)
-          this.limeValues = limeMatrix
+          this.limeService.limeReport = resp
+          this.limeValues = this.limeService.fillMissingValuesLimeReport()
           this.limeLoaded = true
           // this.refreshCharts(this.shapvalues, this.limeValues)
-          this.refreshLimeCharts(this.limeValues)
+          //this.refreshLimeCharts(this.limeValues)
+          const initLimeCharts = this.init_feature_data_graphic(this.limeValues)
+          this.barChartOptions = initLimeCharts.barChartOptions
+          this.barChartDataLime = initLimeCharts.barChartData
+          this.featureChartDataLime=this.generateFeatureChartData(this.limeValues,this.columnLabels)
         },
         error: () => {}
       })

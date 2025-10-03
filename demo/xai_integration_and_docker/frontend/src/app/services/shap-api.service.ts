@@ -12,7 +12,7 @@ import { error } from 'console';
 export class ShapApiService {
 
   // Consolidated SHAP endpoint under backend port 5000 and /api
-  readonly endpointSHAPTimeseriesAPI = "/api/shap"
+  readonly endpointSHAPTimeseriesAPI = "http://localhost:5000/api/shap"
 
   private shapDataState = signal<RequestState>(RequestState.Not_Initiated)
   readonly shapDataStateSignal = this.shapDataState.asReadonly()
@@ -29,12 +29,12 @@ export class ShapApiService {
   constructor(private http: HttpClient) {
     // this.shapReport =JSON.parse(localStorage.getItem("shap_report")||"")
     try {
-      console.log('ShapApiService constructor - MockData:', MockData);
-      console.log('ShapApiService constructor - MockData.mockShapReport:', MockData.mockShapReport);
+      // console.log('ShapApiService constructor - MockData:', MockData);
+      // console.log('ShapApiService constructor - MockData.mockShapReport:', MockData.mockShapReport);
       this.shapReport = MockData.mockShapReport
-      console.log('ShapApiService constructor - shapReport initialized:', this.shapReport);
+      // console.log('ShapApiService constructor - shapReport initialized:', this.shapReport);
     } catch (error) {
-      console.error('Error initializing shapReport:', error);
+      // console.error('Error initializing shapReport:', error);
       this.shapReport = {};
     }
   }

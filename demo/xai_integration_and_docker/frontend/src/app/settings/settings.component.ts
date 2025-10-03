@@ -6,11 +6,13 @@ import { ShapApiService } from '../services/shap-api.service';
 import { XAIApiService } from '../../../angular-services/xai-api.service';
 import { forkJoin } from 'rxjs';
 import { isPlatformBrowser } from '@angular/common';
+import { SidebarComponent } from '../sidebar/sidebar.component';
 
 @Component({
   selector: 'app-settings', // Defines the selector that will be used to place this component in the HTML
   imports: [
-    FormsModule
+    FormsModule,
+    SidebarComponent
 ],
   templateUrl: './settings.component.html',  // Specifies the path to the component's template file
   styleUrl: './settings.component.css' // Specifies the path to the component's CSS file
