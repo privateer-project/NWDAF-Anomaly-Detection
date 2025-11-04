@@ -1,76 +1,103 @@
 -- HITL Database Schema Definition
 -- 
 -- This SQL file defines the complete database schema for the HITL system.
--- It should be idempotent (safe to run multiple times).
+-- It is idempotent (safe to run multiple times).
 --
--- Tables to create:
---
--- 1. anomalies
---    Stores anomaly metadata
---    Columns:
---      - anomaly_id TEXT PRIMARY KEY (unique identifier)
---      - occurred_at TEXT NOT NULL (ISO timestamp when anomaly occurred)
---      - source TEXT NOT NULL (origin/unit that detected anomaly)
---      - created_at TEXT NOT NULL (ISO timestamp when record created)
---      - updated_at TEXT NOT NULL (ISO timestamp when record last updated)
---
--- 2. feedback
---    Stores human feedback/labels on anomalies
---    Columns:
---      - feedback_id TEXT PRIMARY KEY
---      - anomaly_id TEXT NOT NULL (FK to anomalies)
---      - user_id TEXT NOT NULL (who provided feedback)
---      - label TEXT NOT NULL (e.g., "TP", "FP", "TN", "FN")
---      - confidence REAL (0.0-1.0, nullable)
---      - note TEXT (optional human notes)
---      - created_at TEXT NOT NULL
---    Foreign keys: anomaly_id REFERENCES anomalies(anomaly_id) ON DELETE CASCADE
---    Indexes: idx_fb_anom_time ON (anomaly_id, created_at DESC)
---
--- 3. feature_schemas
---    Stores tensor shape/dtype schemas
---    Columns:
---      - schema_id TEXT PRIMARY KEY (hash of shape+dtype)
---      - shape TEXT NOT NULL (JSON or comma-separated tuple)
---      - ndim INTEGER NOT NULL (number of dimensions)
---      - numel INTEGER NOT NULL (total elements)
---      - dtype TEXT NOT NULL DEFAULT 'float32'
---      - created_at TEXT NOT NULL
---
--- 4. raw_vectors
---    Stores tensor data as .npy BLOBs
---    Columns:
---      - anomaly_id TEXT PRIMARY KEY (one vector per anomaly)
---      - schema_id TEXT NOT NULL (FK to feature_schemas)
---      - tensor_blob BLOB NOT NULL (.npy format bytes)
---      - created_at TEXT NOT NULL
---    Foreign keys:
---      - anomaly_id REFERENCES anomalies(anomaly_id) ON DELETE CASCADE
---      - schema_id REFERENCES feature_schemas(schema_id)
---
--- 5. models
---    Stores trained model metadata
---    Columns:
---      - model_version TEXT PRIMARY KEY (e.g., "AE-2025.11.04-1")
---      - kind TEXT NOT NULL (e.g., "dense", "conv1d")
---      - artifact_path TEXT NOT NULL (relative path to artifacts directory)
---      - created_at TEXT NOT NULL
---
--- 6. settings
---    Key-value store for system configuration
---    Columns:
---      - key TEXT PRIMARY KEY (e.g., "live_model_version")
---      - value TEXT NOT NULL
---
--- Pragmas to set:
---   - PRAGMA journal_mode=WAL (for concurrent reads)
---
--- All CREATE TABLE statements should use IF NOT EXISTS
--- All indexes should use IF NOT EXISTS
+-- Tables:
+--   1. anomalies - Anomaly metadata
+--   2. feedback - Human feedback on anomalies
+--   3. feature_schemas - Tensor shape/dtype schemas
+--   4. raw_vectors - Tensor data as .npy BLOBs
+--   5. models - Trained model metadata
+--   6. settings - Key-value configuration store
 
+-- Enable WAL mode for concurrent reads
 PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
 
--- TODO: Implement all CREATE TABLE statements as described above
--- TODO: Add appropriate indexes for common queries
--- TODO: Ensure all foreign key constraints are defined
--- TODO: Add CHECK constraints where appropriate (e.g., confidence between 0 and 1)
+-- =============================================================================
+-- 1. ANOMALIES TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS anomalies (
+    anomaly_id TEXT PRIMARY KEY,
+    occurred_at TEXT NOT NULL,
+    source TEXT NOT NULL,
+    schema_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (schema_id) REFERENCES feature_schemas(schema_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_anomalies_occurred ON anomalies(occurred_at DESC);
+CREATE INDEX IF NOT EXISTS idx_anomalies_source ON anomalies(source);
+CREATE INDEX IF NOT EXISTS idx_anomalies_schema ON anomalies(schema_id);
+
+-- =============================================================================
+-- 2. FEEDBACK TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id TEXT PRIMARY KEY,
+    anomaly_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    confidence REAL CHECK (confidence IS NULL OR (confidence >= 0.0 AND confidence <= 1.0)),
+    note TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (anomaly_id) REFERENCES anomalies(anomaly_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_anomaly ON feedback(anomaly_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feedback_user ON feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_label ON feedback(label);
+
+-- =============================================================================
+-- 3. FEATURE_SCHEMAS TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS feature_schemas (
+    schema_id TEXT PRIMARY KEY,
+    shape TEXT NOT NULL,
+    ndim INTEGER NOT NULL CHECK (ndim > 0),
+    numel INTEGER NOT NULL CHECK (numel > 0),
+    dtype TEXT NOT NULL DEFAULT 'float32',
+    created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_schemas_ndim ON feature_schemas(ndim);
+
+-- =============================================================================
+-- 4. RAW_VECTORS TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS raw_vectors (
+    anomaly_id TEXT PRIMARY KEY,
+    schema_id TEXT NOT NULL,
+    tensor_blob BLOB NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (anomaly_id) REFERENCES anomalies(anomaly_id) ON DELETE CASCADE,
+    FOREIGN KEY (schema_id) REFERENCES feature_schemas(schema_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vectors_schema ON raw_vectors(schema_id);
+
+-- =============================================================================
+-- 5. MODELS TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS models (
+    model_version TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('dense', 'conv1d')),
+    schema_id TEXT NOT NULL,
+    artifact_path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (schema_id) REFERENCES feature_schemas(schema_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_models_kind ON models(kind);
+CREATE INDEX IF NOT EXISTS idx_models_schema ON models(schema_id);
+CREATE INDEX IF NOT EXISTS idx_models_created ON models(created_at DESC);
+
+-- =============================================================================
+-- 6. SETTINGS TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
