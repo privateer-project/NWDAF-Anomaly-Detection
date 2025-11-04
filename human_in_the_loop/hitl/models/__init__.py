@@ -1,7 +1,19 @@
-# Models Package Initialization
-#
-# This file makes the models directory a Python package.
-#
-# Example export:
-# from hitl.models.ae import DenseAE, Conv1dAE, build_model
-# __all__ = ["DenseAE", "Conv1dAE", "build_model"]
+"""Models package for HITL system."""
+
+from hitl.models.ae import (
+    DenseAE,
+    Conv1dAE,
+    build_model,
+    count_parameters,
+    init_weights,
+    model_summary,
+)
+
+__all__ = [
+    "DenseAE",
+    "Conv1dAE",
+    "build_model",
+    "count_parameters",
+    "init_weights",
+    "model_summary",
+]
