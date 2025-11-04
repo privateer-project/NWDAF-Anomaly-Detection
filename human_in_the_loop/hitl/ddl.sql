@@ -1,0 +1,76 @@
+-- HITL Database Schema Definition
+-- 
+-- This SQL file defines the complete database schema for the HITL system.
+-- It should be idempotent (safe to run multiple times).
+--
+-- Tables to create:
+--
+-- 1. anomalies
+--    Stores anomaly metadata
+--    Columns:
+--      - anomaly_id TEXT PRIMARY KEY (unique identifier)
+--      - occurred_at TEXT NOT NULL (ISO timestamp when anomaly occurred)
+--      - source TEXT NOT NULL (origin/unit that detected anomaly)
+--      - created_at TEXT NOT NULL (ISO timestamp when record created)
+--      - updated_at TEXT NOT NULL (ISO timestamp when record last updated)
+--
+-- 2. feedback
+--    Stores human feedback/labels on anomalies
+--    Columns:
+--      - feedback_id TEXT PRIMARY KEY
+--      - anomaly_id TEXT NOT NULL (FK to anomalies)
+--      - user_id TEXT NOT NULL (who provided feedback)
+--      - label TEXT NOT NULL (e.g., "TP", "FP", "TN", "FN")
+--      - confidence REAL (0.0-1.0, nullable)
+--      - note TEXT (optional human notes)
+--      - created_at TEXT NOT NULL
+--    Foreign keys: anomaly_id REFERENCES anomalies(anomaly_id) ON DELETE CASCADE
+--    Indexes: idx_fb_anom_time ON (anomaly_id, created_at DESC)
+--
+-- 3. feature_schemas
+--    Stores tensor shape/dtype schemas
+--    Columns:
+--      - schema_id TEXT PRIMARY KEY (hash of shape+dtype)
+--      - shape TEXT NOT NULL (JSON or comma-separated tuple)
+--      - ndim INTEGER NOT NULL (number of dimensions)
+--      - numel INTEGER NOT NULL (total elements)
+--      - dtype TEXT NOT NULL DEFAULT 'float32'
+--      - created_at TEXT NOT NULL
+--
+-- 4. raw_vectors
+--    Stores tensor data as .npy BLOBs
+--    Columns:
+--      - anomaly_id TEXT PRIMARY KEY (one vector per anomaly)
+--      - schema_id TEXT NOT NULL (FK to feature_schemas)
+--      - tensor_blob BLOB NOT NULL (.npy format bytes)
+--      - created_at TEXT NOT NULL
+--    Foreign keys:
+--      - anomaly_id REFERENCES anomalies(anomaly_id) ON DELETE CASCADE
+--      - schema_id REFERENCES feature_schemas(schema_id)
+--
+-- 5. models
+--    Stores trained model metadata
+--    Columns:
+--      - model_version TEXT PRIMARY KEY (e.g., "AE-2025.11.04-1")
+--      - kind TEXT NOT NULL (e.g., "dense", "conv1d")
+--      - artifact_path TEXT NOT NULL (relative path to artifacts directory)
+--      - created_at TEXT NOT NULL
+--
+-- 6. settings
+--    Key-value store for system configuration
+--    Columns:
+--      - key TEXT PRIMARY KEY (e.g., "live_model_version")
+--      - value TEXT NOT NULL
+--
+-- Pragmas to set:
+--   - PRAGMA journal_mode=WAL (for concurrent reads)
+--
+-- All CREATE TABLE statements should use IF NOT EXISTS
+-- All indexes should use IF NOT EXISTS
+
+PRAGMA journal_mode=WAL;
+
+-- TODO: Implement all CREATE TABLE statements as described above
+-- TODO: Add appropriate indexes for common queries
+-- TODO: Ensure all foreign key constraints are defined
+-- TODO: Add CHECK constraints where appropriate (e.g., confidence between 0 and 1)

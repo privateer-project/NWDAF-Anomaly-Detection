@@ -167,3 +167,5 @@ data/*
 data/raw/*.csv
 data/processed/*.csv
 
+# temporary scripts
+TEMP/

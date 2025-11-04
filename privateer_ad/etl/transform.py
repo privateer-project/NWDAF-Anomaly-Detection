@@ -267,48 +267,35 @@ class DataProcessor:
     def prepare_datasets(self, raw_dataset_path=None) -> None:
         """
         Transform raw network traffic data into processed train-validation-test splits.
-
-        This method constitutes the primary data preparation pipeline, handling the
-        complete transformation from raw CSV data through stratified splitting,
-        scaler establishment, and persistence of processed datasets. The splitting
-        strategy ensures balanced representation of attack patterns across all subsets
-        while maintaining temporal ordering within each partition.
-
-        The scaling establishment phase exclusively uses benign training samples
-        to prevent contamination from attack signatures.
-
-        Args:
-            raw_dataset_path (str, optional): Path to raw dataset file. If None,
-                                            uses the default path from configuration.
-                                            Expected format is CSV with timestamped
-                                            network metrics.
-
-        Raises:
-            FileNotFoundError: When the specified raw dataset path cannot be accessed.
-            ValueError: When dataset lacks required columns or contains insufficient
-                       samples for stratified splitting.
         """
         raw_dataset_path = raw_dataset_path or self.paths_config.raw_dataset
-
-        check_existing_datasets()
-
+    
+        # Don't hard-fail on first run if processed splits are missing
+        try:
+            check_existing_datasets()
+        except FileNotFoundError as e:
+            logging.info(f'Processed splits not found yet ({e}); will create them now.')
+    
+        # Load the raw CSV (absolute path from config)
         raw_df = self.read_ds(raw_dataset_path)
         logging.info(f'Loaded data from {raw_dataset_path}')
-
+    
         # Split data to train/val/test
         datasets = self.split_data(raw_df)
-
-        # Ensure a processed directory exists
+    
+        # Ensure processed dir exists
         self.paths_config.processed_dir.mkdir(parents=True, exist_ok=True)
-
-        # Setup and save scalers using training data
-        self.setup_scalers()
-
+    
+        # Save datasets FIRST so train.csv exists for scaler setup
         logging.info('Save datasets...')
         for k, df in datasets.items():
-            save_path = get_dataset_path(k)
+            # Write directly to processed_dir; don't use get_dataset_path for saving
+            save_path = self.paths_config.processed_dir / f'{k}.csv'
             df.to_csv(save_path, index=False)
             logging.info(f'{k} saved at {save_path}')
+    
+        # Now that data/processed/train.csv exists, set up scalers (idempotent)
+        self.setup_scalers()
 
     def setup_scalers(self) -> None:
         """Sets up data scalers using only benign training samples for normalization.
