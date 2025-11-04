@@ -29,6 +29,26 @@ make type-check
 make check
 ```
 
+### Development Scripts
+
+For manual testing and debugging, see the `dev_scripts/` directory:
+
+```bash
+# Run all dev scripts
+cd dev_scripts && ./run_all.sh
+
+# Or run individual test scripts
+python dev_scripts/test_utils.py
+python dev_scripts/test_database.py
+python dev_scripts/test_full_workflow.py
+# ... etc
+
+# See QUICKREF.md for details
+cat dev_scripts/QUICKREF.md
+```
+
+The dev scripts provide functional testing for all implemented phases (1-6).
+
 ## Overview
 <!--
 This README should contain:
