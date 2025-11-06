@@ -46,7 +46,7 @@ cat QUICKREF.md
 
 ```
 Documentation:  ~500 lines total
-Test scripts:   ~2,000 lines total  
+Test scripts:   ~2,000 lines total
 Bash runner:    ~70 lines
 Total:          ~2,600 lines
 ```

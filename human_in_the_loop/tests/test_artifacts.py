@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-import torch
 import torch.nn as nn
 
 from hitl.artifacts.manager import Artifacts, _find_next_sequence
@@ -16,11 +15,11 @@ from hitl.errors import ArtifactMissing
 
 class SimpleModel(nn.Module):
     """Simple model for testing."""
-    
+
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(10, 5)
-    
+
     def forward(self, x):
         return self.linear(x)
 
@@ -83,7 +82,7 @@ class TestVersionCreation:
     def test_create_version_generates_version(self, artifacts):
         """Test model version generation."""
         version, path = artifacts.create_version("dense", (128,))
-        
+
         # Version should start with "AE-"
         assert version.startswith("AE-")
         # Should contain date
@@ -95,20 +94,20 @@ class TestVersionCreation:
         """Test version creation with specific date."""
         date = datetime(2025, 11, 4, 10, 0, 0)
         version, _ = artifacts.create_version("dense", (128,), date=date)
-        
+
         # Should contain the specified date
         assert "2025.11.04" in version
 
     def test_create_version_increments_sequence(self, artifacts):
         """Test sequence number increments for same date."""
         date = datetime(2025, 11, 4)
-        
+
         # Create first version
         version1, _ = artifacts.create_version("dense", (128,), date=date)
-        
+
         # Create second version on same date
         version2, _ = artifacts.create_version("dense", (128,), date=date)
-        
+
         # Sequence should increment
         assert version1.endswith("-1")
         assert version2.endswith("-2")
@@ -116,7 +115,7 @@ class TestVersionCreation:
     def test_create_version_creates_directory(self, artifacts, temp_dir):
         """Test artifact directory is created."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         # Directory should exist
         version_dir = temp_dir / version
         assert version_dir.exists()
@@ -129,9 +128,9 @@ class TestArtifactSaving:
     def test_save_model_writes_file(self, artifacts, sample_state_dict, temp_dir):
         """Test model state dict is saved."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         artifacts.save_model(version, sample_state_dict)
-        
+
         # File should exist
         model_path = temp_dir / version / "model.pt"
         assert model_path.exists()
@@ -139,15 +138,16 @@ class TestArtifactSaving:
     def test_save_config_writes_json(self, artifacts, sample_config, temp_dir):
         """Test config is saved as JSON."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         artifacts.save_config(version, sample_config)
-        
+
         # File should exist
         config_path = temp_dir / version / "config.json"
         assert config_path.exists()
-        
+
         # Should be valid JSON
         import json
+
         with config_path.open() as f:
             loaded = json.load(f)
         assert loaded == sample_config
@@ -155,9 +155,9 @@ class TestArtifactSaving:
     def test_save_scaler_writes_json(self, artifacts, sample_scaler, temp_dir):
         """Test scaler params are saved as JSON."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         artifacts.save_scaler(version, sample_scaler)
-        
+
         # File should exist
         scaler_path = temp_dir / version / "scaler.json"
         assert scaler_path.exists()
@@ -165,9 +165,9 @@ class TestArtifactSaving:
     def test_save_threshold_writes_json(self, artifacts, sample_threshold, temp_dir):
         """Test threshold is saved as JSON."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         artifacts.save_threshold(version, sample_threshold)
-        
+
         # File should exist
         threshold_path = temp_dir / version / "threshold.json"
         assert threshold_path.exists()
@@ -182,8 +182,14 @@ class TestArtifactLoading:
     """Test loading artifacts."""
 
     @pytest.fixture
-    def complete_artifacts(self, artifacts, sample_state_dict, sample_config, 
-                           sample_scaler, sample_threshold):
+    def complete_artifacts(
+        self,
+        artifacts,
+        sample_state_dict,
+        sample_config,
+        sample_scaler,
+        sample_threshold,
+    ):
         """Create complete set of artifacts."""
         version, _ = artifacts.create_version("dense", (128,))
         artifacts.save_model(version, sample_state_dict)
@@ -195,7 +201,7 @@ class TestArtifactLoading:
     def test_load_all_returns_dict(self, artifacts, complete_artifacts):
         """Test loading all artifacts returns complete dict."""
         all_artifacts = artifacts.load_all(complete_artifacts)
-        
+
         assert "model" in all_artifacts
         assert "config" in all_artifacts
         assert "scaler" in all_artifacts
@@ -204,27 +210,33 @@ class TestArtifactLoading:
     def test_load_model_returns_state_dict(self, artifacts, complete_artifacts):
         """Test loading just model state dict."""
         state_dict = artifacts.load_model(complete_artifacts)
-        
+
         assert isinstance(state_dict, dict)
         # Should have some parameters
         assert len(state_dict) > 0
 
-    def test_load_config_returns_dict(self, artifacts, complete_artifacts, sample_config):
+    def test_load_config_returns_dict(
+        self, artifacts, complete_artifacts, sample_config
+    ):
         """Test loading just config."""
         config = artifacts.load_config(complete_artifacts)
-        
+
         assert config == sample_config
 
-    def test_load_scaler_returns_dict(self, artifacts, complete_artifacts, sample_scaler):
+    def test_load_scaler_returns_dict(
+        self, artifacts, complete_artifacts, sample_scaler
+    ):
         """Test loading just scaler."""
         scaler = artifacts.load_scaler(complete_artifacts)
-        
+
         assert scaler == sample_scaler
 
-    def test_load_threshold_returns_dict(self, artifacts, complete_artifacts, sample_threshold):
+    def test_load_threshold_returns_dict(
+        self, artifacts, complete_artifacts, sample_threshold
+    ):
         """Test loading just threshold."""
         threshold = artifacts.load_threshold(complete_artifacts)
-        
+
         assert threshold == sample_threshold
 
     def test_load_all_raises_if_missing(self, artifacts):
@@ -236,7 +248,7 @@ class TestArtifactLoading:
         """Test loading model raises if file doesn't exist."""
         version, _ = artifacts.create_version("dense", (128,))
         # Don't save model
-        
+
         with pytest.raises(ArtifactMissing):
             artifacts.load_model(version)
 
@@ -244,16 +256,21 @@ class TestArtifactLoading:
 class TestExistenceChecking:
     """Test artifact existence checking."""
 
-    def test_exists_returns_true_if_complete(self, artifacts, sample_state_dict,
-                                              sample_config, sample_scaler, 
-                                              sample_threshold):
+    def test_exists_returns_true_if_complete(
+        self,
+        artifacts,
+        sample_state_dict,
+        sample_config,
+        sample_scaler,
+        sample_threshold,
+    ):
         """Test existence check returns True for complete artifacts."""
         version, _ = artifacts.create_version("dense", (128,))
         artifacts.save_model(version, sample_state_dict)
         artifacts.save_config(version, sample_config)
         artifacts.save_scaler(version, sample_scaler)
         artifacts.save_threshold(version, sample_threshold)
-        
+
         assert artifacts.exists(version) is True
 
     def test_exists_returns_false_if_missing(self, artifacts):
@@ -265,7 +282,7 @@ class TestExistenceChecking:
         version, _ = artifacts.create_version("dense", (128,))
         # Only save config, not all files
         artifacts.save_config(version, sample_config)
-        
+
         assert artifacts.exists(version) is False
 
 
@@ -277,19 +294,19 @@ class TestVersionListing:
         # Create multiple versions
         date1 = datetime(2025, 11, 3)
         date2 = datetime(2025, 11, 4)
-        
+
         v1, _ = artifacts.create_version("dense", (128,), date=date1)
         v2, _ = artifacts.create_version("dense", (128,), date=date2)
         v3, _ = artifacts.create_version("dense", (128,), date=date2)
-        
+
         versions = artifacts.list_versions()
-        
+
         # Should have all versions
         assert len(versions) == 3
         assert v1 in versions
         assert v2 in versions
         assert v3 in versions
-        
+
         # Should be sorted (newest first)
         assert versions[0] > versions[-1]
 
@@ -305,14 +322,14 @@ class TestArtifactDeletion:
     def test_delete_removes_directory(self, artifacts, temp_dir):
         """Test artifact deletion."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         # Verify directory exists
         version_dir = temp_dir / version
         assert version_dir.exists()
-        
+
         # Delete
         artifacts.delete(version)
-        
+
         # Should no longer exist
         assert not version_dir.exists()
 
@@ -328,9 +345,9 @@ class TestPathResolution:
     def test_get_path_returns_absolute(self, artifacts, temp_dir):
         """Test path resolution."""
         version, _ = artifacts.create_version("dense", (128,))
-        
+
         path = artifacts.get_path(version)
-        
+
         # Should be absolute
         assert path.is_absolute()
         # Should include version
@@ -352,7 +369,7 @@ class TestHelperFunctions:
         # Create some directories
         (temp_dir / "AE-2025.11.04-1").mkdir()
         (temp_dir / "AE-2025.11.04-2").mkdir()
-        
+
         seq = _find_next_sequence(temp_dir, "2025.11.04")
         assert seq == 3
 
@@ -360,8 +377,7 @@ class TestHelperFunctions:
         """Test different dates have independent sequences."""
         (temp_dir / "AE-2025.11.03-1").mkdir()
         (temp_dir / "AE-2025.11.03-2").mkdir()
-        
+
         # New date should start at 1
         seq = _find_next_sequence(temp_dir, "2025.11.04")
         assert seq == 1
-

@@ -1,8 +1,8 @@
 # ARCHITECTURE.md — HITL v0.4T‑MD MVP
 
-**Target**: Production‑ready minimal system for Human‑in‑the‑Loop anomaly filtering using a PyTorch Autoencoder with tensor storage in SQLite and local artifacts.  
-**Packaging/Build**: `uv` + `pyproject.toml`.  
-**APIs**: CLI and optional FastAPI HTTP server.  
+**Target**: Production‑ready minimal system for Human‑in‑the‑Loop anomaly filtering using a PyTorch Autoencoder with tensor storage in SQLite and local artifacts.
+**Packaging/Build**: `uv` + `pyproject.toml`.
+**APIs**: CLI and optional FastAPI HTTP server.
 **Tensor support**: 1D `(D,)` or 2D `(T,F)` via one active AE mode (`dense` or `conv1d`).
 
 ---
@@ -231,7 +231,7 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 ## 8. Storage Layer
 
 ### `store/sqlite.py`
-- `class SQLite`  
+- `class SQLite`
   - `__init__(self, path: str)` → ensures file and applies DDL.
   - `connect(self) -> sqlite3.Connection` with `row_factory=sqlite3.Row`.
   - `execute(self, sql: str, params: tuple=()) -> None`
@@ -264,23 +264,23 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 ## 9. Schema Registry (`schemas/registry.py`)
 
 - `class SchemaRegistry`
-  - `ensure(shape: tuple[int,...], dtype: str) -> SchemaInfo`  
+  - `ensure(shape: tuple[int,...], dtype: str) -> SchemaInfo`
     Computes `schema_id` from shape+dtype, inserts if missing.
-  - `from_anomaly(anomaly_id) -> SchemaInfo`  
+  - `from_anomaly(anomaly_id) -> SchemaInfo`
     Looks up raw vector to infer shape and dtype.
   - Validates `(D,)` or `(T,F)` only for MVP. Raises `UnsupportedShape` otherwise.
 
-**Input:** `shape`, `dtype`.  
+**Input:** `shape`, `dtype`.
 **Output:** `SchemaInfo` with `schema_id` and metadata.
 
 ---
 
 ## 10. IO Serialization (`io/serialization.py`)
 
-- `encode_npy(arr: np.ndarray, dtype="float32") -> bytes`  
+- `encode_npy(arr: np.ndarray, dtype="float32") -> bytes`
   Validates contiguous 1D/2D, casts dtype, returns `.npy` bytes.
 - `decode_npy(blob: bytes) -> np.ndarray`
-- `ensure_shape(arr: np.ndarray, shape: tuple[int,...]) -> np.ndarray`  
+- `ensure_shape(arr: np.ndarray, shape: tuple[int,...]) -> np.ndarray`
   Raises `ShapeMismatch` if not exact.
 
 ---
@@ -295,7 +295,7 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
   - `save_threshold(path: str, threshold: dict) -> None`
   - `load_all(path: str) -> dict` → returns `{"model": state_dict, "config":..., "scaler":..., "threshold":...}`
 
-**Input:** state dict, config, scaler, threshold.  
+**Input:** state dict, config, scaler, threshold.
 **Output:** persisted files and paths.
 
 ---
@@ -313,7 +313,7 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 
 - `build_model(mode: Literal["dense","conv1d"], input_shape: tuple[int,...]) -> nn.Module`
 
-**Input:** mode and input shape.  
+**Input:** mode and input shape.
 **Output:** initialized AE model instance.
 
 ---
@@ -322,9 +322,9 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 
 - `class Trainer`
   - `__init__(repo: Repository, artifacts: Artifacts, cfg: Config, logger)`
-  - `load_dataset(schema_id: str) -> tuple[np.ndarray, list[str]]`  
+  - `load_dataset(schema_id: str) -> tuple[np.ndarray, list[str]]`
     Returns `X` and `ids` in consistent shape `(N,D)` for dense or `(N,F,T)` for conv1d.
-  - `fit(X, params: TrainParams) -> tuple[state_dict, scaler, threshold, metrics]`  
+  - `fit(X, params: TrainParams) -> tuple[state_dict, scaler, threshold, metrics]`
     - Split 90/10.
     - Compute scaler:
       - dense: per‑feature mean/std on axis=0.
@@ -332,12 +332,12 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
     - Train with MSE + Adam(lr).
     - Early stop with patience on val loss.
     - Threshold: 99.5th percentile of train reconstruction MSE.
-  - `train_and_publish(schema_id: str, params: TrainParams) -> str`  
+  - `train_and_publish(schema_id: str, params: TrainParams) -> str`
     - Create artifact version.
     - Save artifacts.
     - Insert model row and return `model_version`.
 
-**Inputs:** `schema_id`, training params.  
+**Inputs:** `schema_id`, training params.
 **Output:** `model_version` string.
 
 ---
@@ -356,7 +356,7 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 
 - `mse_per_sample(x, x_hat) -> np.ndarray[(N,)]` implemented per mode.
 
-**Input:** tensor.  
+**Input:** tensor.
 **Output:** `PredictResult` dict.
 
 ---
@@ -383,21 +383,21 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 
 ## 16. HTTP API (optional) (`api/server.py`, `api/schemas.py`)
 
-- `POST /anomalies`  
-  **Body**: `AnomalyUpsert { anomaly_id:str, occurred_at:str, source:str, tensor: list|nested list|base64 npy }`  
+- `POST /anomalies`
+  **Body**: `AnomalyUpsert { anomaly_id:str, occurred_at:str, source:str, tensor: list|nested list|base64 npy }`
   **Out**: `{ anomaly_id }`
-- `POST /feedback`  
-  **Body**: `FeedbackIn { anomaly_id, user_id, label, confidence?, note? }`  
+- `POST /feedback`
+  **Body**: `FeedbackIn { anomaly_id, user_id, label, confidence?, note? }`
   **Out**: `{ ok: true }`
-- `POST /train`  
-  **Body**: `{ mode: "dense"|"conv1d", schema_id?, params? }`  
+- `POST /train`
+  **Body**: `{ mode: "dense"|"conv1d", schema_id?, params? }`
   **Out**: `{ model_version }`
-- `POST /live/{model_version}`  
+- `POST /live/{model_version}`
   **Out**: `{ ok: true }`
-- `POST /predict`  
-  **Body**: `PredictIn { tensor? , anomaly_id? }` exactly one is required  
+- `POST /predict`
+  **Body**: `PredictIn { tensor? , anomaly_id? }` exactly one is required
   **Out**: `PredictOut { label:int, score:float, threshold:float, model_version:str }`
-- `GET /health`  
+- `GET /health`
   **Out**: `{ status:"ok" }`
 
 Validation uses Pydantic. Server uses Uvicorn with `--workers 1` for MVP.
@@ -414,7 +414,7 @@ Commands (Typer or argparse):
 - `hitl set-live --model AE-2025.11.04-1`
 - `hitl predict --npy path.npy` or `--anomaly A1`
 
-**Inputs:** flags and `.npy` files.  
+**Inputs:** flags and `.npy` files.
 **Outputs:** stdout JSON dicts.
 
 ---

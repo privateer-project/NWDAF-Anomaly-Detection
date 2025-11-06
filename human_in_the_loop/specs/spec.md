@@ -1,7 +1,7 @@
 # Human-in-the-Loop (HITL) — v0.4T‑MD **MVP**
 
-**Status:** Draft  
-**Date:** 2025-11-04  
+**Status:** Draft
+**Date:** 2025-11-04
 **Goal:** Small, operational MVP for AE-based anomaly filtering with tensor storage in SQLite. Multi‑dimensional tensors supported, but we keep one AE mode active to cut surface area.
 
 ---

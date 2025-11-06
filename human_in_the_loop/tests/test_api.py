@@ -77,7 +77,7 @@
 # def test_api_complete_workflow(client):
 #   """
 #   Integration test via API.
-#   
+#
 #   1. POST anomaly
 #   2. POST feedback
 #   3. POST train

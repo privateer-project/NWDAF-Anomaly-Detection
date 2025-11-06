@@ -12,7 +12,7 @@
 #   source: str = Field(..., description="Origin/unit that detected anomaly")
 #   tensor: list[float] | list[list[float]] = Field(..., description="Feature vector")
 #   dtype: str = Field(default="float32", description="NumPy dtype")
-#   
+#
 #   # Validators:
 #   # - occurred_at must be valid ISO timestamp
 #   # - tensor must be 1D or 2D list
@@ -31,7 +31,7 @@
 #   mode: Literal["dense", "conv1d"] | None = None
 #   schema_id: str | None = None
 #   params: dict | None = None
-#   
+#
 #   # params can include:
 #   # - epochs: int
 #   # - batch_size: int
@@ -48,7 +48,7 @@
 #   """Request model for prediction."""
 #   tensor: list[float] | list[list[float]] | None = None
 #   anomaly_id: str | None = None
-#   
+#
 #   # Custom validator: exactly one of tensor/anomaly_id must be provided
 #   @model_validator(mode='after')
 #   def check_exactly_one(self):
@@ -132,7 +132,7 @@
 #
 # Example Usage:
 #   from hitl.api.schemas import AnomalyUpsertRequest, PredictResponse
-#   
+#
 #   # In FastAPI endpoint
 #   @app.post("/anomalies", response_model=AnomalyUpsertResponse)
 #   async def create_anomaly(req: AnomalyUpsertRequest):

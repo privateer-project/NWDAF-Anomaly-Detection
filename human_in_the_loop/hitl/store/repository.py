@@ -11,37 +11,37 @@ Classes:
 import sqlite3
 from typing import Generator
 
-from .sqlite import SQLite, row_to_dict
+from .sqlite import SQLite
 from ..errors import DBError
 
 
 class Repository:
     """
     High-level database operations for HITL domain objects.
-    
+
     Provides CRUD operations for anomalies, feedback, schemas, vectors,
     models, and settings.
-    
+
     Example:
         >>> db = SQLite("hitl.db")
         >>> repo = Repository(db)
-        >>> repo.upsert_anomaly("A1", "2025-11-04T10:00:00Z", "sensor-1", 
+        >>> repo.upsert_anomaly("A1", "2025-11-04T10:00:00Z", "sensor-1",
         ...                     "schema123", "2025-11-04T10:00:01Z", "2025-11-04T10:00:01Z")
     """
-    
+
     def __init__(self, sqlite: SQLite):
         """
         Initialize repository with SQLite connection manager.
-        
+
         Args:
             sqlite: SQLite instance for database access
         """
         self.db = sqlite
-    
+
     # =========================================================================
     # ANOMALIES
     # =========================================================================
-    
+
     def upsert_anomaly(
         self,
         anomaly_id: str,
@@ -53,7 +53,7 @@ class Repository:
     ) -> None:
         """
         Insert or update anomaly record.
-        
+
         Args:
             anomaly_id: Unique anomaly identifier
             occurred_at: ISO timestamp when anomaly occurred
@@ -61,7 +61,7 @@ class Repository:
             schema_id: Schema ID for this anomaly's tensor
             created_at: ISO timestamp when record created
             updated_at: ISO timestamp when record updated
-        
+
         Raises:
             DBError: On database errors
         """
@@ -74,21 +74,23 @@ class Repository:
             schema_id = excluded.schema_id,
             updated_at = excluded.updated_at
         """
-        self.db.execute(sql, (anomaly_id, occurred_at, source, schema_id, created_at, updated_at))
-    
+        self.db.execute(
+            sql, (anomaly_id, occurred_at, source, schema_id, created_at, updated_at)
+        )
+
     def get_anomaly(self, anomaly_id: str) -> sqlite3.Row | None:
         """
         Fetch anomaly by ID.
-        
+
         Args:
             anomaly_id: Anomaly identifier
-        
+
         Returns:
             Row with anomaly data or None if not found
         """
         sql = "SELECT * FROM anomalies WHERE anomaly_id = ?"
         return self.db.fetchone(sql, (anomaly_id,))
-    
+
     def list_anomalies(
         self,
         limit: int = 100,
@@ -97,12 +99,12 @@ class Repository:
     ) -> list[sqlite3.Row]:
         """
         List anomalies with pagination and optional filtering.
-        
+
         Args:
             limit: Maximum rows to return
             offset: Skip this many rows
             source: Filter by source if provided
-        
+
         Returns:
             List of anomaly rows
         """
@@ -121,11 +123,11 @@ class Repository:
             LIMIT ? OFFSET ?
             """
             return self.db.fetchall(sql, (limit, offset))
-    
+
     # =========================================================================
     # FEEDBACK
     # =========================================================================
-    
+
     def insert_feedback(
         self,
         feedback_id: str,
@@ -138,7 +140,7 @@ class Repository:
     ) -> None:
         """
         Insert feedback record.
-        
+
         Args:
             feedback_id: Unique feedback identifier
             anomaly_id: Associated anomaly ID (FK)
@@ -147,7 +149,7 @@ class Repository:
             confidence: Optional confidence score (0.0-1.0)
             note: Optional text note
             created_at: ISO timestamp
-        
+
         Raises:
             DBError: If anomaly_id invalid or other error
         """
@@ -155,15 +157,17 @@ class Repository:
         INSERT INTO feedback (feedback_id, anomaly_id, user_id, label, confidence, note, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """
-        self.db.execute(sql, (feedback_id, anomaly_id, user_id, label, confidence, note, created_at))
-    
+        self.db.execute(
+            sql, (feedback_id, anomaly_id, user_id, label, confidence, note, created_at)
+        )
+
     def latest_feedback(self, anomaly_id: str) -> sqlite3.Row | None:
         """
         Get most recent feedback for anomaly.
-        
+
         Args:
             anomaly_id: Anomaly identifier
-        
+
         Returns:
             Most recent feedback row or None
         """
@@ -174,7 +178,7 @@ class Repository:
         LIMIT 1
         """
         return self.db.fetchone(sql, (anomaly_id,))
-    
+
     def list_feedback(
         self,
         anomaly_id: str | None = None,
@@ -182,11 +186,11 @@ class Repository:
     ) -> list[sqlite3.Row]:
         """
         List feedback records with optional filters.
-        
+
         Args:
             anomaly_id: Filter by specific anomaly
             label: Filter by label type
-        
+
         Returns:
             List of feedback rows
         """
@@ -214,24 +218,24 @@ class Repository:
         else:
             sql = "SELECT * FROM feedback ORDER BY created_at DESC"
             return self.db.fetchall(sql)
-    
+
     # =========================================================================
     # FEATURE SCHEMAS
     # =========================================================================
-    
+
     def get_schema(self, schema_id: str) -> sqlite3.Row | None:
         """
         Fetch schema by ID.
-        
+
         Args:
             schema_id: Schema identifier
-        
+
         Returns:
             Row with schema data or None
         """
         sql = "SELECT * FROM feature_schemas WHERE schema_id = ?"
         return self.db.fetchone(sql, (schema_id,))
-    
+
     def insert_schema(
         self,
         schema_id: str,
@@ -243,7 +247,7 @@ class Repository:
     ) -> None:
         """
         Insert new schema (idempotent).
-        
+
         Args:
             schema_id: Unique schema identifier
             shape: Shape as string (e.g., "128" or "8,128")
@@ -257,21 +261,21 @@ class Repository:
         VALUES (?, ?, ?, ?, ?, ?)
         """
         self.db.execute(sql, (schema_id, shape, ndim, numel, dtype, created_at))
-    
+
     def list_schemas(self) -> list[sqlite3.Row]:
         """
         List all registered schemas.
-        
+
         Returns:
             List of schema rows
         """
         sql = "SELECT * FROM feature_schemas ORDER BY created_at DESC"
         return self.db.fetchall(sql)
-    
+
     # =========================================================================
     # RAW VECTORS
     # =========================================================================
-    
+
     def put_vector(
         self,
         anomaly_id: str,
@@ -281,7 +285,7 @@ class Repository:
     ) -> None:
         """
         Store tensor blob for anomaly (upsert).
-        
+
         Args:
             anomaly_id: Anomaly identifier (FK)
             schema_id: Schema identifier (FK)
@@ -296,14 +300,14 @@ class Repository:
             tensor_blob = excluded.tensor_blob
         """
         self.db.execute(sql, (anomaly_id, schema_id, blob, created_at))
-    
+
     def get_vector(self, anomaly_id: str) -> tuple[str, bytes] | None:
         """
         Retrieve tensor blob for anomaly.
-        
+
         Args:
             anomaly_id: Anomaly identifier
-        
+
         Returns:
             (schema_id, blob) tuple or None
         """
@@ -312,17 +316,17 @@ class Repository:
         if row:
             return (row["schema_id"], row["tensor_blob"])
         return None
-    
+
     def iter_vectors(self, schema_id: str) -> Generator[tuple[str, bytes], None, None]:
         """
         Iterate over all vectors for a schema (for training).
-        
+
         Args:
             schema_id: Schema identifier
-        
+
         Yields:
             (anomaly_id, blob) tuples
-        
+
         Note:
             Uses cursor iterator to avoid loading all blobs into memory.
         """
@@ -338,25 +342,25 @@ class Repository:
                 yield (row["anomaly_id"], row["tensor_blob"])
         finally:
             conn.close()
-    
+
     def count_vectors(self, schema_id: str) -> int:
         """
         Count vectors for a schema.
-        
+
         Args:
             schema_id: Schema identifier
-        
+
         Returns:
             Number of vectors
         """
         sql = "SELECT COUNT(*) FROM raw_vectors WHERE schema_id = ?"
         row = self.db.fetchone(sql, (schema_id,))
         return row[0] if row else 0
-    
+
     # =========================================================================
     # MODELS
     # =========================================================================
-    
+
     def insert_model(
         self,
         model_version: str,
@@ -367,7 +371,7 @@ class Repository:
     ) -> None:
         """
         Register trained model.
-        
+
         Args:
             model_version: Unique model identifier (e.g., "AE-2025.11.04-1")
             kind: Model architecture ("dense" or "conv1d")
@@ -379,28 +383,30 @@ class Repository:
         INSERT INTO models (model_version, kind, schema_id, artifact_path, created_at)
         VALUES (?, ?, ?, ?, ?)
         """
-        self.db.execute(sql, (model_version, kind, schema_id, artifact_path, created_at))
-    
+        self.db.execute(
+            sql, (model_version, kind, schema_id, artifact_path, created_at)
+        )
+
     def get_model(self, model_version: str) -> sqlite3.Row | None:
         """
         Fetch model metadata by version.
-        
+
         Args:
             model_version: Model identifier
-        
+
         Returns:
             Row with model data or None
         """
         sql = "SELECT * FROM models WHERE model_version = ?"
         return self.db.fetchone(sql, (model_version,))
-    
+
     def list_models(self, kind: str | None = None) -> list[sqlite3.Row]:
         """
         List all models, optionally filtered by kind.
-        
+
         Args:
             kind: Filter by architecture type
-        
+
         Returns:
             List of model rows
         """
@@ -414,15 +420,15 @@ class Repository:
         else:
             sql = "SELECT * FROM models ORDER BY created_at DESC"
             return self.db.fetchall(sql)
-    
+
     # =========================================================================
     # SETTINGS
     # =========================================================================
-    
+
     def set_setting(self, key: str, value: str) -> None:
         """
         Set a configuration value (upsert).
-        
+
         Args:
             key: Setting key
             value: Setting value
@@ -433,49 +439,51 @@ class Repository:
         ON CONFLICT(key) DO UPDATE SET value = excluded.value
         """
         self.db.execute(sql, (key, value))
-    
+
     def get_setting(self, key: str) -> str | None:
         """
         Get a configuration value.
-        
+
         Args:
             key: Setting key
-        
+
         Returns:
             Setting value or None
         """
         sql = "SELECT value FROM settings WHERE key = ?"
         row = self.db.fetchone(sql, (key,))
         return row["value"] if row else None
-    
+
     def set_live_model(self, model_version: str) -> None:
         """
         Set the live model version.
-        
+
         Args:
             model_version: Model identifier
-        
+
         Raises:
             DBError: If model_version not found
         """
         # Validate model exists
         if not self.get_model(model_version):
             raise DBError(f"Model not found: {model_version}")
-        
+
         self.set_setting("live_model_version", model_version)
-    
+
     def get_live_model(self) -> str | None:
         """
         Get current live model version.
-        
+
         Returns:
             Live model version or None
         """
         return self.get_setting("live_model_version")
+
+
 #
 # class Repository:
 #   """High-level database operations for HITL domain objects."""
-#   
+#
 #   def __init__(self, sqlite: SQLite):
 #     """
 #     Initialize repository with SQLite connection manager.
@@ -483,9 +491,9 @@ class Repository:
 #       - sqlite: SQLite instance for database access
 #     """
 #     self.db = sqlite
-#   
+#
 #   # ===== ANOMALIES =====
-#   
+#
 #   def upsert_anomaly(
 #     self,
 #     anomaly_id: str,
@@ -496,23 +504,23 @@ class Repository:
 #   ) -> None:
 #     """
 #     Insert or update anomaly record.
-#     
+#
 #     SQL: INSERT OR REPLACE INTO anomalies ...
 #     On conflict, update updated_at timestamp.
-#     
+#
 #     Args: anomaly metadata fields
 #     Returns: None
 #     Raises: DBError on failure
 #     """
-#   
+#
 #   def get_anomaly(self, anomaly_id: str) -> sqlite3.Row | None:
 #     """
 #     Fetch anomaly by ID.
-#     
+#
 #     SQL: SELECT * FROM anomalies WHERE anomaly_id = ?
 #     Returns: Row or None if not found
 #     """
-#   
+#
 #   def list_anomalies(
 #     self,
 #     limit: int = 100,
@@ -521,16 +529,16 @@ class Repository:
 #   ) -> list[sqlite3.Row]:
 #     """
 #     List anomalies with pagination and optional filtering.
-#     
+#
 #     SQL: SELECT * FROM anomalies WHERE ... ORDER BY occurred_at DESC
 #     Args:
 #       - limit: max rows to return
 #       - offset: skip this many rows
 #       - source: filter by source if provided
 #     """
-#   
+#
 #   # ===== FEEDBACK =====
-#   
+#
 #   def insert_feedback(
 #     self,
 #     feedback_id: str,
@@ -543,24 +551,24 @@ class Repository:
 #   ) -> None:
 #     """
 #     Insert feedback record.
-#     
+#
 #     SQL: INSERT INTO feedback ...
 #     Validate anomaly_id exists (FK constraint will catch this)
-#     
+#
 #     Args: feedback fields
 #     Returns: None
 #     Raises: DBError if anomaly_id invalid or other error
 #     """
-#   
+#
 #   def latest_feedback(self, anomaly_id: str) -> sqlite3.Row | None:
 #     """
 #     Get most recent feedback for anomaly.
-#     
+#
 #     SQL: SELECT * FROM feedback WHERE anomaly_id = ?
 #          ORDER BY created_at DESC LIMIT 1
 #     Returns: Row or None
 #     """
-#   
+#
 #   def list_feedback(
 #     self,
 #     anomaly_id: str | None = None,
@@ -568,22 +576,22 @@ class Repository:
 #   ) -> list[sqlite3.Row]:
 #     """
 #     List feedback records with optional filters.
-#     
+#
 #     Args:
 #       - anomaly_id: filter by specific anomaly
 #       - label: filter by label type (TP, FP, etc.)
 #     """
-#   
+#
 #   # ===== FEATURE SCHEMAS =====
-#   
+#
 #   def get_schema(self, schema_id: str) -> sqlite3.Row | None:
 #     """
 #     Fetch schema by ID.
-#     
+#
 #     SQL: SELECT * FROM feature_schemas WHERE schema_id = ?
 #     Returns: Row with shape, ndim, numel, dtype or None
 #     """
-#   
+#
 #   def insert_schema(
 #     self,
 #     schema_id: str,
@@ -595,20 +603,20 @@ class Repository:
 #   ) -> None:
 #     """
 #     Insert new schema (idempotent).
-#     
+#
 #     SQL: INSERT OR IGNORE INTO feature_schemas ...
 #     If schema_id exists, this is a no-op.
 #     """
-#   
+#
 #   def list_schemas(self) -> list[sqlite3.Row]:
 #     """
 #     List all registered schemas.
-#     
+#
 #     SQL: SELECT * FROM feature_schemas ORDER BY created_at DESC
 #     """
-#   
+#
 #   # ===== RAW VECTORS =====
-#   
+#
 #   def put_vector(
 #     self,
 #     anomaly_id: str,
@@ -618,7 +626,7 @@ class Repository:
 #   ) -> None:
 #     """
 #     Store tensor blob for anomaly (upsert).
-#     
+#
 #     SQL: INSERT OR REPLACE INTO raw_vectors ...
 #     Args:
 #       - anomaly_id: FK to anomalies
@@ -626,38 +634,38 @@ class Repository:
 #       - blob: .npy format bytes
 #       - created_at: timestamp
 #     """
-#   
+#
 #   def get_vector(self, anomaly_id: str) -> tuple[str, bytes] | None:
 #     """
 #     Retrieve tensor blob for anomaly.
-#     
+#
 #     SQL: SELECT schema_id, tensor_blob FROM raw_vectors
 #          WHERE anomaly_id = ?
 #     Returns: (schema_id, blob) tuple or None
 #     """
-#   
+#
 #   def iter_vectors(self, schema_id: str) -> Generator[tuple[str, bytes], None, None]:
 #     """
 #     Iterate over all vectors for a schema (for training).
-#     
+#
 #     SQL: SELECT anomaly_id, tensor_blob FROM raw_vectors
 #          WHERE schema_id = ? ORDER BY created_at
 #     Yields: (anomaly_id, blob) tuples
-#     
+#
 #     Implementation note: Use cursor as iterator to avoid loading
 #     all blobs into memory at once.
 #     """
-#   
+#
 #   def count_vectors(self, schema_id: str) -> int:
 #     """
 #     Count vectors for a schema.
-#     
+#
 #     SQL: SELECT COUNT(*) FROM raw_vectors WHERE schema_id = ?
 #     Returns: integer count
 #     """
-#   
+#
 #   # ===== MODELS =====
-#   
+#
 #   def insert_model(
 #     self,
 #     model_version: str,
@@ -667,7 +675,7 @@ class Repository:
 #   ) -> None:
 #     """
 #     Register trained model.
-#     
+#
 #     SQL: INSERT INTO models ...
 #     Args:
 #       - model_version: unique identifier (e.g., "AE-2025.11.04-1")
@@ -675,58 +683,58 @@ class Repository:
 #       - artifact_path: relative path to artifacts directory
 #       - created_at: timestamp
 #     """
-#   
+#
 #   def get_model(self, model_version: str) -> sqlite3.Row | None:
 #     """
 #     Fetch model metadata by version.
-#     
+#
 #     SQL: SELECT * FROM models WHERE model_version = ?
 #     """
-#   
+#
 #   def list_models(self, kind: str | None = None) -> list[sqlite3.Row]:
 #     """
 #     List all models, optionally filtered by kind.
-#     
+#
 #     SQL: SELECT * FROM models WHERE ... ORDER BY created_at DESC
 #     """
-#   
+#
 #   # ===== SETTINGS =====
-#   
+#
 #   def set_setting(self, key: str, value: str) -> None:
 #     """
 #     Set a configuration value (upsert).
-#     
+#
 #     SQL: INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
 #     """
-#   
+#
 #   def get_setting(self, key: str) -> str | None:
 #     """
 #     Get a configuration value.
-#     
+#
 #     SQL: SELECT value FROM settings WHERE key = ?
 #     Returns: value string or None
 #     """
-#   
+#
 #   def set_live_model(self, model_version: str) -> None:
 #     """
 #     Set the live model version.
-#     
+#
 #     Validates that model_version exists in models table.
 #     Then: self.set_setting("live_model_version", model_version)
 #     Raises: DBError if model_version not found
 #     """
-#   
+#
 #   def get_live_model(self) -> str | None:
 #     """
 #     Get current live model version.
-#     
+#
 #     Returns: self.get_setting("live_model_version")
 #     """
 #
 # Usage patterns:
 #   db = SQLite("hitl.db")
 #   repo = Repository(db)
-#   
+#
 #   # Insert anomaly
 #   repo.upsert_anomaly(
 #     anomaly_id="A1",
@@ -735,14 +743,14 @@ class Repository:
 #     created_at=now_iso(),
 #     updated_at=now_iso()
 #   )
-#   
+#
 #   # Store vector
 #   repo.put_vector("A1", schema_id, blob, now_iso())
-#   
+#
 #   # Training: iterate vectors
 #   for aid, blob in repo.iter_vectors(schema_id):
 #     tensor = decode_npy(blob)
 #     # ... accumulate for training
-#   
+#
 #   # Set live model
 #   repo.set_live_model("AE-2025.11.04-1")

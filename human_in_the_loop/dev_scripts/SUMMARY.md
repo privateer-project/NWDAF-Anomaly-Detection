@@ -17,7 +17,7 @@ Created comprehensive development scripts for manual testing and debugging of Ph
    - Structured logging
    - Configuration loading
    - Performance benchmarks
-   
+
 2. **test_serialization.py** (338 lines)
    - NumPy array encoding/decoding
    - Shape and dtype preservation
@@ -25,7 +25,7 @@ Created comprehensive development scripts for manual testing and debugging of Ph
    - Type casting
    - Compression analysis
    - Precision preservation
-   
+
 3. **test_database.py** (294 lines)
    - Database initialization
    - Anomaly CRUD operations
@@ -35,7 +35,7 @@ Created comprehensive development scripts for manual testing and debugging of Ph
    - Model registration
    - Settings and live model
    - Transaction rollback
-   
+
 4. **test_schema_registry.py** (255 lines)
    - 1D schema registration (dense mode)
    - 2D schema registration (conv1d mode)
@@ -43,7 +43,7 @@ Created comprehensive development scripts for manual testing and debugging of Ph
    - Shape/dtype validation
    - Schema retrieval from anomalies
    - Serialization round-trip
-   
+
 5. **test_artifacts.py** (405 lines)
    - Version creation (AE-YYYY.MM.DD-N)
    - PyTorch model save/load
@@ -52,7 +52,7 @@ Created comprehensive development scripts for manual testing and debugging of Ph
    - Version listing and deletion
    - Architecture preservation
    - weights_only security
-   
+
 6. **test_full_workflow.py** (351 lines)
    - End-to-end integration test
    - 9-phase workflow simulation:
@@ -140,7 +140,7 @@ cd dev_scripts
 
 # Run individual tests
 python test_utils.py              # ~2s
-python test_serialization.py      # ~3s  
+python test_serialization.py      # ~3s
 python test_database.py           # ~2s
 python test_schema_registry.py    # ~2s
 python test_artifacts.py          # ~3s

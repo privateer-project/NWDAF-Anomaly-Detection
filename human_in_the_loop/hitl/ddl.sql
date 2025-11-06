@@ -1,5 +1,5 @@
 -- HITL Database Schema Definition
--- 
+--
 -- This SQL file defines the complete database schema for the HITL system.
 -- It is idempotent (safe to run multiple times).
 --

@@ -12,7 +12,7 @@
 # # Setup
 # import typer
 # from typing_extensions import Annotated
-# 
+#
 # app = typer.Typer(
 #   name="hitl",
 #   help="HITL - Human-in-the-Loop Anomaly Filtering CLI",
@@ -32,10 +32,10 @@
 # def init_db():
 #   """
 #   Initialize database with schema.
-#   
+#
 #   Creates database file and applies DDL.
 #   Safe to run multiple times (idempotent).
-#   
+#
 #   Example:
 #     hitl init-db
 #   """
@@ -50,9 +50,9 @@
 # ):
 #   """
 #   Insert or update anomaly with feature vector.
-#   
+#
 #   Loads tensor from .npy file and stores in database.
-#   
+#
 #   Example:
 #     hitl upsert --id A1 --source unit-1 --when 2025-11-04T10:00:00Z --npy data.npy
 #   """
@@ -67,7 +67,7 @@
 # ):
 #   """
 #   Submit human feedback on anomaly.
-#   
+#
 #   Example:
 #     hitl feedback --anomaly A1 --user analyst-1 --label TP --confidence 0.9
 #   """
@@ -82,9 +82,9 @@
 # ):
 #   """
 #   Train new anomaly detection model.
-#   
+#
 #   If schema_id not provided, uses all available data (must be single schema).
-#   
+#
 #   Example:
 #     hitl train --mode dense --epochs 100 --lr 0.001
 #   """
@@ -95,7 +95,7 @@
 # ):
 #   """
 #   Set which model is used for inference.
-#   
+#
 #   Example:
 #     hitl set-live --model AE-2025.11.04-1
 #   """
@@ -107,9 +107,9 @@
 # ):
 #   """
 #   Predict whether anomaly is true positive.
-#   
+#
 #   Provide either --npy or --anomaly (not both).
-#   
+#
 #   Example:
 #     hitl predict --npy data.npy
 #     hitl predict --anomaly A1
@@ -122,7 +122,7 @@
 # ):
 #   """
 #   List anomalies from database.
-#   
+#
 #   Example:
 #     hitl list-anomalies --limit 50 --source unit-1
 #   """
@@ -133,7 +133,7 @@
 # ):
 #   """
 #   List trained models.
-#   
+#
 #   Example:
 #     hitl list-models --kind dense
 #   """
@@ -142,9 +142,9 @@
 # def stats():
 #   """
 #   Show system statistics.
-#   
+#
 #   Displays counts of anomalies, models, feedback, etc.
-#   
+#
 #   Example:
 #     hitl stats
 #   """
@@ -153,9 +153,9 @@
 # def health():
 #   """
 #   Check system health.
-#   
+#
 #   Verifies database, artifacts, and live model status.
-#   
+#
 #   Example:
 #     hitl health
 #   """
@@ -166,7 +166,7 @@
 # ):
 #   """
 #   Get details for specific anomaly.
-#   
+#
 #   Example:
 #     hitl get-anomaly A1
 #   """
@@ -178,7 +178,7 @@
 # ):
 #   """
 #   Export feature vector to .npy file.
-#   
+#
 #   Example:
 #     hitl export-vector --anomaly A1 --output vector.npy
 #   """
@@ -206,7 +206,7 @@
 # def handle_error(exc: Exception) -> None:
 #   """
 #   Handle and display errors appropriately.
-#   
+#
 #   Different error types get different messages/exit codes.
 #   """
 #

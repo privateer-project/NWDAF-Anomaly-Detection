@@ -1,17 +1,17 @@
 # HITL Implementation Plan
 
-**Project:** Human-in-the-Loop Anomaly Filtering System  
-**Version:** 0.1.0 (MVP v0.4T-MD)  
-**Created:** November 4, 2025  
-**Last Updated:** November 4, 2025  
+**Project:** Human-in-the-Loop Anomaly Filtering System
+**Version:** 0.1.0 (MVP v0.4T-MD)
+**Created:** November 4, 2025
+**Last Updated:** November 4, 2025
 **Estimated Duration:** 4-5 weeks (single developer)
 
 ---
 
 ## Progress Summary
 
-**Completed Phases:** 7 of 14 (50%)  
-**Total Tests Passing:** 212 tests  
+**Completed Phases:** 7 of 14 (50%)
+**Total Tests Passing:** 212 tests
 **Test Coverage:** Comprehensive unit and integration tests
 
 ### Completed ✅
@@ -45,8 +45,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 1: Foundation & Utilities ⚡
 
-**Duration:** 1-2 days  
-**Dependencies:** None  
+**Duration:** 1-2 days
+**Dependencies:** None
 **Priority:** CRITICAL - Start here!
 
 ### Files to Implement
@@ -104,8 +104,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 2: Type System 📋
 
-**Duration:** 1 day  
-**Dependencies:** Phase 1  
+**Duration:** 1 day
+**Dependencies:** Phase 1
 **Priority:** HIGH - Establishes contracts
 
 ### Files to Implement
@@ -117,17 +117,17 @@ This document outlines the implementation plan for the HITL system, organized in
      - `PredictResult` - label, score, threshold, model_version
      - `AnomalyRecord` - anomaly_id, occurred_at, source, created_at, updated_at
      - `FeedbackRecord` - feedback_id, anomaly_id, user_id, label, confidence, note, created_at
-   
+
    - **Pydantic Models:**
      - `AnomalyUpsert` - Request for upserting anomaly
      - `FeedbackIn` - Request for submitting feedback
      - `TrainRequest` - Request for training
      - `PredictIn` - Request for prediction (with validation)
      - `PredictOut` - Response for prediction
-   
+
    - **Protocols:**
      - `RepositoryProtocol` - Interface for repository
-   
+
    - **Type Aliases:**
      - `Tensor1D`, `Tensor2D`
 
@@ -148,8 +148,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 3: Database Layer 🗄️
 
-**Duration:** 2-3 days  
-**Dependencies:** Phase 1, 2  
+**Duration:** 2-3 days
+**Dependencies:** Phase 1, 2
 **Priority:** CRITICAL - Foundation for persistence
 
 ### Files to Implement
@@ -204,8 +204,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 4: I/O & Serialization 💾
 
-**Duration:** 1-2 days  
-**Dependencies:** Phase 1, 2  
+**Duration:** 1-2 days
+**Dependencies:** Phase 1, 2
 **Priority:** HIGH - Required for tensor storage
 
 ### Files to Implement
@@ -239,8 +239,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 5: Schema Registry 📐
 
-**Duration:** 1-2 days  
-**Dependencies:** Phase 3, 4  
+**Duration:** 1-2 days
+**Dependencies:** Phase 3, 4
 **Priority:** HIGH - Connects storage and validation
 
 ### Files to Implement
@@ -278,8 +278,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 6: Artifacts Manager 📦
 
-**Duration:** 1-2 days  
-**Dependencies:** Phase 1  
+**Duration:** 1-2 days
+**Dependencies:** Phase 1
 **Priority:** MEDIUM - Can develop in parallel with Phase 3-5
 
 ### Files to Implement
@@ -319,8 +319,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 7: Model Architectures 🧠
 
-**Duration:** 2-3 days  
-**Dependencies:** Phase 1 (minimal)  
+**Duration:** 2-3 days
+**Dependencies:** Phase 1 (minimal)
 **Priority:** MEDIUM - Can develop early
 
 ### Files to Implement
@@ -331,16 +331,16 @@ This document outlines the implementation plan for the HITL system, organized in
      - `forward()` - Full forward pass
      - `encode()` - Get latent representation
      - `decode()` - Reconstruct from latent
-   
+
    - `Conv1dAE` class:
      - `__init__()` - Build conv/deconv layers
      - `forward()` - Full forward pass (B, F, T)
      - `encode()` - Get latent representation
      - `decode()` - Reconstruct from latent
-   
+
    - Factory function:
      - `build_model()` - Create model based on mode and shape
-   
+
    - Helper functions:
      - `count_parameters()` - Count trainable params
      - `init_weights()` - Initialize with Xavier/Kaiming
@@ -367,8 +367,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 8: Training Pipeline 🎓
 
-**Duration:** 3-4 days  
-**Dependencies:** Phase 3, 4, 5, 6, 7  
+**Duration:** 3-4 days
+**Dependencies:** Phase 3, 4, 5, 6, 7
 **Priority:** CRITICAL - Core ML functionality
 
 ### Files to Implement
@@ -385,7 +385,7 @@ This document outlines the implementation plan for the HITL system, organized in
      - `_validate()` - Validation pass
      - `_compute_threshold()` - Calculate anomaly threshold
      - `_create_dataloader()` - PyTorch DataLoader
-   
+
    - Helper functions:
      - `mse_per_sample()` - Per-sample MSE
      - `get_device()` - Get CUDA or CPU
@@ -412,8 +412,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 9: Inference Service 🔮
 
-**Duration:** 2 days  
-**Dependencies:** Phase 3, 4, 6, 7  
+**Duration:** 2 days
+**Dependencies:** Phase 3, 4, 6, 7
 **Priority:** HIGH - Required for predictions
 
 ### Files to Implement
@@ -427,7 +427,7 @@ This document outlines the implementation plan for the HITL system, organized in
      - `get_info()` - Return model metadata
      - `_normalize()` - Apply scaler to input
      - `_compute_reconstruction_error()` - Calculate MSE
-   
+
    - Helper functions:
      - `mse_per_sample()` - Per-sample MSE
      - `get_device()` - Get device
@@ -453,8 +453,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 10: HITL Orchestrator 🎯
 
-**Duration:** 3-4 days  
-**Dependencies:** Phase 3, 4, 5, 6, 7, 8, 9  
+**Duration:** 3-4 days
+**Dependencies:** Phase 3, 4, 5, 6, 7, 8, 9
 **Priority:** CRITICAL - Main public API
 
 ### Files to Implement
@@ -465,28 +465,28 @@ This document outlines the implementation plan for the HITL system, organized in
        - `upsert_anomaly()` - Insert/update with tensor
        - `get_anomaly()` - Retrieve metadata
        - `get_anomaly_with_tensor()` - Retrieve with vector
-     
+
      - **Feedback:**
        - `submit_feedback()` - Submit human label
        - `get_feedback()` - Get feedback history
-     
+
      - **Training:**
        - `train_model()` - Train new model
        - `list_models()` - List trained models
-     
+
      - **Model Management:**
        - `set_live_model()` - Activate model
        - `get_live_model()` - Get current live version
-     
+
      - **Inference:**
        - `filter_predict()` - Predict single
        - `batch_predict()` - Predict multiple
-     
+
      - **Utility:**
        - `get_stats()` - System statistics
        - `health_check()` - System health
        - `close()` - Cleanup
-   
+
    - Helper functions:
      - `_validate_anomaly_dict()` - Validate required fields
      - `_merge_train_params()` - Merge with defaults
@@ -510,8 +510,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 11: CLI Interface 💻
 
-**Duration:** 2-3 days  
-**Dependencies:** Phase 10  
+**Duration:** 2-3 days
+**Dependencies:** Phase 10
 **Priority:** HIGH - User-facing
 
 ### Files to Implement
@@ -530,7 +530,7 @@ This document outlines the implementation plan for the HITL system, organized in
      - `health` - Check system health
      - `get-anomaly` - Get anomaly details
      - `export-vector` - Export vector to .npy
-   
+
    - Helper functions:
      - `load_npy()` - Load from file
      - `save_npy()` - Save to file
@@ -557,8 +557,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 12: HTTP API 🌐
 
-**Duration:** 2-3 days  
-**Dependencies:** Phase 10  
+**Duration:** 2-3 days
+**Dependencies:** Phase 10
 **Priority:** HIGH - External integration
 
 ### Files to Implement
@@ -580,7 +580,7 @@ This document outlines the implementation plan for the HITL system, organized in
      - `POST /models/live` - Set live model
      - `GET /models/live` - Get live model
      - `POST /predict` - Predict
-   
+
    - Error handlers for all custom exceptions
    - Startup/shutdown hooks
    - HITL dependency injection
@@ -605,8 +605,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 13: Testing & Documentation ✅
 
-**Duration:** 2-3 days  
-**Dependencies:** ALL phases  
+**Duration:** 2-3 days
+**Dependencies:** ALL phases
 **Priority:** CRITICAL - Quality assurance
 
 ### Tasks
@@ -653,8 +653,8 @@ This document outlines the implementation plan for the HITL system, organized in
 
 ## Phase 14: End-to-End Validation 🚀
 
-**Duration:** 2-3 days  
-**Dependencies:** ALL phases  
+**Duration:** 2-3 days
+**Dependencies:** ALL phases
 **Priority:** CRITICAL - Production readiness
 
 ### Validation Tests
@@ -663,24 +663,24 @@ This document outlines the implementation plan for the HITL system, organized in
    ```bash
    # Initialize
    hitl init-db
-   
+
    # Ingest data
    hitl upsert --id A1 --source unit-1 --when 2025-11-04T10:00:00Z --npy data.npy
    hitl upsert --id A2 --source unit-1 --when 2025-11-04T10:05:00Z --npy data2.npy
-   
+
    # Submit feedback
    hitl feedback --anomaly A1 --user analyst-1 --label TP --confidence 0.9
-   
+
    # Train model
    hitl train --mode dense --epochs 50
-   
+
    # Set live model
    hitl set-live --model AE-2025.11.04-1
-   
+
    # Predict
    hitl predict --anomaly A1
    hitl predict --npy new_data.npy
-   
+
    # Statistics
    hitl stats
    hitl health
@@ -690,10 +690,10 @@ This document outlines the implementation plan for the HITL system, organized in
    ```python
    from hitl import HITL
    import numpy as np
-   
+
    # Initialize
    hitl = HITL()
-   
+
    # Ingest
    for i in range(100):
        tensor = np.random.randn(128)
@@ -701,20 +701,20 @@ This document outlines the implementation plan for the HITL system, organized in
            anomaly={"anomaly_id": f"A{i}", ...},
            tensor=tensor
        )
-   
+
    # Feedback
    hitl.submit_feedback("A0", label="TP", user_id="user1")
-   
+
    # Train
    model_version = hitl.train_model(mode="dense")
-   
+
    # Deploy
    hitl.set_live_model(model_version)
-   
+
    # Predict
    result = hitl.filter_predict(tensor=new_data)
    print(f"Anomaly: {result['label']}, Score: {result['score']}")
-   
+
    # Stats
    stats = hitl.get_stats()
    ```
@@ -723,20 +723,20 @@ This document outlines the implementation plan for the HITL system, organized in
    ```bash
    # Start server
    uvicorn hitl.api.server:app --reload
-   
+
    # Health check
    curl http://localhost:8000/health
-   
+
    # Upsert anomaly
    curl -X POST http://localhost:8000/anomalies \
      -H "Content-Type: application/json" \
      -d '{"anomaly_id":"A1","occurred_at":"2025-11-04T10:00:00Z","source":"unit-1","tensor":[...]}'
-   
+
    # Train
    curl -X POST http://localhost:8000/train \
      -H "Content-Type: application/json" \
      -d '{"mode":"dense","params":{"epochs":50}}'
-   
+
    # Predict
    curl -X POST http://localhost:8000/predict \
      -H "Content-Type: application/json" \
@@ -911,5 +911,5 @@ The following can be worked on simultaneously by different developers:
 
 ---
 
-**Last Updated:** November 4, 2025  
+**Last Updated:** November 4, 2025
 **Status:** Ready to Start Implementation

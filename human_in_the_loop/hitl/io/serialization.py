@@ -8,7 +8,6 @@ for BLOB storage in SQLite, with shape and dtype validation.
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Any
 
 import numpy as np
 
@@ -28,18 +27,18 @@ __all__ = [
 def encode_npy(arr: np.ndarray, dtype: str = "float32") -> bytes:
     """
     Encode NumPy array to .npy format bytes for database storage.
-    
+
     Args:
         arr: NumPy array (1D or 2D)
         dtype: Target dtype string (e.g., "float32")
-    
+
     Returns:
         .npy format bytes
-    
+
     Raises:
         UnsupportedShape: if not 1D or 2D
         ValueError: if dtype conversion fails
-    
+
     Example:
         >>> arr = np.array([1.0, 2.0, 3.0])
         >>> blob = encode_npy(arr, dtype="float32")
@@ -47,16 +46,16 @@ def encode_npy(arr: np.ndarray, dtype: str = "float32") -> bytes:
     # Ensure contiguous memory layout
     if not arr.flags.c_contiguous:
         arr = np.ascontiguousarray(arr)
-    
+
     # Cast to target dtype
     arr = arr.astype(dtype)
-    
+
     # Validate shape is 1D or 2D
     if arr.ndim not in (1, 2):
         raise UnsupportedShape(
             f"Array must be 1D or 2D, got shape {arr.shape} (ndim={arr.ndim})"
         )
-    
+
     # Serialize to .npy format
     buffer = BytesIO()
     np.save(buffer, arr)
@@ -66,46 +65,46 @@ def encode_npy(arr: np.ndarray, dtype: str = "float32") -> bytes:
 def decode_npy(blob: bytes) -> np.ndarray:
     """
     Decode .npy format bytes back to NumPy array.
-    
+
     Args:
         blob: .npy format bytes from database
-    
+
     Returns:
         NumPy array with original shape and dtype
-    
+
     Raises:
         ValueError: if blob is not valid .npy format
         TypeError: if result is not ndarray
-    
+
     Example:
         >>> arr = decode_npy(blob)
     """
     buffer = BytesIO(blob)
-    
+
     # Load with allow_pickle=False for security
     result = np.load(buffer, allow_pickle=False)
-    
+
     # Validate result is ndarray
     if not isinstance(result, np.ndarray):
         raise TypeError(f"Expected ndarray, got {type(result).__name__}")
-    
+
     return result
 
 
 def ensure_shape(arr: np.ndarray, expected_shape: tuple[int, ...]) -> np.ndarray:
     """
     Validate array has expected shape.
-    
+
     Args:
         arr: NumPy array to check
         expected_shape: Required shape tuple
-    
+
     Returns:
         arr (unchanged) if shape matches
-    
+
     Raises:
         ShapeMismatch: if arr.shape != expected_shape
-    
+
     Example:
         >>> arr = decode_npy(blob)
         >>> arr = ensure_shape(arr, expected_shape=(128,))
@@ -121,14 +120,14 @@ def ensure_shape(arr: np.ndarray, expected_shape: tuple[int, ...]) -> np.ndarray
 def validate_tensor(arr: np.ndarray) -> None:
     """
     Validate tensor for HITL system requirements.
-    
+
     Args:
         arr: NumPy array to validate
-    
+
     Raises:
         UnsupportedShape: if not 1D or 2D
         ValueError: if contains NaN, Inf, or is empty
-    
+
     Checks:
         - Shape is 1D (D,) or 2D (T, F)
         - No NaN values
@@ -140,38 +139,37 @@ def validate_tensor(arr: np.ndarray) -> None:
         raise UnsupportedShape(
             f"Tensor must be 1D or 2D, got shape {arr.shape} (ndim={arr.ndim})"
         )
-    
+
     # Check non-empty
     if arr.size == 0:
         raise ValueError("Tensor cannot be empty (size=0)")
-    
+
     # Check for NaN
     if np.any(np.isnan(arr)):
         raise ValueError("Tensor contains NaN values")
-    
+
     # Check for Inf
     if np.any(np.isinf(arr)):
         raise ValueError("Tensor contains Inf values")
 
 
 def tensor_from_list(
-    data: list[float] | list[list[float]],
-    dtype: str = "float32"
+    data: list[float] | list[list[float]], dtype: str = "float32"
 ) -> np.ndarray:
     """
     Convert Python list to NumPy array for API inputs.
-    
+
     Args:
         data: Nested list (1D or 2D)
         dtype: Target NumPy dtype
-    
+
     Returns:
         NumPy array with validated shape
-    
+
     Raises:
         UnsupportedShape: if 3D+ or scalar
         ValueError: if ragged arrays or invalid data
-    
+
     Example:
         >>> arr = tensor_from_list([1.0, 2.0, 3.0])
         >>> arr.shape
@@ -179,23 +177,23 @@ def tensor_from_list(
     """
     # Convert to NumPy array
     arr = np.array(data, dtype=dtype)
-    
+
     # Validate with tensor requirements
     validate_tensor(arr)
-    
+
     return arr
 
 
 def tensor_to_list(arr: np.ndarray) -> list[float] | list[list[float]]:
     """
     Convert NumPy array to Python list for API outputs.
-    
+
     Args:
         arr: NumPy array (1D or 2D)
-    
+
     Returns:
         Nested Python list
-    
+
     Example:
         >>> arr = np.array([1.0, 2.0])
         >>> lst = tensor_to_list(arr)
@@ -208,14 +206,14 @@ def tensor_to_list(arr: np.ndarray) -> list[float] | list[list[float]]:
 def estimate_blob_size(shape: tuple[int, ...], dtype: str = "float32") -> int:
     """
     Estimate .npy blob size in bytes for capacity planning.
-    
+
     Args:
         shape: Tensor dimensions
         dtype: NumPy dtype string
-    
+
     Returns:
         Approximate bytes (header + data)
-    
+
     Example:
         >>> size = estimate_blob_size((128,), "float32")
         >>> size
@@ -225,14 +223,14 @@ def estimate_blob_size(shape: tuple[int, ...], dtype: str = "float32") -> int:
     numel = 1
     for dim in shape:
         numel *= dim
-    
+
     # Get itemsize for dtype
     itemsize = np.dtype(dtype).itemsize
-    
+
     # Data size
     data_size = numel * itemsize
-    
+
     # .npy header overhead (~128 bytes)
     header_size = 128
-    
+
     return data_size + header_size

@@ -72,7 +72,7 @@
 # def test_complete_workflow(hitl):
 #   """
 #   Integration test: complete workflow from ingest to predict.
-#   
+#
 #   Steps:
 #   1. Upsert anomaly with vector
 #   2. Submit feedback

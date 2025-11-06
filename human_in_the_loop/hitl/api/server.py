@@ -20,7 +20,7 @@
 # async def startup_event():
 #   """
 #   Initialize HITL system on server startup.
-#   
+#
 #   Responsibilities:
 #     - Load config
 #     - Create HITL instance
@@ -33,7 +33,7 @@
 # async def shutdown_event():
 #   """
 #   Clean shutdown.
-#   
+#
 #   Close HITL connections.
 #   """
 #
@@ -48,7 +48,7 @@
 # async def health_check(hitl: HITL = Depends(get_hitl)):
 #   """
 #   Health check endpoint.
-#   
+#
 #   Returns system health status including database,
 #   artifacts, and live model state.
 #   """
@@ -57,7 +57,7 @@
 # async def get_stats(hitl: HITL = Depends(get_hitl)):
 #   """
 #   Get system statistics.
-#   
+#
 #   Returns counts of anomalies, models, feedback, etc.
 #   """
 #
@@ -68,7 +68,7 @@
 # ):
 #   """
 #   Insert or update anomaly with feature vector.
-#   
+#
 #   Request body:
 #     {
 #       "anomaly_id": "A1",
@@ -77,7 +77,7 @@
 #       "tensor": [1.0, 2.0, ...],
 #       "dtype": "float32"
 #     }
-#   
+#
 #   Returns anomaly_id.
 #   """
 #
@@ -88,7 +88,7 @@
 # ):
 #   """
 #   Get anomaly details by ID.
-#   
+#
 #   Returns metadata and optionally feedback history.
 #   """
 #
@@ -99,7 +99,7 @@
 # ):
 #   """
 #   Submit human feedback on anomaly.
-#   
+#
 #   Request body:
 #     {
 #       "anomaly_id": "A1",
@@ -108,7 +108,7 @@
 #       "confidence": 0.9,
 #       "note": "Clear anomaly"
 #     }
-#   
+#
 #   Returns feedback_id.
 #   """
 #
@@ -119,10 +119,10 @@
 # ):
 #   """
 #   Train new anomaly detection model.
-#   
+#
 #   This is a long-running operation. In production, consider
 #   making this async with Celery/RQ or background tasks.
-#   
+#
 #   Request body:
 #     {
 #       "mode": "dense",
@@ -132,7 +132,7 @@
 #         "lr": 0.001
 #       }
 #     }
-#   
+#
 #   Returns model_version.
 #   """
 #
@@ -143,7 +143,7 @@
 # ):
 #   """
 #   List all trained models.
-#   
+#
 #   Optional query param:
 #     - kind: Filter by model type
 #   """
@@ -155,7 +155,7 @@
 # ):
 #   """
 #   Set which model is used for inference.
-#   
+#
 #   Request body:
 #     {
 #       "model_version": "AE-2025.11.04-1"
@@ -175,19 +175,19 @@
 # ):
 #   """
 #   Predict whether anomaly is true positive.
-#   
+#
 #   Provide either tensor or anomaly_id (not both).
-#   
+#
 #   Request body (option 1 - direct tensor):
 #     {
 #       "tensor": [1.0, 2.0, ...]
 #     }
-#   
+#
 #   Request body (option 2 - from database):
 #     {
 #       "anomaly_id": "A1"
 #     }
-#   
+#
 #   Returns prediction result with label, score, threshold.
 #   """
 #
@@ -297,10 +297,10 @@
 # if __name__ == "__main__":
 #   """
 #   Run server directly (for development).
-#   
+#
 #   Production: use uvicorn CLI
 #     uvicorn hitl.api.server:app --host 0.0.0.0 --port 8000 --workers 1
-#   
+#
 #   Note: --workers 1 for MVP to avoid SQLite concurrency issues.
 #   """
 #   import uvicorn
@@ -309,10 +309,10 @@
 # Usage:
 #   # Start server
 #   python -m hitl.api.server
-#   
+#
 #   # Or with uvicorn
 #   uvicorn hitl.api.server:app --reload
-#   
+#
 #   # Test endpoints
 #   curl http://localhost:8000/health
 #   curl -X POST http://localhost:8000/anomalies \

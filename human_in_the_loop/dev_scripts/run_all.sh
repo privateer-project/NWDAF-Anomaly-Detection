@@ -32,7 +32,7 @@ for script in "${scripts[@]}"; do
     echo "----------------------------------------------------------------------"
     echo "  Running: $script"
     echo "----------------------------------------------------------------------"
-    
+
     if python "$script"; then
         echo -e "${GREEN}✓ PASSED${NC}: $script"
         ((passed++))
