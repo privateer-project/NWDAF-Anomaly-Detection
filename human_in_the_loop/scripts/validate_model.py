@@ -97,14 +97,13 @@ def load_validation_data(data_dir: str, use_test: bool = False):
     return X_fp, X_tp
 
 
-def compute_reconstruction_errors(model, X, scaler, device):
+def compute_reconstruction_errors(model, X, device):
     """
     Compute reconstruction errors for samples.
     
     Args:
         model: Trained autoencoder
-        X: Input data (N, *)
-        scaler: Normalization scaler
+        X: Input data (N, *) - raw, no preprocessing
         device: Torch device
     
     Returns:
@@ -114,11 +113,8 @@ def compute_reconstruction_errors(model, X, scaler, device):
     errors = []
     
     with torch.no_grad():
-        # Normalize
-        X_norm = (X - scaler['mean']) / (scaler['std'] + 1e-8)
-        
-        # Convert to tensor
-        X_tensor = torch.from_numpy(X_norm).float().to(device)
+        # Convert to tensor (no normalization)
+        X_tensor = torch.from_numpy(X).float().to(device)
         
         # Reconstruct
         X_recon = model(X_tensor)
@@ -160,10 +156,6 @@ def validate_model(
     config = artifacts.load_config(model_version)
     logger.info(f"Model config: {config}")
     
-    # Load scaler
-    scaler = artifacts.load_scaler(model_version)
-    logger.info(f"Scaler mean shape: {scaler['mean'].shape}")
-    
     # Load threshold
     threshold = artifacts.load_threshold(model_version)
     logger.info(f"Threshold: {threshold['value']:.6f} (p{threshold['percentile']})")
@@ -197,8 +189,8 @@ def validate_model(
     # Compute reconstruction errors
     logger.info("\nComputing reconstruction errors...")
     
-    errors_fp = compute_reconstruction_errors(model, X_fp, scaler, device) if len(X_fp) > 0 else np.array([])
-    errors_tp = compute_reconstruction_errors(model, X_tp, scaler, device) if len(X_tp) > 0 else np.array([])
+    errors_fp = compute_reconstruction_errors(model, X_fp, device) if len(X_fp) > 0 else np.array([])
+    errors_tp = compute_reconstruction_errors(model, X_tp, device) if len(X_tp) > 0 else np.array([])
     
     # Analyze results
     logger.info("\n" + "="*60)

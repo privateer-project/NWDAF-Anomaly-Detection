@@ -95,7 +95,6 @@ artifacts/
   AE-YYYY.MM.DD-1/
     model.pt
     config.json        # {"mode":"dense"|"conv1d","input_shape":[...],"dtype":"float32"}
-    scaler.json        # {"kind":"per_feature","mean":[...],"std":[...],"eps":1e-8}
     threshold.json     # {"strategy":"percentile","value": <float>}
 ```
 
@@ -126,11 +125,11 @@ class HITL:
 ## 6) Fixed defaults
 
 - `mode`: pick one and hardcode for MVP (`dense` or `conv1d`).
-- Scaler: `per_feature`.
 - Loss/opt: `MSE` + `Adam(lr=1e-3)`.
 - Early stopping: `patience=5` on val loss.
 - Threshold: `percentile=0.995` on train reconstruction errors.
 - Batch size: `128`. Epochs: `20`.
+- **No preprocessing**: Train directly on raw vectors from database.
 
 ---
 
@@ -140,14 +139,13 @@ class HITL:
    - `schema_id = sha1(json.dumps({"shape": shape, "dtype": dtype}).encode())`.
 2. Load tensors with this `schema_id` from `raw_vectors` → `X` with shape `(N, *)`.
 3. Split 90/10 train/val.
-4. Fit scaler on train and transform both sets.
-5. Build AE:
+4. Build AE:
    - **dense**: MLP encoder/decoder (Linear + ReLU), final Linear to input size.
    - **conv1d**: Conv1d blocks with features as channels (input `(B,F,T)`), decoder via ConvTranspose1d, reshape to `(T,F)` if needed.
-6. Train with early stopping on val MSE.
-7. Compute train reconstruction MSE per sample. Set threshold at 99.5th percentile.
-8. Save artifacts (`model.pt`, `config.json`, `scaler.json`, `threshold.json`) under a new `model_version`.
-9. Insert one row into `models` and set `settings("live_model_version") = model_version` when promoted.
+5. Train with early stopping on val MSE (train on raw data, no preprocessing).
+6. Compute train reconstruction MSE per sample. Set threshold at 99.5th percentile.
+7. Save artifacts (`model.pt`, `config.json`, `threshold.json`) under a new `model_version`.
+8. Insert one row into `models` and set `settings("live_model_version") = model_version` when promoted.
 
 ---
 
@@ -157,10 +155,9 @@ class HITL:
 2. Accept `tensor` or `anomaly_id`:
    - Read and decode `.npy` if from DB.
    - Validate exact shape against `config["input_shape"]`.
-3. Standardize via `scaler.json`.
-4. Forward pass → reconstruction MSE → `score`.
-5. Decision: `label = int(score >= threshold)`.
-6. Return:
+3. Forward pass (on raw data, no preprocessing) → reconstruction MSE → `score`.
+4. Decision: `label = int(score >= threshold)`.
+5. Return:
 ```json
 {"label": 0, "score": 0.013, "threshold": 0.042, "model_version": "AE-2025.11.04-1"}
 ```

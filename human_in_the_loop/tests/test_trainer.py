@@ -130,7 +130,7 @@ def test_load_dataset_returns_array_and_ids(
         repository.put_vector(anomaly_id, schema_id, blob, "2025-11-06T10:00:00Z")
 
     # Test
-    X, ids = trainer.load_dataset(schema_id)
+    X, ids = trainer.load_dataset(schema_id, mode="dense")
 
     assert X.shape == (5, 84)
     assert len(ids) == 5
@@ -140,7 +140,7 @@ def test_load_dataset_returns_array_and_ids(
 def test_load_dataset_raises_if_empty(trainer):
     """Test error when no vectors for schema."""
     with pytest.raises(ValueError, match="No vectors found"):
-        trainer.load_dataset("nonexistent-schema")
+        trainer.load_dataset("nonexistent-schema", mode="dense")
 
 
 # Tests - Data Preprocessing
@@ -154,50 +154,6 @@ def test_split_data(trainer):
 
     assert X_train.shape == (90, 84)
     assert X_val.shape == (10, 84)
-
-
-def test_compute_scaler_dense(trainer):
-    """Test scaler computation for dense mode."""
-    X_train = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype="float32")
-
-    scaler = trainer._compute_scaler(X_train, "dense")
-
-    assert scaler["kind"] == "per_feature"
-    assert len(scaler["mean"]) == 3
-    assert len(scaler["std"]) == 3
-    assert scaler["eps"] == 1e-8
-
-    # Check values
-    expected_mean = X_train.mean(axis=0)
-    assert np.allclose(scaler["mean"], expected_mean)
-
-
-def test_compute_scaler_conv1d(trainer):
-    """Test scaler computation for conv1d mode."""
-    X_train = np.random.randn(10, 84, 240).astype("float32")
-
-    scaler = trainer._compute_scaler(X_train, "conv1d")
-
-    assert scaler["kind"] == "per_feature"
-    assert len(scaler["mean"]) == 84  # One per feature/channel
-    assert len(scaler["std"]) == 84
-
-    # Check computation
-    expected_mean = X_train.mean(axis=(0, 2))
-    assert np.allclose(scaler["mean"], expected_mean)
-
-
-def test_normalize_dense(trainer):
-    """Test normalization for dense mode."""
-    X = np.array([[1, 2, 3], [4, 5, 6]], dtype="float32")
-    scaler = {"mean": [2.5, 3.5, 4.5], "std": [1.5, 1.5, 1.5], "eps": 1e-8}
-
-    X_norm = trainer._normalize(X, scaler, "dense")
-
-    assert X_norm.shape == X.shape
-    # Check approximate standardization
-    expected = (X - np.array(scaler["mean"])) / np.array(scaler["std"])
-    assert np.allclose(X_norm, expected)
 
 
 # Tests - Training
@@ -264,11 +220,10 @@ def test_fit_trains_model(trainer):
         "percentile": 95.0,
     }
 
-    state_dict, scaler, threshold, metrics = trainer.fit(X, params)
+    state_dict, threshold, metrics = trainer.fit(X, params)
 
     # Check returns
     assert isinstance(state_dict, dict)
-    assert isinstance(scaler, dict)
     assert isinstance(threshold, dict)
     assert isinstance(metrics, dict)
 
@@ -291,16 +246,11 @@ def test_fit_returns_artifacts(trainer):
         "percentile": 99.0,
     }
 
-    state_dict, scaler, threshold, metrics = trainer.fit(X, params)
+    state_dict, threshold, metrics = trainer.fit(X, params)
 
     # Check state_dict
     assert len(state_dict) > 0
     assert all(isinstance(v, torch.Tensor) for v in state_dict.values())
-
-    # Check scaler
-    assert "mean" in scaler
-    assert "std" in scaler
-    assert len(scaler["mean"]) == 15
 
     # Check threshold
     assert "value" in threshold
@@ -356,7 +306,6 @@ def test_train_and_publish_creates_version(trainer, repository, registry, artifa
     artifact_path = artifacts.base_dir / model_row["artifact_path"]
     assert (artifact_path / "model.pt").exists()
     assert (artifact_path / "config.json").exists()
-    assert (artifact_path / "scaler.json").exists()
     assert (artifact_path / "threshold.json").exists()
 
 

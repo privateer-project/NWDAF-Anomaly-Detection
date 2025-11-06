@@ -266,13 +266,6 @@ def test_full_workflow():
         artifacts.save_config(version, config)
         print("✓ Config saved")
 
-        scaler = {
-            "mean": float(training_data.mean()),
-            "std": float(training_data.std()),
-        }
-        artifacts.save_scaler(version, scaler)
-        print("✓ Scaler saved")
-
         threshold_dict = {
             "value": threshold,
             "percentile": 95.0,

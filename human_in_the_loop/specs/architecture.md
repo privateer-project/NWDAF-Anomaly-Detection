@@ -12,7 +12,7 @@
 **Data path**
 1. Upsert anomaly + tensor → SQLite (`anomalies`, `feature_schemas`, `raw_vectors`).
 2. Train AE from `raw_vectors` for a schema → save artifacts → set live pointer.
-3. Inference: load live model + scaler + threshold → score new tensor or stored anomaly.
+3. Inference: load live model + threshold → score new tensor or stored anomaly (no preprocessing).
 
 **Key constraints**
 - SQLite with WAL. Single writer, many readers.
@@ -47,7 +47,7 @@ hitl/
 │  ├─ io/
 │  │   └─ serialization.py     # npy encode/decode + validation
 │  ├─ artifacts/
-│  │   └─ manager.py           # artifact IO (model.pt, scaler.json, threshold.json, config.json)
+│  │   └─ manager.py           # artifact IO (model.pt, threshold.json, config.json)
 │  ├─ models/
 │  │   └─ ae.py                # AE architectures: DenseAE or Conv1dAE
 │  ├─ training/
@@ -291,11 +291,10 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
   - `create_version(mode: str, input_shape: tuple[int,...]) -> str` → returns `model_version` like `AE-YYYY.MM.DD-N` and artifact directory path.
   - `save_model(state_dict: dict, path: str) -> None` → writes `model.pt`
   - `save_config(path: str, config: dict) -> None`
-  - `save_scaler(path: str, scaler: dict) -> None`
   - `save_threshold(path: str, threshold: dict) -> None`
-  - `load_all(path: str) -> dict` → returns `{"model": state_dict, "config":..., "scaler":..., "threshold":...}`
+  - `load_all(path: str) -> dict` → returns `{"model": state_dict, "config":..., "threshold":...}`
 
-**Input:** state dict, config, scaler, threshold.
+**Input:** state dict, config, threshold.
 **Output:** persisted files and paths.
 
 ---
@@ -322,23 +321,22 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
 
 - `class Trainer`
   - `__init__(repo: Repository, artifacts: Artifacts, cfg: Config, logger)`
-  - `load_dataset(schema_id: str) -> tuple[np.ndarray, list[str]]`
+  - `load_dataset(schema_id: str, mode: str) -> tuple[np.ndarray, list[str]]`
     Returns `X` and `ids` in consistent shape `(N,D)` for dense or `(N,F,T)` for conv1d.
-  - `fit(X, params: TrainParams) -> tuple[state_dict, scaler, threshold, metrics]`
+  - `fit(X, params: TrainParams) -> tuple[state_dict, threshold, metrics]`
     - Split 90/10.
-    - Compute scaler:
-      - dense: per‑feature mean/std on axis=0.
-      - conv1d: per‑feature/channel mean/std over batch+time.
-    - Train with MSE + Adam(lr).
+    - Train with MSE + Adam(lr) on raw data (no preprocessing/normalization).
     - Early stop with patience on val loss.
     - Threshold: 99.5th percentile of train reconstruction MSE.
   - `train_and_publish(schema_id: str, params: TrainParams) -> str`
     - Create artifact version.
-    - Save artifacts.
+    - Save artifacts (model, config, threshold only).
     - Insert model row and return `model_version`.
 
 **Inputs:** `schema_id`, training params.
 **Output:** `model_version` string.
+
+**Note:** Training is performed directly on raw vectors from database with no preprocessing.
 
 ---
 
@@ -349,14 +347,13 @@ CREATE INDEX IF NOT EXISTS idx_fb_anom_time ON feedback(anomaly_id, created_at D
   - `load_live() -> None` loads live model once and caches.
   - `predict_tensor(arr: np.ndarray) -> PredictResult`
     - Validate shape
-    - Standardize
-    - Forward
+    - Forward pass (on raw data, no preprocessing)
     - Compute per‑sample MSE → scalar `score`
     - Compare to threshold
 
 - `mse_per_sample(x, x_hat) -> np.ndarray[(N,)]` implemented per mode.
 
-**Input:** tensor.
+**Input:** tensor (raw, no preprocessing).
 **Output:** `PredictResult` dict.
 
 ---
@@ -481,7 +478,7 @@ Commands (Typer or argparse):
 - [ ] Implement `SchemaRegistry` and `.ensure()`.
 - [ ] Implement `.npy` `encode/decode` and shape guards.
 - [ ] Implement `DenseAE` and `Conv1dAE`; `build_model()`.
-- [ ] Implement `Trainer.train_and_publish()` with scaler + early stop + percentile threshold.
+- [ ] Implement `Trainer.train_and_publish()` with early stop + percentile threshold (no preprocessing).
 - [ ] Implement `LiveModel` with in‑memory cache and reload on `set_live_model()`.
 - [ ] Implement `HITL` façade.
 - [ ] Wire CLI. Optionally wire FastAPI server.

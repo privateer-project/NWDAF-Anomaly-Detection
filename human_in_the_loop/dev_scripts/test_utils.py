@@ -8,7 +8,6 @@ Tests timestamp generation, ID creation, logging configuration, and settings.
 import sys
 from pathlib import Path
 import time
-from typing import Any
 import re
 
 # Add parent directory to path

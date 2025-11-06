@@ -37,7 +37,6 @@
 #     # Cache state
 #     self._cached_version: str | None = None
 #     self._model: nn.Module | None = None
-#     self._scaler: dict | None = None
 #     self._threshold: dict | None = None
 #     self._config: dict | None = None
 #     self._device: torch.device = get_device()
@@ -49,7 +48,7 @@
 #     Algorithm:
 #       1. Get live model version from database
 #       2. If version == cached version, skip (already loaded)
-#       3. Load all artifacts (model, config, scaler, threshold)
+#       3. Load all artifacts (model, config, threshold - no scaler)
 #       4. Build model architecture from config
 #       5. Load state dict into model
 #       6. Set model to eval mode
@@ -61,6 +60,8 @@
 #       - ArtifactMissing: if artifacts not found
 #
 #     Call this at startup or after set_live_model()
+#     
+#     Note: No scaler needed - inference on raw data
 #     """
 #
 #   def predict_tensor(self, arr: np.ndarray) -> PredictResult:
@@ -68,7 +69,9 @@
 #     Predict whether tensor is anomalous.
 #
 #     Args:
-#       - arr: NumPy array (1D or 2D based on model)
+#       - arr: NumPy array in STORAGE format (raw data, no preprocessing):
+#           - Dense mode: (D,) - feature vector
+#           - Conv1d mode: (T, F) - time-series (time-first)
 #
 #     Returns: PredictResult dict
 #       {
@@ -81,17 +84,54 @@
 #     Algorithm:
 #       1. Ensure model is loaded (call load_live if needed)
 #       2. Validate tensor shape matches model input
-#       3. Normalize tensor using cached scaler
-#       4. Convert to PyTorch tensor
-#       5. Forward pass through model
-#       6. Compute reconstruction error (MSE)
-#       7. Compare to threshold
-#       8. Return result
+#       3. For Conv1d: transpose (T, F) -> (F, T) to match model format
+#       4. Add batch dimension: (F, T) -> (1, F, T)
+#       5. Convert to PyTorch tensor (raw data, no normalization)
+#       6. Forward pass through model
+#       7. Compute reconstruction error (MSE)
+#       8. Compare to threshold
+#       9. Return result
+#
+#     Shape Convention (Conv1d):
+#       Storage format: (T, F) - time-first, human-readable
+#       Model format: (B, F, T) - channels-first, PyTorch Conv1d requirement
+#       See: docs/SHAPE_CONVENTIONS.md for full details
 #
 #     Raises:
 #       - NoLiveModel: if no live model
 #       - ShapeMismatch: if tensor shape wrong
 #       - ValidationError: if tensor has NaN/Inf
+#     
+#     TODO IMPLEMENTATION:
+#       if self._config["mode"] == "conv1d" and arr.ndim == 2:
+#           # Transform from storage format (T, F) to model format (F, T)
+#           arr = arr.T  # (T, F) -> (F, T)
+#           self.logger.debug(
+#               "Transposed input for Conv1d inference",
+#               storage_shape="(T, F)",
+#               model_shape="(F, T)"
+#           )
+#       
+#       # Add batch dimension
+#       arr = arr[np.newaxis, ...]  # (F, T) -> (1, F, T) for conv1d
+#                                    # (D,) -> (1, D) for dense
+#       
+#       # Forward pass on raw data - no normalization
+#       x = torch.FloatTensor(arr).to(self._device)
+#       x_hat = self._model(x)
+#       
+#       # Compute reconstruction error
+#       mse = ((x - x_hat) ** 2).mean().item()
+#       
+#       # Compare to threshold
+#       label = int(mse >= self._threshold["value"])
+#       
+#       return {
+#           "label": label,
+#           "score": mse,
+#           "threshold": self._threshold["value"],
+#           "model_version": self._cached_version
+#       }
 #     """
 #
 #   def reload_if_changed(self) -> bool:
@@ -133,25 +173,6 @@
 #       }
 #
 #     Useful for health checks and debugging.
-#     """
-#
-#   def _normalize(self, arr: np.ndarray, mode: str) -> np.ndarray:
-#     """
-#     Apply normalization using cached scaler.
-#
-#     Args:
-#       - arr: Input array (single sample or batch)
-#       - mode: "dense" or "conv1d"
-#
-#     Returns: Normalized array
-#
-#     Uses self._scaler["mean"] and self._scaler["std"]
-#
-#     Broadcasting:
-#       - Dense (D,): subtract mean (D,), divide by std (D,)
-#       - Conv1d (F, T): need to broadcast mean/std shape (F,) over (F, T)
-#
-#     Add batch dimension if needed for model forward pass.
 #     """
 #
 #   def _compute_reconstruction_error(

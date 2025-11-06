@@ -58,15 +58,6 @@ def sample_config():
 
 
 @pytest.fixture
-def sample_scaler():
-    """Create sample scaler dict."""
-    return {
-        "mean": [0.1, 0.2, 0.3],
-        "std": [1.0, 1.1, 1.2],
-    }
-
-
-@pytest.fixture
 def sample_threshold():
     """Create sample threshold dict."""
     return {
@@ -152,16 +143,6 @@ class TestArtifactSaving:
             loaded = json.load(f)
         assert loaded == sample_config
 
-    def test_save_scaler_writes_json(self, artifacts, sample_scaler, temp_dir):
-        """Test scaler params are saved as JSON."""
-        version, _ = artifacts.create_version("dense", (128,))
-
-        artifacts.save_scaler(version, sample_scaler)
-
-        # File should exist
-        scaler_path = temp_dir / version / "scaler.json"
-        assert scaler_path.exists()
-
     def test_save_threshold_writes_json(self, artifacts, sample_threshold, temp_dir):
         """Test threshold is saved as JSON."""
         version, _ = artifacts.create_version("dense", (128,))
@@ -187,14 +168,12 @@ class TestArtifactLoading:
         artifacts,
         sample_state_dict,
         sample_config,
-        sample_scaler,
         sample_threshold,
     ):
         """Create complete set of artifacts."""
         version, _ = artifacts.create_version("dense", (128,))
         artifacts.save_model(version, sample_state_dict)
         artifacts.save_config(version, sample_config)
-        artifacts.save_scaler(version, sample_scaler)
         artifacts.save_threshold(version, sample_threshold)
         return version
 
@@ -204,7 +183,6 @@ class TestArtifactLoading:
 
         assert "model" in all_artifacts
         assert "config" in all_artifacts
-        assert "scaler" in all_artifacts
         assert "threshold" in all_artifacts
 
     def test_load_model_returns_state_dict(self, artifacts, complete_artifacts):
@@ -222,14 +200,6 @@ class TestArtifactLoading:
         config = artifacts.load_config(complete_artifacts)
 
         assert config == sample_config
-
-    def test_load_scaler_returns_dict(
-        self, artifacts, complete_artifacts, sample_scaler
-    ):
-        """Test loading just scaler."""
-        scaler = artifacts.load_scaler(complete_artifacts)
-
-        assert scaler == sample_scaler
 
     def test_load_threshold_returns_dict(
         self, artifacts, complete_artifacts, sample_threshold
@@ -261,14 +231,12 @@ class TestExistenceChecking:
         artifacts,
         sample_state_dict,
         sample_config,
-        sample_scaler,
         sample_threshold,
     ):
         """Test existence check returns True for complete artifacts."""
         version, _ = artifacts.create_version("dense", (128,))
         artifacts.save_model(version, sample_state_dict)
         artifacts.save_config(version, sample_config)
-        artifacts.save_scaler(version, sample_scaler)
         artifacts.save_threshold(version, sample_threshold)
 
         assert artifacts.exists(version) is True

@@ -71,20 +71,33 @@ class Trainer:
         self.config = config
         self.logger = logger
 
-    def load_dataset(self, schema_id: str) -> tuple[np.ndarray, list[str]]:
+    def load_dataset(self, schema_id: str, mode: str) -> tuple[np.ndarray, list[str]]:
         """Load all vectors for a schema from database.
 
         Args:
             schema_id: Feature schema to load
+            mode: "dense" or "conv1d" - determines shape transformation
 
         Returns:
-            (X, ids) tuple where X is array of shape (N, D) or (N, F, T)
-            and ids is list of anomaly_ids
+            (X, ids) tuple where:
+            - Dense mode: X has shape (N, D)
+            - Conv1d mode: X has shape (N, F, T) - transposed from storage format
+            - ids is list of anomaly_ids
+
+        Shape Convention:
+            Storage format (per sample):
+                - Dense: (D,) - feature vector
+                - Conv1d: (T, F) - time-series with T timesteps, F features
+            
+            Training format (batch):
+                - Dense: (N, D) - no transformation needed
+                - Conv1d: (N, F, T) - transposed from (N, T, F) for PyTorch Conv1d
+                  PyTorch Conv1d expects channels-first format (B, C, L)
 
         Raises:
             ValueError: if no vectors found for schema
         """
-        self.logger.info("Loading dataset", schema_id=schema_id)
+        self.logger.info("Loading dataset", schema_id=schema_id, mode=mode)
 
         vectors = []
         ids = []
@@ -102,21 +115,35 @@ class Trainer:
         # Stack into single array
         X = np.stack(vectors, axis=0)
 
+        # For Conv1d mode, transpose from storage format (N, T, F) to training format (N, F, T)
+        # PyTorch Conv1d expects (Batch, Channels, Length) = (N, F, T)
+        if mode == "conv1d" and X.ndim == 3:
+            X = np.transpose(X, (0, 2, 1))  # (N, T, F) -> (N, F, T)
+            self.logger.info(
+                "Transposed data for Conv1d", 
+                storage_format="(N, T, F)", 
+                training_format="(N, F, T)"
+            )
+
         self.logger.info(
-            "Dataset loaded", schema_id=schema_id, n_samples=len(vectors), shape=X.shape
+            "Dataset loaded", 
+            schema_id=schema_id, 
+            n_samples=len(vectors), 
+            shape=X.shape,
+            mode=mode
         )
 
         return X, ids
 
-    def fit(self, X: np.ndarray, params: TrainParams) -> tuple[dict, dict, dict, dict]:
+    def fit(self, X: np.ndarray, params: TrainParams) -> tuple[dict, dict, dict]:
         """Train autoencoder on data.
 
         Args:
-            X: Training data array
+            X: Training data array (raw, no preprocessing)
             params: Training parameters
 
         Returns:
-            (state_dict, scaler, threshold, metrics) tuple
+            (state_dict, threshold, metrics) tuple
         """
         self.logger.info("Starting training", shape=X.shape, params=params)
 
@@ -136,15 +163,7 @@ class Trainer:
         X_train, X_val = self._split_data(X, val_split)
         self.logger.info("Data split", train_shape=X_train.shape, val_shape=X_val.shape)
 
-        # 2. Compute scaler on train set only
-        scaler = self._compute_scaler(X_train, mode)
-        self.logger.info("Scaler computed")
-
-        # 3. Normalize both sets
-        X_train_norm = self._normalize(X_train, scaler, mode)
-        X_val_norm = self._normalize(X_val, scaler, mode)
-
-        # 4. Build model
+        # 2. Build model (train on raw data, no normalization)
         input_shape = X.shape[1:]  # Everything except batch dimension
         model = build_model(mode, input_shape)
         model = model.to(device)
@@ -154,10 +173,10 @@ class Trainer:
             "Model built", mode=mode, input_shape=input_shape, n_parameters=n_params
         )
 
-        # 5. Setup optimizer and loss
+        # 3. Setup optimizer and loss
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-        # 6. Training loop with early stopping
+        # 4. Training loop with early stopping
         train_losses = []
         val_losses = []
         best_val_loss = float("inf")
@@ -167,12 +186,12 @@ class Trainer:
         for epoch in range(epochs):
             # Train
             train_loss = self._train_epoch(
-                model, optimizer, X_train_norm, batch_size, device
+                model, optimizer, X_train, batch_size, device
             )
             train_losses.append(train_loss)
 
             # Validate
-            val_loss = self._validate(model, X_val_norm, batch_size, device)
+            val_loss = self._validate(model, X_val, batch_size, device)
             val_losses.append(val_loss)
 
             # Check for improvement
@@ -206,8 +225,8 @@ class Trainer:
         if best_state_dict is not None:
             model.load_state_dict(best_state_dict)
 
-        # 7. Compute threshold on train set
-        threshold = self._compute_threshold(model, X_train_norm, percentile, device)
+        # 5. Compute threshold on train set (raw data, no normalization)
+        threshold = self._compute_threshold(model, X_train, percentile, device)
 
         self.logger.info(
             "Training complete",
@@ -216,7 +235,7 @@ class Trainer:
             threshold=f"{threshold['value']:.6f}",
         )
 
-        # 8. Prepare return values
+        # 6. Prepare return values
         state_dict = {k: v.cpu() for k, v in model.state_dict().items()}
         metrics = {
             "train_losses": train_losses,
@@ -227,7 +246,7 @@ class Trainer:
             "final_val_loss": val_losses[-1] if val_losses else None,
         }
 
-        return state_dict, scaler, threshold, metrics
+        return state_dict, threshold, metrics
 
     def train_and_publish(self, schema_id: str, params: TrainParams) -> str:
         """Complete training workflow: load → train → save → register.
@@ -243,11 +262,11 @@ class Trainer:
             "Starting train_and_publish", schema_id=schema_id, mode=params["mode"]
         )
 
-        # 1. Load dataset
-        X, ids = self.load_dataset(schema_id)
+        # 1. Load dataset (with appropriate shape transformation for mode)
+        X, ids = self.load_dataset(schema_id, mode=params["mode"])
 
-        # 2. Train model
-        state_dict, scaler, threshold, metrics = self.fit(X, params)
+        # 2. Train model (no normalization, train on raw data)
+        state_dict, threshold, metrics = self.fit(X, params)
 
         # 3. Create artifact version
         input_shape = X.shape[1:]
@@ -259,7 +278,7 @@ class Trainer:
             "Artifact version created", model_version=model_version, path=artifact_path
         )
 
-        # 4. Save all artifacts
+        # 4. Save artifacts (no scaler - training on raw data)
         self.artifacts.save_model(model_version, state_dict)
 
         config = {
@@ -269,7 +288,6 @@ class Trainer:
         }
         self.artifacts.save_config(model_version, config)
 
-        self.artifacts.save_scaler(model_version, scaler)
         self.artifacts.save_threshold(model_version, threshold)
 
         self.logger.info("All artifacts saved")
@@ -313,69 +331,6 @@ class Trainer:
 
         return X_train, X_val
 
-    def _compute_scaler(self, X_train: np.ndarray, mode: str) -> dict:
-        """Compute normalization statistics.
-
-        Args:
-            X_train: Training data
-            mode: "dense" or "conv1d"
-
-        Returns:
-            Scaler dict with "mean" and "std" as lists
-        """
-        eps = 1e-8
-
-        if mode == "dense":
-            # X_train shape: (N, D)
-            # Compute per-feature: axis=0
-            mean = X_train.mean(axis=0)
-            std = X_train.std(axis=0) + eps
-        elif mode == "conv1d":
-            # X_train shape: (N, F, T)
-            # Compute per-channel over samples and time: axes=(0, 2)
-            mean = X_train.mean(axis=(0, 2))
-            std = X_train.std(axis=(0, 2)) + eps
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
-
-        scaler = {
-            "kind": "per_feature",
-            "mean": mean.tolist(),
-            "std": std.tolist(),
-            "eps": eps,
-        }
-
-        return scaler
-
-    def _normalize(self, X: np.ndarray, scaler: dict, mode: str) -> np.ndarray:
-        """Apply normalization using scaler.
-
-        Args:
-            X: Data to normalize
-            scaler: Dict with mean and std
-            mode: "dense" or "conv1d"
-
-        Returns:
-            Normalized array
-        """
-        mean = np.array(scaler["mean"])
-        std = np.array(scaler["std"])
-
-        if mode == "dense":
-            # X shape: (N, D)
-            # mean/std shape: (D,) - broadcasts directly
-            X_norm = (X - mean) / std
-        elif mode == "conv1d":
-            # X shape: (N, F, T)
-            # mean/std shape: (F,) - reshape to (1, F, 1) for broadcasting
-            mean = mean.reshape(1, -1, 1)
-            std = std.reshape(1, -1, 1)
-            X_norm = (X - mean) / std
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
-
-        return X_norm
-
     def _train_epoch(
         self,
         model: nn.Module,
@@ -389,7 +344,7 @@ class Trainer:
         Args:
             model: PyTorch model
             optimizer: Optimizer
-            X_train: Training data (normalized)
+            X_train: Training data (raw, no preprocessing)
             batch_size: Batch size
             device: CPU or CUDA device
 
@@ -436,7 +391,7 @@ class Trainer:
 
         Args:
             model: PyTorch model
-            X_val: Validation data (normalized)
+            X_val: Validation data (raw, no preprocessing)
             batch_size: Batch size
             device: Device
 
@@ -479,7 +434,7 @@ class Trainer:
 
         Args:
             model: Trained model
-            X_train: Training data (normalized)
+            X_train: Training data (raw, no preprocessing)
             percentile: Threshold percentile (e.g., 99.5)
             device: Device
 

@@ -1,8 +1,8 @@
 """
-Model Artifacts Manager
+Artifact Manager for HITL System
 
-This module manages the filesystem storage of trained model artifacts
-including weights, configuration, scalers, and thresholds.
+Handles storage and retrieval of model artifacts on the local filesystem,
+including weights, configuration, and thresholds.
 """
 
 from __future__ import annotations
@@ -79,7 +79,6 @@ class Artifacts:
                 AE-2025.11.04-1/
                     model.pt
                     config.json
-                    scaler.json
                     threshold.json
                 AE-2025.11.04-2/
                     ...
@@ -174,32 +173,6 @@ class Artifacts:
         with config_path.open("w") as f:
             json.dump(config, f, indent=2)
 
-    def save_scaler(self, model_version: str, scaler: dict[str, Any]) -> None:
-        """
-        Save normalization scaler parameters as JSON.
-
-        Args:
-            model_version: Model version identifier
-            scaler: Dict with mean and std arrays
-
-        Saves to: {base_dir}/{model_version}/scaler.json
-
-        Scaler dict format:
-            {
-                "mean": [...],  # list of floats
-                "std": [...]
-            }
-
-        Note: Convert NumPy arrays to Python lists before saving.
-        """
-        version_dir = self.base_dir / model_version
-        if not version_dir.exists():
-            raise ArtifactMissing(f"Version directory not found: {version_dir}")
-
-        scaler_path = version_dir / "scaler.json"
-        with scaler_path.open("w") as f:
-            json.dump(scaler, f, indent=2)
-
     def save_threshold(self, model_version: str, threshold: dict[str, Any]) -> None:
         """
         Save anomaly detection threshold as JSON.
@@ -238,7 +211,6 @@ class Artifacts:
             {
                 "model": state_dict,
                 "config": config_dict,
-                "scaler": scaler_dict,
                 "threshold": threshold_dict
             }
 
@@ -249,7 +221,6 @@ class Artifacts:
         return {
             "model": self.load_model(model_version),
             "config": self.load_config(model_version),
-            "scaler": self.load_scaler(model_version),
             "threshold": self.load_threshold(model_version),
         }
 
@@ -292,26 +263,6 @@ class Artifacts:
         with config_path.open() as f:
             return json.load(f)
 
-    def load_scaler(self, model_version: str) -> dict[str, Any]:
-        """
-        Load just the scaler params.
-
-        Args:
-            model_version: Model version identifier
-
-        Returns:
-            Scaler dict
-
-        Raises:
-            ArtifactMissing: if file doesn't exist
-        """
-        scaler_path = self.base_dir / model_version / "scaler.json"
-        if not scaler_path.exists():
-            raise ArtifactMissing(f"Scaler file not found: {scaler_path}")
-
-        with scaler_path.open() as f:
-            return json.load(f)
-
     def load_threshold(self, model_version: str) -> dict[str, Any]:
         """
         Load just the threshold.
@@ -345,14 +296,13 @@ class Artifacts:
         Required files:
             - model.pt
             - config.json
-            - scaler.json
             - threshold.json
         """
         version_dir = self.base_dir / model_version
         if not version_dir.exists():
             return False
 
-        required_files = ["model.pt", "config.json", "scaler.json", "threshold.json"]
+        required_files = ["model.pt", "config.json", "threshold.json"]
         return all((version_dir / fname).exists() for fname in required_files)
 
     def list_versions(self) -> list[str]:

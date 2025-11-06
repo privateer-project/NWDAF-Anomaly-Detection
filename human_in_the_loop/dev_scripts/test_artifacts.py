@@ -63,7 +63,7 @@ def test_artifacts():
         print(f"Artifacts directory: {artifacts_dir}")
 
         sqlite = SQLite(str(db_path))
-        repo = Repository(sqlite)
+        _ = Repository(sqlite)
         artifacts = Artifacts(base_dir=str(artifacts_dir))
 
         print("✓ Artifacts manager initialized")
@@ -137,23 +137,8 @@ def test_artifacts():
         assert (version_dir / "config.json").exists()
         print("  - Config file: config.json")
 
-        # Test scaler saving
-        print_section("5. Scaler Saving")
-
-        scaler = {
-            "mean": [0.5, 1.2, -0.3],
-            "std": [1.0, 2.5, 0.8],
-        }
-
-        print("Saving scaler...")
-        artifacts.save_scaler(model_version=version, scaler=scaler)
-        print("✓ Scaler saved")
-
-        assert (version_dir / "scaler.json").exists()
-        print("  - Scaler file: scaler.json")
-
         # Test threshold saving
-        print_section("6. Threshold Saving")
+        print_section("5. Threshold Saving")
 
         threshold = 0.15
 
@@ -166,7 +151,7 @@ def test_artifacts():
         print("  - Threshold file: threshold.json")
 
         # Test complete loading
-        print_section("7. Complete Loading")
+        print_section("6. Complete Loading")
 
         print(f"Loading all artifacts for version: {version}")
 
@@ -175,7 +160,6 @@ def test_artifacts():
         print("✓ All artifacts loaded")
         print(f"  - Model: {type(loaded['model']).__name__}")
         print(f"  - Config: {len(loaded['config'])} keys")
-        print(f"  - Scaler: {list(loaded['scaler'].keys())}")
         print(f"  - Threshold: {loaded['threshold']}")
 
         # Verify model weights match
@@ -191,16 +175,12 @@ def test_artifacts():
         assert loaded["config"] == config
         print("✓ Config matches original")
 
-        # Verify scaler matches
-        assert loaded["scaler"] == scaler
-        print("✓ Scaler matches original")
-
         # Verify threshold matches
         assert loaded["threshold"] == threshold
         print("✓ Threshold matches original")
 
         # Test individual loading
-        print_section("8. Individual Loading")
+        print_section("7. Individual Loading")
 
         model_only = artifacts.load_model(version)
         print(f"✓ Model loaded: {type(model_only).__name__}")
@@ -208,14 +188,11 @@ def test_artifacts():
         config_only = artifacts.load_config(version)
         print(f"✓ Config loaded: {config_only['model_type']}")
 
-        scaler_only = artifacts.load_scaler(version)
-        print(f"✓ Scaler loaded: mean={scaler_only['mean']}")
-
         threshold_only = artifacts.load_threshold(version)
         print(f"✓ Threshold loaded: {threshold_only}")
 
         # Test listing versions
-        print_section("9. Version Listing")
+        print_section("8. Version Listing")
 
         # Create another version
         version3, _ = artifacts.create_version("conv1d", (8, 77))
@@ -234,7 +211,7 @@ def test_artifacts():
         assert version3 in versions
 
         # Test version existence
-        print_section("10. Version Existence Check")
+        print_section("9. Version Existence Check")
 
         assert artifacts.exists(version)
         print(f"✓ Version exists: {version}")
@@ -243,7 +220,7 @@ def test_artifacts():
         print("✓ Non-existent version correctly detected")
 
         # Test error handling
-        print_section("11. Error Handling")
+        print_section("10. Error Handling")
 
         print("Testing missing artifacts...")
 

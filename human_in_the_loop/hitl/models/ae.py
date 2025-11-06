@@ -115,7 +115,25 @@ class DenseAE(nn.Module):
 
 
 class Conv1dAE(nn.Module):
-    """Convolutional autoencoder for 2D time-series (T, F) tensors."""
+    """Convolutional autoencoder for 2D time-series (T, F) tensors.
+    
+    IMPORTANT - Shape Conventions:
+        Storage format (per sample): (T, F) - time-first
+            - T = number of timesteps
+            - F = number of features/channels
+            - Example: (240, 84) for 240 timesteps with 84 features
+        
+        Model input format (batched): (B, F, T) - channels-first
+            - B = batch size
+            - F = number of features/channels (Conv1d input channels)
+            - T = number of timesteps (sequence length)
+            - Example: (128, 84, 240) for batch of 128 samples
+        
+        Transformation required: Data must be transposed from (N, T, F) to (N, F, T)
+        before being passed to this model. This is handled in trainer.py.
+        
+        See docs/SHAPE_CONVENTIONS.md for full details.
+    """
 
     def __init__(
         self,
@@ -128,15 +146,18 @@ class Conv1dAE(nn.Module):
         Initialize 1D convolutional autoencoder.
 
         Args:
-            num_features: Number of features/channels (F)
-            seq_len: Sequence length (T)
+            num_features: Number of features/channels (F) - becomes Conv1d input channels
+            seq_len: Sequence length / number of timesteps (T)
             latent_dim: Size of latent representation
             num_filters: List of filter counts for conv layers
                         If None, use default: [16, 32, 64]
 
         Architecture:
-            Input format: (B, F, T) where B=batch, F=features, T=time
+            Input format: (B, F, T) where B=batch, F=features (channels), T=time
             PyTorch Conv1d expects channels-first format.
+            
+            Note: This differs from storage format (T, F).
+                  Transformation (T, F) -> (F, T) happens in data loading.
 
             Encoder: Conv1d layers with ReLU
                 (B, F, T) → Conv1d(F, 16, k=3, s=2, p=1) → ReLU
@@ -222,7 +243,20 @@ class Conv1dAE(nn.Module):
         self.decoder_conv = nn.Sequential(*decoder_layers)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through convolutional autoencoder."""
+        """Forward pass through convolutional autoencoder.
+        
+        Args:
+            x: Input tensor of shape (B, F, T)
+               - B = batch size
+               - F = number of features/channels (must match num_features)
+               - T = sequence length (must match seq_len)
+        
+        Returns:
+            Reconstructed tensor of shape (B, F, T)
+            
+        Note: Input must already be in channels-first format (B, F, T).
+              Transformation from storage format (T, F) happens before this call.
+        """
         z = self.encode(x)
         x_hat = self.decode(z)
 
@@ -257,7 +291,30 @@ def build_model(
     latent_dim: int = 32,
     **kwargs,
 ) -> nn.Module:
-    """Factory function to build appropriate autoencoder based on mode."""
+    """Factory function to build appropriate autoencoder based on mode.
+    
+    Args:
+        mode: "dense" for 1D vectors, "conv1d" for 2D time-series
+        input_shape: Shape tuple from STORAGE format (not model format)
+            - Dense: (D,) where D = number of features
+            - Conv1d: (T, F) where T = timesteps, F = features
+        latent_dim: Size of latent/bottleneck dimension
+        **kwargs: Additional model-specific parameters
+    
+    Returns:
+        Initialized autoencoder model (DenseAE or Conv1dAE)
+    
+    Shape Convention Note:
+        input_shape represents the STORAGE format (per sample).
+        For Conv1d: Storage is (T, F) but model expects (B, F, T).
+        Data transformation happens in trainer.py, not here.
+        This function extracts T and F from input_shape and passes them
+        to Conv1dAE constructor in the correct order.
+    
+    Raises:
+        UnsupportedShape: If input_shape doesn't match expected dimensionality
+        ValueError: If mode is invalid
+    """
     if mode == "dense":
         if len(input_shape) != 1:
             raise UnsupportedShape(
