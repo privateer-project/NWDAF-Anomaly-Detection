@@ -101,3 +101,13 @@ ci: install test-coverage lint type-check
 check: format lint test
 	@echo ""
 	@echo "✓ Pre-commit checks passed!"
+
+# resets db
+reset-db:
+	@$(MAKE) clean
+	rm -rf db/hitl.db db/hitl.db-wal db/hitl.db-shm
+	sqlite3 db/hitl.db < hitl/ddl.sql
+
+# open db shell
+db-shell:
+	sqlite3 db/hitl.db

@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument(
         "--db-path",
         type=str,
-        default="data/hitl.db",
+        default="db/hitl.db",
         help="SQLite database path",
     )
     parser.add_argument(
@@ -95,6 +95,18 @@ def parse_args():
         type=float,
         default=95.0,
         help="Threshold percentile (e.g., 95.0)",
+    )
+    parser.add_argument(
+        "--schema-id",
+        type=str,
+        default=None,
+        help="Optional schema_id to use instead of creating a new one",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional limit on number of samples to ingest/train (for testing)",
     )
     return parser.parse_args()
 
@@ -144,7 +156,7 @@ def load_data(data_dir: str, use_validation: bool = True):
     return X, metadata
 
 
-def insert_into_db(repository, registry, X, metadata, source_name: str):
+def insert_into_db(repository, registry, X, metadata, source_name: str, schema_id_override: str | None = None, limit: int | None = None):
     """
     Insert anomalies into the database.
 
@@ -160,7 +172,13 @@ def insert_into_db(repository, registry, X, metadata, source_name: str):
     """
     logger.info(f"Inserting {len(X)} anomalies into database...")
 
-    # Register schema
+    # Optionally apply a user-provided limit (for testing)
+    if limit is not None:
+        logger.info(f"Applying user limit: {limit} samples")
+        X = X[:limit]
+        metadata = metadata.iloc[:limit]
+
+    # Register schema (or use provided schema_id)
     if len(X.shape) == 3:
         # Conv1d: (N, T, F)
         sample_shape = X[0].shape  # (T, F)
@@ -168,11 +186,15 @@ def insert_into_db(repository, registry, X, metadata, source_name: str):
         # Dense: (N, F)
         sample_shape = X[0].shape  # (F,)
 
-    schema_info = registry.ensure(sample_shape, str(X.dtype))
-    schema_id = schema_info["schema_id"]
-    logger.info(f"Schema ID: {schema_id}, shape: {sample_shape}")
+    if schema_id_override:
+        schema_id = schema_id_override
+        logger.info(f"Using provided schema_id: {schema_id} (declared sample shape: {sample_shape})")
+    else:
+        schema_info = registry.ensure(sample_shape, str(X.dtype))
+        schema_id = schema_info["schema_id"]
+        logger.info(f"Schema ID: {schema_id}, shape: {sample_shape}")
 
-    # For large datasets, use smaller sample
+    # For very large datasets, cap the demo size (safety)
     if len(X) > 5000:
         logger.warning(f"Dataset has {len(X)} samples - using first 5000 for training demo")
         X = X[:5000]
@@ -275,18 +297,18 @@ def evaluate_model(artifacts, repository, model_version, schema_id):
 
     logger.info(f"Model loaded on device: {device}")
 
-    # Load data from DB
+    # Load data from DB (use repository.iterator to avoid loading everything at once)
     from hitl.io.serialization import decode_npy
 
-    vectors_raw = repository.get_vectors_by_schema(schema_id)
-    logger.info(f"Loaded {len(vectors_raw)} vectors from database")
-
     X_list = []
-    for v in vectors_raw:
-        arr = decode_npy(v["vector_blob"])
+    count = 0
+    for anomaly_id, blob in repository.iter_vectors(schema_id):
+        arr = decode_npy(blob)
         X_list.append(arr)
+        count += 1
 
-    X = np.stack(X_list, axis=0)
+    logger.info(f"Loaded {count} vectors from database")
+    X = np.stack(X_list, axis=0) if X_list else np.empty((0,))
     logger.info(f"Stacked data shape: {X.shape}")
 
     # Transpose if Conv1d
@@ -392,7 +414,7 @@ def main():
     logger.info("INSERTING DATA INTO DATABASE")
     logger.info("=" * 60)
     source_name = "validation" if args.use_validation else "test"
-    schema_id = insert_into_db(repository, registry, X, metadata, source_name)
+    schema_id = insert_into_db(repository, registry, X, metadata, source_name, schema_id_override=args.schema_id, limit=args.limit)
 
     # Train model
     train_params = {

@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument(
         "--db",
         type=str,
-        default="hitl.db",
+        default="db/hitl.db",
         help="Path to SQLite database file"
     )
     parser.add_argument(
@@ -61,6 +61,17 @@ def parse_args():
         type=int,
         default=None,
         help="Limit number of samples to ingest (for testing)"
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=1000,
+        help="Number of rows between progress logs/commits"
+    )
+    parser.add_argument(
+        "--apply-ddl",
+        action="store_true",
+        help="Apply DDL from hitl/ddl.sql if database is new"
     )
     return parser.parse_args()
 
@@ -85,7 +96,9 @@ def ingest_false_positives(
     db_path: str,
     schema_id: str,
     source: str,
-    limit: int | None = None
+    limit: int | None = None,
+    batch_size: int = 1000,
+    apply_ddl: bool = False,
 ):
     """
     Load False Positives from NPZ and ingest into database.
@@ -113,10 +126,12 @@ def ingest_false_positives(
     
     X_fp = data['X'][fp_mask]  # Shape: (N, 77, 8)
     ts_fp = data['ts_ns'][fp_mask]  # Timestamps in nanoseconds
+    true_labels = meta['true_label'][fp_mask].values
     
     if limit:
         X_fp = X_fp[:limit]
         ts_fp = ts_fp[:limit]
+        true_labels = true_labels[:limit]
     
     logger.info(f"Found {len(X_fp)} False Positive samples")
     logger.info(f"Sample shape: {X_fp[0].shape}")
@@ -125,6 +140,16 @@ def ingest_false_positives(
     # Initialize database
     db = SQLite(db_path)
     repo = Repository(db)
+
+    # Optionally ensure DDL is applied (SQLite already applies DDL on new DB,
+    # but this flag allows forcing initialization if requested)
+    if apply_ddl:
+        try:
+            # call protected method on SQLite; it's idempotent
+            db._apply_ddl()
+            logger.info("Applied DDL to database (apply_ddl=True)")
+        except Exception:
+            logger.debug("apply_ddl requested but DDL application failed or already applied", exc_info=True)
     
     # Register schema
     sample_shape = X_fp[0].shape  # (77, 8)
@@ -177,9 +202,29 @@ def ingest_false_positives(
             blob=blob,
             created_at=now
         )
+        # Insert feedback derived from true label (map 1 -> 'TP', 0 -> 'FP')
+        try:
+            tl = int(true_labels[idx])
+            label_str = "TP" if tl == 1 else "FP"
+        except Exception:
+            label_str = "FP"
+
+        feedback_id = f"fb_{anomaly_id}"
+        try:
+            repo.insert_feedback(
+                feedback_id=feedback_id,
+                anomaly_id=anomaly_id,
+                user_id="ingest_script",
+                label=label_str,
+                confidence=1.0,
+                note=f"ingested_from_{source}",
+                created_at=now,
+            )
+        except Exception:
+            logger.debug("Failed to insert feedback for %s", anomaly_id, exc_info=True)
         
         # Progress logging
-        if (idx + 1) % 1000 == 0:
+        if (idx + 1) % batch_size == 0:
             logger.info(f"  Ingested {idx + 1}/{len(X_fp)} samples...")
     
     logger.info(f"✓ Successfully ingested {len(X_fp)} False Positive samples")
@@ -200,7 +245,9 @@ def main():
             db_path=args.db,
             schema_id=args.schema_id,
             source=args.source,
-            limit=args.limit
+            limit=args.limit,
+            batch_size=args.batch_size,
+            apply_ddl=args.apply_ddl,
         )
     except Exception as e:
         logger = get_logger("ingest_fp")
