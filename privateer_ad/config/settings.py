@@ -13,6 +13,7 @@ production deployment scenarios. All configuration classes support environment
 variable overrides and validation to ensure parameter consistency across
 different execution environments.
 """
+
 import importlib.resources as resources
 
 from pathlib import Path
@@ -20,7 +21,7 @@ from typing import Optional, Literal
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
-package_path = resources.files('privateer_ad')
+package_path = resources.files("privateer_ad")
 # Get the src package location
 with resources.as_file(package_path) as pkg_path:
     root_dir: Path = pkg_path.parent
@@ -29,6 +30,7 @@ with resources.as_file(package_path) as pkg_path:
 # =============================================================================
 # CONFIGURATION CLASSES
 # =============================================================================
+
 
 class PathConfig(BaseSettings):
     """
@@ -42,63 +44,69 @@ class PathConfig(BaseSettings):
                         installation location
         data_url (str): Remote data source URL for dataset download operations
     """
-    root_dir: Path = Field(default=root_dir, description="Package root directory")
-    data_url: str = Field(default="https://zenodo.org/api/records/13900057/files-archive", description="Data URL")
 
-    model_config = {'env_prefix': 'PRIVATEER_PATH_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    root_dir: Path = Field(default=root_dir, description="Package root directory")
+    data_url: str = Field(
+        default="https://zenodo.org/api/records/13900057/files-archive",
+        description="Data URL",
+    )
+
+    model_config = {
+        "env_prefix": "PRIVATEER_PATH_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
     @property
     def data_dir(self) -> Path:
         """Primary data directory for all dataset storage and processing."""
-        return self.root_dir.joinpath('data')
+        return self.root_dir.joinpath("data")
 
     @property
     def models_dir(self) -> Path:
         """Trained model storage directory for model persistence."""
-        return self.root_dir.joinpath('models')
+        return self.root_dir.joinpath("models")
 
     @property
     def experiments_dir(self) -> Path:
         """Experiment results directory for training artifacts and logs."""
-        return self.root_dir.joinpath('experiments')
+        return self.root_dir.joinpath("experiments")
 
     @property
     def scalers_dir(self) -> Path:
         """Feature scaling parameters directory for preprocessing consistency."""
-        return self.root_dir.joinpath('scalers')
+        return self.root_dir.joinpath("scalers")
 
     @property
     def analysis_dir(self) -> Path:
         """Analysis results directory for evaluation metrics and visualizations."""
-        return self.root_dir.joinpath('analysis_results')
+        return self.root_dir.joinpath("analysis_results")
 
     @property
     def requirements_file(self) -> Path:
         """Python dependencies specification file for reproducible environments."""
-        return self.root_dir.joinpath('requirements.txt')
+        return self.root_dir.joinpath("requirements.txt")
 
     @property
     def raw_dir(self) -> Path:
         """Raw dataset storage directory for unprocessed network traffic data."""
-        return self.data_dir.joinpath('raw')
+        return self.data_dir.joinpath("raw")
 
     @property
     def processed_dir(self) -> Path:
         """Processed dataset directory for cleaned and prepared training data."""
-        return self.data_dir.joinpath('processed')
+        return self.data_dir.joinpath("processed")
 
     @property
     def zip_file(self) -> Path:
         """Temporary zip file location for dataset download operations."""
-        return self.raw_dir.joinpath('nwdaf-data.zip')
+        return self.raw_dir.joinpath("nwdaf-data.zip")
 
     @property
     def raw_dataset(self) -> Path:
         """Primary raw dataset file containing network traffic with attack labels."""
-        return self.raw_dir.joinpath('amari_ue_data_merged_with_attack_number.csv')
+        return self.raw_dir.joinpath("amari_ue_data_merged_with_attack_number.csv")
 
 
 class DataConfig(BaseSettings):
@@ -130,14 +138,37 @@ class DataConfig(BaseSettings):
         persistent_workers (bool): Worker process persistence across epochs
         pin_memory (bool): GPU memory pinning for accelerated transfer
     """
-    train_size: float = Field(default=0.8, gt=0.0, lt=1.0, description='Training set size as a fraction of the dataset. '
-                                                                       'Example: "0.8" for 80% of the dataset. Default: "0.8" Test size is calculated as 1 - train_size - val_size')
-    val_size: float = Field(default=0.1, gt=0.0, lt=1.0, description='Validation set size as a fraction of the dataset. '
-                                                                     'Example: "0.1" for 10% of the dataset. Default: "0.1". Test size is calculated as 1 - train_size - val_size')
-    partition_id: int = Field(default=-1, ge=-1, description='Partition ID for data partitioning. Default: "-1"')
-    partition_by: str = Field(default='cell', description="Column to partition data by. Default: 'cell'")
-    num_partitions: int = Field(default=0, ge=0, description="Number of partitions to split the data into. Default: 1")
-    num_classes_per_partition: int = Field(default=1, ge=1, description="Number of classes per partition. Default: 1")
+
+    train_size: float = Field(
+        default=0.8,
+        gt=0.0,
+        lt=1.0,
+        description="Training set size as a fraction of the dataset. "
+        'Example: "0.8" for 80% of the dataset. Default: "0.8" Test size is calculated as 1 - train_size - val_size',
+    )
+    val_size: float = Field(
+        default=0.1,
+        gt=0.0,
+        lt=1.0,
+        description="Validation set size as a fraction of the dataset. "
+        'Example: "0.1" for 10% of the dataset. Default: "0.1". Test size is calculated as 1 - train_size - val_size',
+    )
+    partition_id: int = Field(
+        default=-1,
+        ge=-1,
+        description='Partition ID for data partitioning. Default: "-1"',
+    )
+    partition_by: str = Field(
+        default="cell", description="Column to partition data by. Default: 'cell'"
+    )
+    num_partitions: int = Field(
+        default=0,
+        ge=0,
+        description="Number of partitions to split the data into. Default: 1",
+    )
+    num_classes_per_partition: int = Field(
+        default=1, ge=1, description="Number of classes per partition. Default: 1"
+    )
 
     batch_size: int = Field(default=4096, gt=0)
     seq_len: int = Field(default=77, ge=1)
@@ -147,20 +178,24 @@ class DataConfig(BaseSettings):
     persistent_workers: bool = Field(default=True)
     pin_memory: bool = Field(default=True)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_splits_sum_to_one(self):
         """
         Validate dataset split proportions sum to valid range.
         """
         total = self.train_size + self.val_size
-        if 1.0 - total < 0.:
-            raise ValueError(f'Train and val sizes must be between 0 and 1. Total: {total}')
+        if 1.0 - total < 0.0:
+            raise ValueError(
+                f"Train and val sizes must be between 0 and 1. Total: {total}"
+            )
         return self
 
-    model_config = {'env_prefix': 'PRIVATEER_DATA_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_DATA_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class ModelConfig(BaseSettings):
@@ -176,19 +211,22 @@ class ModelConfig(BaseSettings):
         dropout (float): Dropout probability for regularization during training
         seq_len (int): Input sequence length for temporal modeling
     """
-    model_name: str = Field(default='TransformerAD')
+
+    model_name: str = Field(default="TransformerAD")
     input_size: int = Field(default=8, ge=1)
     num_layers: int = Field(default=4, ge=1)
     embed_dim: int = Field(default=32, ge=1)
     latent_dim: int = Field(default=16, ge=1)
     num_heads: int = Field(default=8, ge=1)
-    dropout: float = Field(default=0., ge=0.0, le=1.0)
+    dropout: float = Field(default=0.0, ge=0.0, le=1.0)
     seq_len: int = Field(default=77, ge=1)
 
-    model_config = {'env_prefix': 'PRIVATEER_MODEL_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_MODEL_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class TrainingConfig(BaseSettings):
@@ -204,10 +242,11 @@ class TrainingConfig(BaseSettings):
         target_metric (str): Primary evaluation metric for model selection
         direction (Literal): Optimization direction for target metric
     """
+
     # Optimization parameters
     learning_rate: float = Field(default=0.0001, gt=0.0)
     epochs: int = Field(default=100, gt=0)
-    loss_fn_name: str = Field(default='L1Loss')
+    loss_fn_name: str = Field(default="L1Loss")
 
     # Early stopping
     es_enabled: bool = Field(default=True)
@@ -215,13 +254,15 @@ class TrainingConfig(BaseSettings):
     es_warmup: int = Field(default=10, gt=0)
 
     # Evaluation parameters
-    target_metric: str = Field(default='val_f1-score')
-    direction: Literal['minimize', 'maximize'] = Field(default='maximize')
+    target_metric: str = Field(default="val_f1-score")
+    direction: Literal["minimize", "maximize"] = Field(default="maximize")
 
-    model_config = {'env_prefix': 'PRIVATEER_TRAIN_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_TRAIN_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class AutotuningConfig(BaseSettings):
@@ -244,24 +285,39 @@ class AutotuningConfig(BaseSettings):
         pruning_warmup_steps (int): Warmup steps before pruning evaluation
         sampler_type (Literal): Sampling strategy for parameter space exploration
     """
-    study_name: str = Field(default="privateer-autotune", description="Name for the Optuna study")
-    n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
-    timeout: Optional[int] = Field(default=None, description="Timeout in seconds for optimization")
-    target_metric: str = Field(default="val_f1-score", description="Metric to optimize")
-    direction: Literal["minimize", "maximize"] = Field(default="maximize", description="Optimization direction")
 
-    storage_url: str = Field(default="sqlite:///optuna_study.db", description="Optuna storage URL")
+    study_name: str = Field(
+        default="privateer-autotune", description="Name for the Optuna study"
+    )
+    n_trials: int = Field(default=30, gt=0, description="Number of optimization trials")
+    timeout: Optional[int] = Field(
+        default=None, description="Timeout in seconds for optimization"
+    )
+    target_metric: str = Field(default="val_f1-score", description="Metric to optimize")
+    direction: Literal["minimize", "maximize"] = Field(
+        default="maximize", description="Optimization direction"
+    )
+
+    storage_url: str = Field(
+        default="sqlite:///optuna_study.db", description="Optuna storage URL"
+    )
 
     enable_pruning: bool = Field(default=True, description="Enable trial pruning")
-    pruning_warmup_steps: int = Field(default=5, gt=0, description="Steps before pruning can start")
+    pruning_warmup_steps: int = Field(
+        default=5, gt=0, description="Steps before pruning can start"
+    )
 
     # Sampler configuration
-    sampler_type: Literal["tpe", "random", "cmaes"] = Field(default="tpe", description="Type of sampler to use")
+    sampler_type: Literal["tpe", "random", "cmaes"] = Field(
+        default="tpe", description="Type of sampler to use"
+    )
 
-    model_config = {'env_prefix': 'PRIVATEER_AUTOTUNE_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_AUTOTUNE_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class FederatedLearningConfig(BaseSettings):
@@ -297,10 +353,12 @@ class FederatedLearningConfig(BaseSettings):
     epochs_per_round: int = Field(default=1, gt=0)
     partition_data: bool = Field(default=True)
 
-    model_config = {'env_prefix': 'PRIVATEER_FL_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_FL_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class PrivacyConfig(BaseSettings):
@@ -318,15 +376,17 @@ class PrivacyConfig(BaseSettings):
     dp_enabled: bool = Field(default=True)
     target_epsilon: float = Field(default=0.5, gt=0.0)
     target_delta: float = Field(default=1e-6, gt=0.0)
-    max_grad_norm: float = Field(default=.7, gt=0.0)
+    max_grad_norm: float = Field(default=0.7, gt=0.0)
     secure_mode: bool = Field(default=True)
 
     anonymization_enabled: bool = Field(default=False)
 
-    model_config = {'env_prefix': 'PRIVATEER_DP_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_DP_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }
 
 
 class MLFlowConfig(BaseSettings):
@@ -339,13 +399,20 @@ class MLFlowConfig(BaseSettings):
         parent_run_id (Optional[str]): Parent run identifier for nested experiments
         child_run_id (Optional[str]): Child run identifier for federated clients
     """
+
     enabled: bool = Field(default=True, description="Enable MLFlow tracking")
-    tracking_uri: str = Field(default="http://localhost:5001", description="MLFlow server address")
-    experiment_name: str = Field(default="privateer-ad", description="MLFlow experiment name")
+    tracking_uri: str = Field(
+        default="http://localhost:5001", description="MLFlow server address"
+    )
+    experiment_name: str = Field(
+        default="privateer-ad", description="MLFlow experiment name"
+    )
     parent_run_id: str | None = Field(default=None, description="Parent run id")
     child_run_id: str | None = Field(default=None, description="Client run id")
 
-    model_config = {'env_prefix': 'PRIVATEER_MLFLOW_',
-                    'env_file': '.env',
-                    'extra': 'ignore',
-                    'case_sensitive': False}
+    model_config = {
+        "env_prefix": "PRIVATEER_MLFLOW_",
+        "env_file": ".env",
+        "extra": "ignore",
+        "case_sensitive": False,
+    }

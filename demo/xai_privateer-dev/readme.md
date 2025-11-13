@@ -5,7 +5,7 @@ The project in docker should be run with:
 
 # Organization
 
-Five services will be launched, 4 in the backend and 1 in the frontend. 
+Five services will be launched, 4 in the backend and 1 in the frontend.
 
 In the backend we will have:
 - dataset management -> manage dataset for XAI. This will change in the near future for live predictions without the need to manage datasets
@@ -13,7 +13,7 @@ In the backend we will have:
 - XAI Shap -> service to run SHAP upon the model and data
 - XAI Lime -> service to run Lime upon the model and data
 
-In the frontend we will have: 
+In the frontend we will have:
 - xai_frontend -> and angular application configured to use the services
 
 After the initial run in docker, the main interface may be accessed in:

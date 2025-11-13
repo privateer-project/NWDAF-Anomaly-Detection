@@ -2,9 +2,13 @@ import os
 import numpy as np
 import shap
 import matplotlib
-matplotlib.use("Agg")  # Use non-GUI backend to allow saving plots in headless environments (e.g., servers)
+
+matplotlib.use(
+    "Agg"
+)  # Use non-GUI backend to allow saving plots in headless environments (e.g., servers)
 import matplotlib.pyplot as plt
 import pandas as pd
+
 
 def plot_summary(shap_values, x, feature_names, instance_index, plot_type="bar"):
     """
@@ -31,18 +35,24 @@ def plot_summary(shap_values, x, feature_names, instance_index, plot_type="bar")
         x_single,
         feature_names=feature_names,
         plot_type=plot_type,
-        show=False
+        show=False,
     )
-    summary_path = os.path.join("xAI_shap","graphics", f"shap_summary_{plot_type}_instance_{instance_index}.png")
+    summary_path = os.path.join(
+        "xAI_shap",
+        "graphics",
+        f"shap_summary_{plot_type}_instance_{instance_index}.png",
+    )
     plt.savefig(summary_path, bbox_inches="tight")
     plt.close()
     return summary_path
+
 
 def plot_beeswarm(shap_values, x, feature_names, instance_index):
     """
     Generates a dot-based beeswarm SHAP summary plot.
     """
     return plot_summary(shap_values, x, feature_names, instance_index, plot_type="dot")
+
 
 def plot_dependence(shap_values, x, feature_names, feature_index=0, instance_index=0):
     """
@@ -67,15 +77,20 @@ def plot_dependence(shap_values, x, feature_names, feature_index=0, instance_ind
             pd.DataFrame(x_2d, columns=feature_names),
             feature_names=feature_names,
             interaction_index=None,
-            show=False
+            show=False,
         )
-        dependence_path = os.path.join("xAI_shap","graphics", f"shap_dependence_instance_{instance_index}_{feature_names[feature_index]}.png")
+        dependence_path = os.path.join(
+            "xAI_shap",
+            "graphics",
+            f"shap_dependence_instance_{instance_index}_{feature_names[feature_index]}.png",
+        )
         plt.savefig(dependence_path, bbox_inches="tight")
         plt.close()
         return dependence_path
     except Exception as e:
         print(f"[ERROR] Failed to generate dependence plot: {e}")
         return None
+
 
 def plot_force(explainer, shap_values, x, feature_names, instance_index):
     """
@@ -92,15 +107,18 @@ def plot_force(explainer, shap_values, x, feature_names, instance_index):
             expected_value[0],
             np.array(shap_values[instance_index]),
             np.array(x[instance_index]).flatten(),
-            feature_names=feature_names
+            feature_names=feature_names,
         )
 
-        force_path = os.path.join("xAI_shap","graphics", f"shap_force_instance_{instance_index}.html")
+        force_path = os.path.join(
+            "xAI_shap", "graphics", f"shap_force_instance_{instance_index}.html"
+        )
         shap.save_html(force_path, force_plot)
         return force_path
     except Exception as e:
         print(f"[ERROR] Failed to generate force plot: {e}")
         return None
+
 
 def plot_waterfall(explainer, shap_values, feature_names, instance_index):
     """
@@ -118,15 +136,18 @@ def plot_waterfall(explainer, shap_values, feature_names, instance_index):
             expected_value[0],
             np.array(shap_values[instance_index]),
             feature_names=feature_names,
-            show=False
+            show=False,
         )
-        waterfall_path = os.path.join("xAI_shap","graphics", f"shap_waterfall_instance_{instance_index}.png")
+        waterfall_path = os.path.join(
+            "xAI_shap", "graphics", f"shap_waterfall_instance_{instance_index}.png"
+        )
         plt.savefig(waterfall_path, bbox_inches="tight")
         plt.close()
         return waterfall_path
     except Exception as e:
         print(f"[ERROR] Failed to generate waterfall plot: {e}")
         return None
+
 
 def plot_decision(explainer, shap_values, instance_index, feature_names):
     """
@@ -139,15 +160,18 @@ def plot_decision(explainer, shap_values, instance_index, feature_names):
             explainer.expected_value,
             np.array(shap_values),
             feature_names=feature_names,
-            show=False
+            show=False,
         )
-        path = os.path.join("xAI_shap","graphics", f"shap_decision_instance_{instance_index}.png")
+        path = os.path.join(
+            "xAI_shap", "graphics", f"shap_decision_instance_{instance_index}.png"
+        )
         plt.savefig(path, bbox_inches="tight")
         plt.close()
         return path
     except Exception as e:
         print(f"[ERROR] Failed to generate decision plot: {e}")
         return None
+
 
 def plot_heatmap(shap_values, feature_names):
     """
@@ -158,13 +182,14 @@ def plot_heatmap(shap_values, feature_names):
         plt.figure()
         shap_values_2d = np.array(shap_values)
         shap.plots.heatmap(shap_values_2d, feature_names=feature_names, show=False)
-        path = os.path.join("xAI_shap","graphics", "shap_heatmap_all_instances.png")
+        path = os.path.join("xAI_shap", "graphics", "shap_heatmap_all_instances.png")
         plt.savefig(path, bbox_inches="tight")
         plt.close()
         return path
     except Exception as e:
         print(f"[ERROR] Failed to generate heatmap: {e}")
         return None
+
 
 def main_graphics_shap(results, instance):
     """
@@ -188,7 +213,9 @@ def main_graphics_shap(results, instance):
     if shap_values.ndim == 1:
         shap_values = np.tile(shap_values, (len(x), 1))
     elif shap_values.shape[0] != len(x):
-        raise ValueError(f"shap_values shape {shap_values.shape} does not match number of instances {len(x)}")
+        raise ValueError(
+            f"shap_values shape {shap_values.shape} does not match number of instances {len(x)}"
+        )
 
     os.makedirs("graphics", exist_ok=True)
     plots_by_instance = {}
@@ -199,10 +226,12 @@ def main_graphics_shap(results, instance):
     plots = {
         "summary_bar": plot_summary(shap_values, x, feature_names, i, plot_type="bar"),
         "summary_dot": plot_beeswarm(shap_values, x, feature_names, i),
-        "dependence_plot": plot_dependence(shap_values, x, feature_names, feature_index=0, instance_index=i),
+        "dependence_plot": plot_dependence(
+            shap_values, x, feature_names, feature_index=0, instance_index=i
+        ),
         "force_plot": plot_force(explainer, shap_values, x, feature_names, i),
         "waterfall_plot": plot_waterfall(explainer, shap_values, feature_names, i),
-        "decision_plot": plot_decision(explainer, shap_values, i, feature_names)
+        "decision_plot": plot_decision(explainer, shap_values, i, feature_names),
     }
     plots_by_instance[i] = plots
 

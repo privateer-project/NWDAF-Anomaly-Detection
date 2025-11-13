@@ -8,7 +8,7 @@
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
-  
+
   /* Title */
   .title {
     text-align: center;
@@ -16,7 +16,7 @@
     color: #444;
     margin-bottom: 20px;
   }
-  
+
 /* Description */
 .description {
   display: flex;
@@ -44,7 +44,7 @@
   line-height: 1.6; /* Adiciona altura de linha para melhor legibilidade */
   overflow-y: auto; /* Permite rolagem caso o texto ultrapasse a altura disponível */
 }
-  
+
   /* Flex Layout for Sections */
   .shap-container {
     display: flex;
@@ -52,7 +52,7 @@
     justify-content: space-between;
     gap: 20px;
   }
-  
+
   /* Left Section */
   .left {
     flex: 1 1 calc(33.333% - 20px); /* Responsive columns */
@@ -60,14 +60,14 @@
     flex-direction: column;
     gap: 10px;
   }
-  
+
   /* Instance Label */
   .instance-label {
     font-size: 14px;
     color: #444;
     margin-bottom: 5px;
   }
-  
+
   /* Input Fields */
   input {
     padding: 10px;
@@ -76,12 +76,12 @@
     border-radius: 8px;
     transition: box-shadow 0.3s ease;
   }
-  
+
   input:focus {
     box-shadow: 0 0 5px #007bff;
     outline: none;
   }
-  
+
   /* Buttons */
   button {
     background-color: #007bff;
@@ -93,12 +93,12 @@
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
   }
-  
+
   button:hover {
     background-color: #0056b3;
     transform: translateY(-2px);
   }
-  
+
   /* Lists */
   ul {
     list-style: none;
@@ -109,20 +109,19 @@
     border-radius: 8px;
     background-color: #fff;
   }
-  
+
   li {
     padding: 10px;
     border-bottom: 1px solid #eee;
     cursor: pointer;
     transition: background-color 0.3s ease;
   }
-  
+
   li:last-child {
     border-bottom: none;
   }
-  
+
   li:hover {
     background-color: #f0f8ff;
     color: #007bff;
   }
-  

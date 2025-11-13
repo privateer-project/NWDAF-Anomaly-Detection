@@ -1,5 +1,3 @@
-import torch
-
 def make_prediction(x, model):
     """
     Perform a forward pass through the model using the given input tensor `x`.
@@ -18,7 +16,7 @@ def make_prediction(x, model):
                       in case of a reconstruction model (e.g., autoencoder).
     """
     model.eval()  # Disable dropout, batchnorm, etc.
-    #with torch.no_grad():  # Disable gradient tracking
+    # with torch.no_grad():  # Disable gradient tracking
     output = model(x)
     return output
 
@@ -43,10 +41,14 @@ def get_feature_names():
     """
     # Define the base feature columns expected at each timestep
     feature_columns = [
-        'dl_bitrate', 'ul_bitrate',
-        'cell_x_dl_retx', 'cell_x_dl_tx',
-        'cell_x_ul_retx', 'cell_x_ul_tx',
-        'ul_total_bytes_non_incr', 'dl_total_bytes_non_incr'
+        "dl_bitrate",
+        "ul_bitrate",
+        "cell_x_dl_retx",
+        "cell_x_dl_tx",
+        "cell_x_ul_retx",
+        "cell_x_ul_tx",
+        "ul_total_bytes_non_incr",
+        "dl_total_bytes_non_incr",
     ]
 
     # Append timestep suffix (_0 to _11) to each base feature

@@ -43,6 +43,7 @@ class DataProcessor:
         scalers_dir (Path): Directory path for persisting feature scaling objects
         scalers (dict): Feature-wise scaling transformations fitted on benign data
     """
+
     def __init__(self, data_config: DataConfig | None = None):
         """
         Initialize the data processing pipeline with configuration parameters.
@@ -58,7 +59,7 @@ class DataProcessor:
                                               with standard batch sizes and
                                               sequence parameters.
         """
-        logging.info('Initializing DataProcessor...')
+        logging.info("Initializing DataProcessor...")
 
         # Extract feature configurations
         self.metadata_config = MetadataConfig()
@@ -91,8 +92,8 @@ class DataProcessor:
                          parsed temporal indexing.
         """
         dtypes = deepcopy(self.features_dtypes)
-        dtypes.pop('_time', None)
-        df = pd.read_csv(get_dataset_path(path), dtype=dtypes, parse_dates=['_time'])
+        dtypes.pop("_time", None)
+        df = pd.read_csv(get_dataset_path(path), dtype=dtypes, parse_dates=["_time"])
         return df
 
     def get_partition(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -126,25 +127,34 @@ class DataProcessor:
         """
 
         if self.data_config.partition_id == -1:
-            logging.info(f'No partitioning.')
+            logging.info("No partitioning.")
             return df
         elif self.data_config.partition_id >= self.data_config.num_partitions:
-            raise ValueError(f'partition_id ({self.data_config.partition_id}) '
-                             f'is greater than num_partitions ({self.data_config.num_partitions})')
+            raise ValueError(
+                f"partition_id ({self.data_config.partition_id}) "
+                f"is greater than num_partitions ({self.data_config.num_partitions})"
+            )
 
         # Set num_partitions as the number of unique values in partition_by column. E.g. partition_by='cell' will set num_partitions=3
-        self.data_config.num_partitions = len(df[self.data_config.partition_by].unique())
+        self.data_config.num_partitions = len(
+            df[self.data_config.partition_by].unique()
+        )
 
         partitioner = PathologicalPartitioner(
             num_partitions=self.data_config.num_partitions,
             partition_by=self.data_config.partition_by,
             num_classes_per_partition=self.data_config.num_classes_per_partition,
-            class_assignment_mode='deterministic',
-            shuffle=False)
+            class_assignment_mode="deterministic",
+            shuffle=False,
+        )
 
         partitioner.dataset = Dataset.from_pandas(df)
-        logging.info(f'Get partition: {self.data_config.partition_id + 1}/{self.data_config.num_partitions}')
-        partitioned_df = partitioner.load_partition(self.data_config.partition_id).to_pandas(batched=False)
+        logging.info(
+            f"Get partition: {self.data_config.partition_id + 1}/{self.data_config.num_partitions}"
+        )
+        partitioned_df = partitioner.load_partition(
+            self.data_config.partition_id
+        ).to_pandas(batched=False)
         return partitioned_df[df.columns]
 
     def split_data(self, df: pd.DataFrame, seed: int = 42) -> dict[str, pd.DataFrame]:
@@ -187,36 +197,44 @@ class DataProcessor:
         val_dfs = []
         test_dfs = []
         for device, device_info in self.metadata_config.devices.items():
-            device_df = df.loc[df['imeisv'] == device_info.imeisv]
-            logging.debug(f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
-                          f' benign samples - {len(device_df[device_df["attack"] == 0])}')
+            device_df = df.loc[df["imeisv"] == device_info.imeisv]
+            logging.debug(
+                f'Before: Device - {device}, attack samples - {len(device_df[device_df["attack"] == 1])}'
+                f' benign samples - {len(device_df[device_df["attack"] == 0])}'
+            )
 
-            device_train_df, df_tmp = train_test_split(device_df,
-                                                       train_size=self.data_config.train_size,
-                                                       stratify=device_df['attack_number'],
-                                                       random_state=seed)
-            device_val_df, device_test_df = train_test_split(df_tmp,
-                                                             test_size=1. - self.data_config.train_size - self.data_config.val_size,
-                                                             stratify=df_tmp['attack_number'],
-                                                             random_state=seed)
+            device_train_df, df_tmp = train_test_split(
+                device_df,
+                train_size=self.data_config.train_size,
+                stratify=device_df["attack_number"],
+                random_state=seed,
+            )
+            device_val_df, device_test_df = train_test_split(
+                df_tmp,
+                test_size=1.0 - self.data_config.train_size - self.data_config.val_size,
+                stratify=df_tmp["attack_number"],
+                random_state=seed,
+            )
             train_dfs.append(device_train_df)
             val_dfs.append(device_val_df)
             test_dfs.append(device_test_df)
         df_train = pd.concat(train_dfs)
-        df_train = df_train.sort_values(by=['_time']).reset_index(drop=True)
+        df_train = df_train.sort_values(by=["_time"]).reset_index(drop=True)
 
         df_val = pd.concat(val_dfs)
-        df_val = df_val.sort_values(by=['_time']).reset_index(drop=True)
+        df_val = df_val.sort_values(by=["_time"]).reset_index(drop=True)
 
         df_test = pd.concat(test_dfs)
-        df_test = df_test.sort_values(by=['_time']).reset_index(drop=True)
+        df_test = df_test.sort_values(by=["_time"]).reset_index(drop=True)
 
-        datasets = {'train': df_train, 'val': df_val, 'test': df_test}
+        datasets = {"train": df_train, "val": df_val, "test": df_test}
 
         for k, df in datasets.items():
-            logging.debug(f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
-                          f'benign length: {len(df[df["attack"] == 0])} '
-                          f'{k} shape: {df.shape}')
+            logging.debug(
+                f'Dataset {k} attack length: {len(df[df["attack"] == 1])} '
+                f'benign length: {len(df[df["attack"] == 0])} '
+                f'{k} shape: {df.shape}'
+            )
         return datasets
 
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -252,15 +270,15 @@ class DataProcessor:
             >>> print(f"Cleaned: {len(clean_df)} rows from {len(df)} original")
             Cleaned: 9850 rows from 10000 original
         """
-        df = df.drop(columns=self.drop_features, errors='ignore')
+        df = df.drop(columns=self.drop_features, errors="ignore")
         df = df.drop_duplicates()
         # Handle NaT values in _time column
-        if '_time' in df.columns:
-            nat_indexes = df.index[df['_time'].isna()]
+        if "_time" in df.columns:
+            nat_indexes = df.index[df["_time"].isna()]
             if len(nat_indexes) > 0:
-                logging.warning(f'Found {len(nat_indexes)} NaT values in _time column.')
-                df = df.dropna(subset=['_time'])
-        df = df.dropna(axis='index')
+                logging.warning(f"Found {len(nat_indexes)} NaT values in _time column.")
+                df = df.dropna(subset=["_time"])
+        df = df.dropna(axis="index")
         df = df.reset_index(drop=True)
         return df
 
@@ -269,31 +287,31 @@ class DataProcessor:
         Transform raw network traffic data into processed train-validation-test splits.
         """
         raw_dataset_path = raw_dataset_path or self.paths_config.raw_dataset
-    
+
         # Don't hard-fail on first run if processed splits are missing
         try:
             check_existing_datasets()
         except FileNotFoundError as e:
-            logging.info(f'Processed splits not found yet ({e}); will create them now.')
-    
+            logging.info(f"Processed splits not found yet ({e}); will create them now.")
+
         # Load the raw CSV (absolute path from config)
         raw_df = self.read_ds(raw_dataset_path)
-        logging.info(f'Loaded data from {raw_dataset_path}')
-    
+        logging.info(f"Loaded data from {raw_dataset_path}")
+
         # Split data to train/val/test
         datasets = self.split_data(raw_df)
-    
+
         # Ensure processed dir exists
         self.paths_config.processed_dir.mkdir(parents=True, exist_ok=True)
-    
+
         # Save datasets FIRST so train.csv exists for scaler setup
-        logging.info('Save datasets...')
+        logging.info("Save datasets...")
         for k, df in datasets.items():
             # Write directly to processed_dir; don't use get_dataset_path for saving
-            save_path = self.paths_config.processed_dir / f'{k}.csv'
+            save_path = self.paths_config.processed_dir / f"{k}.csv"
             df.to_csv(save_path, index=False)
-            logging.info(f'{k} saved at {save_path}')
-    
+            logging.info(f"{k} saved at {save_path}")
+
         # Now that data/processed/train.csv exists, set up scalers (idempotent)
         self.setup_scalers()
 
@@ -330,35 +348,38 @@ class DataProcessor:
             INFO:root:Setting up scalers from benign training data only...
             INFO:root:Using 7500 benign samples out of 8000 total training samples for scaling
         """
-        logging.info('Setting up scalers from benign training data only...')
-        train_df = self.read_ds('train')
+        logging.info("Setting up scalers from benign training data only...")
+        train_df = self.read_ds("train")
         train_df = self.get_partition(train_df)
 
         # Clean and prepare training data
         clean_train_df = self.clean_data(train_df.copy())
-        clean_train_df = clean_train_df.sort_values(by=['_time']).reset_index(drop=True)
+        clean_train_df = clean_train_df.sort_values(by=["_time"]).reset_index(drop=True)
 
         # Filter to benign data only for scaling
-        if 'attack' in clean_train_df.columns:
-            benign_train_df = clean_train_df[clean_train_df['attack'] == 0].copy()
+        if "attack" in clean_train_df.columns:
+            benign_train_df = clean_train_df[clean_train_df["attack"] == 0].copy()
             logging.info(
-                f'Using {len(benign_train_df)} benign samples out of {len(clean_train_df)} total training samples for scaling')
+                f"Using {len(benign_train_df)} benign samples out of {len(clean_train_df)} total training samples for scaling"
+            )
         else:
-            logging.warning('No attack column found, using all training data for scaling')
+            logging.warning(
+                "No attack column found, using all training data for scaling"
+            )
             benign_train_df = clean_train_df
 
             # Get mean values per timestep for scaler fitting (benign only)
             mean_train_df = self.aggregate_by_time(benign_train_df)
 
             # Create time index
-            mean_train_df['time_idx'] = range(len(mean_train_df))
-            mean_train_df['group_id'] = 0
+            mean_train_df["time_idx"] = range(len(mean_train_df))
+            mean_train_df["group_id"] = 0
             # Create temporary TimeSeriesDataSet to get scalers
             temp_ts_ds = TimeSeriesDataSet(
                 data=mean_train_df,
-                time_idx='time_idx',
-                target='attack',
-                group_ids=['group_id'], # No grouping since we're using aggregated data
+                time_idx="time_idx",
+                target="attack",
+                group_ids=["group_id"],  # No grouping since we're using aggregated data
                 max_encoder_length=self.data_config.seq_len,
                 max_prediction_length=1,
                 time_varying_known_reals=self.input_features,
@@ -367,52 +388,54 @@ class DataProcessor:
             )
 
             # Extract scalers
-            self.scalers = temp_ts_ds.get_parameters()['scalers']
+            self.scalers = temp_ts_ds.get_parameters()["scalers"]
             self.paths_config.scalers_dir.mkdir(parents=True, exist_ok=True)
             for feature_name in self.scalers:
-                scaler_path = self.scalers_dir.joinpath(feature_name + '.pkl')
+                scaler_path = self.scalers_dir.joinpath(feature_name + ".pkl")
                 joblib.dump(self.scalers[feature_name], scaler_path)
-                logging.info(f'Saved scaler for {feature_name} at {scaler_path}')
+                logging.info(f"Saved scaler for {feature_name} at {scaler_path}")
 
     def load_scalers(self) -> None:
         """Loads previously saved scalers from disk if not already loaded.
 
-           This method loads serialized scaler objects from pickle files for each input feature.
-           The scalers are only loaded if they haven't been loaded already (self.scalers is None).
-           Each scaler file is expected to be named after its corresponding feature with a '.pkl'
-           extension in the configured scalers directory.
+        This method loads serialized scaler objects from pickle files for each input feature.
+        The scalers are only loaded if they haven't been loaded already (self.scalers is None).
+        Each scaler file is expected to be named after its corresponding feature with a '.pkl'
+        extension in the configured scalers directory.
 
-           Side Effects:
-               Sets self.scalers attribute to a dictionary mapping feature names to their
-               corresponding loaded scaler objects.
+        Side Effects:
+            Sets self.scalers attribute to a dictionary mapping feature names to their
+            corresponding loaded scaler objects.
 
-           Note:
-               - Only loads scalers if self.scalers is currently None (lazy loading)
-               - Expects one .pkl file per feature in self.input_features
-               - Scaler files must be named exactly as: {feature_name}.pkl
-               - Uses joblib.load() for deserialization to match joblib.dump() from _save_scalers()
+        Note:
+            - Only loads scalers if self.scalers is currently None (lazy loading)
+            - Expects one .pkl file per feature in self.input_features
+            - Scaler files must be named exactly as: {feature_name}.pkl
+            - Uses joblib.load() for deserialization to match joblib.dump() from _save_scalers()
 
-           Raises:
-               FileNotFoundError: If any required scaler file is missing from the scalers directory.
+        Raises:
+            FileNotFoundError: If any required scaler file is missing from the scalers directory.
 
-           Example:
-               >>> processor.load_scalers()
-               >>> print(f"Loaded {len(processor.scalers)} scalers")
-               Loaded 25 scalers
-               >>> processor.load_scalers()  # Second call does nothing since scalers already loaded
-           """
+        Example:
+            >>> processor.load_scalers()
+            >>> print(f"Loaded {len(processor.scalers)} scalers")
+            Loaded 25 scalers
+            >>> processor.load_scalers()  # Second call does nothing since scalers already loaded
+        """
 
         if self.scalers is None:
             scalers = {}
             for feature_name in self.input_features:
-                scaler_path = self.scalers_dir.joinpath(feature_name + '.pkl')
+                scaler_path = self.scalers_dir.joinpath(feature_name + ".pkl")
                 if not scaler_path.exists():
-                    logging.warning(f'Scaler for feature {feature_name} not found at {scaler_path}.')
+                    logging.warning(
+                        f"Scaler for feature {feature_name} not found at {scaler_path}."
+                    )
                     continue
                 scalers[feature_name] = joblib.load(scaler_path)
             if len(scalers) > 0:
                 self.scalers = scalers
-                logging.info(f'Loaded {len(self.scalers)} scalers')
+                logging.info(f"Loaded {len(self.scalers)} scalers")
 
     def scale_data(self, df) -> pd.DataFrame:
         """
@@ -437,7 +460,9 @@ class DataProcessor:
             df[feature_name] = self.scalers[feature_name].transform(df[[feature_name]])
         return df
 
-    def get_dataset(self, data_path : str | Path, only_benign: bool = False) -> TimeSeriesDataSet:
+    def get_dataset(
+        self, data_path: str | Path, only_benign: bool = False
+    ) -> TimeSeriesDataSet:
         """
         Construct PyTorch Forecasting TimeSeriesDataSet for model training and evaluation.
 
@@ -469,48 +494,55 @@ class DataProcessor:
         if self.data_config.num_workers <= 1:
             self.data_config.prefetch_factor = None
             self.data_config.persistent_workers = False
-        logging.info(f'Get {data_path} dataloader with '
-                     f'batch_size: {self.data_config.batch_size}, '
-                     f'seq_len: {self.data_config.seq_len}, '
-                     f'num_features: {len(self.input_features)}, '
-                     f'partition_id: {self.data_config.partition_id}, '
-                     f'only_benign: {only_benign}')
+        logging.info(
+            f"Get {data_path} dataloader with "
+            f"batch_size: {self.data_config.batch_size}, "
+            f"seq_len: {self.data_config.seq_len}, "
+            f"num_features: {len(self.input_features)}, "
+            f"partition_id: {self.data_config.partition_id}, "
+            f"only_benign: {only_benign}"
+        )
 
         self.setup_scalers()
 
         df = self.read_ds(data_path)
         df = self.get_partition(df)
         df = self.clean_data(df)
-        df = df.sort_values(by=['_time']).reset_index(drop=True)
+        df = df.sort_values(by=["_time"]).reset_index(drop=True)
 
         if only_benign:
-            if 'attack' in df.columns:
-                df['attack'] = df['attack'].astype(int)
-                df = df[df['attack'] == 0]
+            if "attack" in df.columns:
+                df["attack"] = df["attack"].astype(int)
+                df = df[df["attack"] == 0]
             else:
-                logging.warning('Cannot get benign data. No column named `attack` in dataset.')
+                logging.warning(
+                    "Cannot get benign data. No column named `attack` in dataset."
+                )
 
         # Aggregate by time to get mean values per timestep
         df = self.aggregate_by_time(df)
 
         # Create time index
-        df['time_idx'] = range(len(df))
-        df['group_id'] = 0
+        df["time_idx"] = range(len(df))
+        df["group_id"] = 0
 
-        ts_ds = TimeSeriesDataSet(data=df,
-                                  time_idx='time_idx',
-                                  target='attack',
-                                  group_ids=['group_id'],
-                                  max_encoder_length=self.data_config.seq_len,
-                                  max_prediction_length=1,
-                                  time_varying_known_reals=self.input_features,
-                                  allow_missing_timesteps=False,
-                                  predict_mode=False,
-                                  scalers=self.scalers
-                                  )
+        ts_ds = TimeSeriesDataSet(
+            data=df,
+            time_idx="time_idx",
+            target="attack",
+            group_ids=["group_id"],
+            max_encoder_length=self.data_config.seq_len,
+            max_prediction_length=1,
+            time_varying_known_reals=self.input_features,
+            allow_missing_timesteps=False,
+            predict_mode=False,
+            scalers=self.scalers,
+        )
         return ts_ds
 
-    def get_dataloader(self, path, only_benign: bool = False, train: bool = True) -> DataLoader:
+    def get_dataloader(
+        self, path, only_benign: bool = False, train: bool = True
+    ) -> DataLoader:
         """
         Create PyTorch DataLoader with optimized configuration for model training.
 
@@ -543,7 +575,8 @@ class DataProcessor:
             num_workers=self.data_config.num_workers,
             pin_memory=self.data_config.pin_memory,
             prefetch_factor=self.data_config.prefetch_factor,
-            persistent_workers=self.data_config.persistent_workers)
+            persistent_workers=self.data_config.persistent_workers,
+        )
 
     def aggregate_by_time(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -573,17 +606,18 @@ class DataProcessor:
             in attack labeling across the aggregated time series for subsequent
             anomaly detection processing.
         """
-        agg_dict = {feature: 'mean' for feature in self.input_features}
+        agg_dict = {feature: "mean" for feature in self.input_features}
         # For attack column, take max (if any device has attack=1, the timestep is considered attack)
-        agg_dict['attack'] = 'max'
+        agg_dict["attack"] = "max"
 
-        aggregated_df = df.groupby('_time').agg(agg_dict).reset_index()
+        aggregated_df = df.groupby("_time").agg(agg_dict).reset_index()
         return aggregated_df
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     dp = DataProcessor()
-    dl = dp.get_dataloader('val', train=False)
+    dl = dp.get_dataloader("val", train=False)
     for i, sample in enumerate(dl):
-        print(sample[0]['encoder_cont'][0, 0])
+        print(sample[0]["encoder_cont"][0, 0])
         break
     exit()

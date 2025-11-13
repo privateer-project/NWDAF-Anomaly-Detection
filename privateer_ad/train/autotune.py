@@ -26,27 +26,28 @@ def autotune():
         individual optimization trials, establishing proper experiment hierarchy
         for detailed analysis of the optimization process.
     """
-    logging.info('Initialize auto-tuning.')
+    logging.info("Initialize auto-tuning.")
     mlflow_config = MLFlowConfig()
 
     mlflow.set_tracking_uri(mlflow_config.tracking_uri)
     mlflow.set_experiment(mlflow_config.experiment_name)
     mlflow.start_run()
     tuner = ModelAutoTuner(parent_run_id=mlflow.active_run().info.run_id)
-    logging.info('Start autotuning.')
+    logging.info("Start autotuning.")
     param_importance_fig, optimization_hist_fig = tuner.run()
 
-    param_importance_fig.write_html('param_importances.html')
-    optimization_hist_fig.write_html('optimization_history.html')
+    param_importance_fig.write_html("param_importances.html")
+    optimization_hist_fig.write_html("optimization_history.html")
 
-    logging.info('Autotuning finished.')
-    mlflow.log_figure(param_importance_fig, 'param_importances.png')
-    mlflow.log_figure(optimization_hist_fig, 'optimization_history.png')
-    mlflow.log_artifact('param_importances.html', 'param_importances.html')
-    mlflow.log_artifact('optimization_history.html', 'optimization_history.html')
-    os.remove('param_importances.html')
-    os.remove('optimization_history.html')
+    logging.info("Autotuning finished.")
+    mlflow.log_figure(param_importance_fig, "param_importances.png")
+    mlflow.log_figure(optimization_hist_fig, "optimization_history.png")
+    mlflow.log_artifact("param_importances.html", "param_importances.html")
+    mlflow.log_artifact("optimization_history.html", "optimization_history.html")
+    os.remove("param_importances.html")
+    os.remove("optimization_history.html")
     mlflow.end_run()
+
 
 def main():
     """
@@ -57,4 +58,5 @@ def main():
     generation for operational deployment scenarios.
     """
     from fire import Fire
+
     Fire(autotune)

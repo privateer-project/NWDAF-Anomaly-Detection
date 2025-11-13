@@ -4,7 +4,6 @@ Part of the PRIVATEER Security Analytics framework
 """
 
 import os
-import sys
 import json
 import time
 import argparse
@@ -16,10 +15,9 @@ from typing import Dict, Any
 
 # Set up logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger('misp-client')
+logger = logging.getLogger("misp-client")
 
 
 class MISPClient:
@@ -67,7 +65,9 @@ class MISPClient:
                     "distribution": 0,  # Your organization only
                     "threat_level_id": 2,  # Medium (1=High, 2=Medium, 3=Low, 4=Undefined)
                     "analysis": 1,  # Initial (0=Initial, 1=Ongoing, 2=Completed)
-                    "date": data.get('timestamp', datetime.now().isoformat())[:10]  # Just the date part
+                    "date": data.get("timestamp", datetime.now().isoformat())[
+                        :10
+                    ],  # Just the date part
                 }
             }
 
@@ -79,7 +79,8 @@ class MISPClient:
             add_event_script = self.scripts_path / "add-event.py"
             result = subprocess.run(
                 ["python", str(add_event_script), str(event_file)],
-                capture_output=True, text=True
+                capture_output=True,
+                text=True,
             )
 
             if "Error" in result.stdout or result.returncode != 0:
@@ -92,7 +93,9 @@ class MISPClient:
                 response_data = json.loads(response_text.split("Response: ")[1])
                 event_id = response_data.get("Event", {}).get("id")
                 if not event_id:
-                    logger.error(f"Could not extract event ID from response: {response_text}")
+                    logger.error(
+                        f"Could not extract event ID from response: {response_text}"
+                    )
                     return
                 logger.info(f"Created MISP event with ID: {event_id}")
             except Exception as e:
@@ -107,35 +110,37 @@ class MISPClient:
                         "type": "float",
                         "category": "Other",
                         "distribution": 0,
-                        "value": str(data.get('anomaly_score')),
-                        "comment": "Anomaly Score"
+                        "value": str(data.get("anomaly_score")),
+                        "comment": "Anomaly Score",
                     },
                     {
                         "type": "text",
                         "category": "Other",
                         "distribution": 0,
                         "value": f"Affected device: {data.get('imeisv')}",
-                        "comment": "Device Identifier"
+                        "comment": "Device Identifier",
                     },
                     {
                         "type": "datetime",
                         "category": "Other",
                         "distribution": 0,
-                        "value": data.get('timestamp'),
-                        "comment": "Detection Time"
-                    }
+                        "value": data.get("timestamp"),
+                        "comment": "Detection Time",
+                    },
                 ]
             }
 
             # Add network metrics as attributes
-            for metric_name, metric_value in data.get('traffic_metrics', {}).items():
-                attribute_data["Attribute"].append({
-                    "type": "float",
-                    "category": "Network traffic",
-                    "distribution": 0,
-                    "value": str(metric_value),
-                    "comment": f"Traffic Metric: {metric_name}"
-                })
+            for metric_name, metric_value in data.get("traffic_metrics", {}).items():
+                attribute_data["Attribute"].append(
+                    {
+                        "type": "float",
+                        "category": "Network traffic",
+                        "distribution": 0,
+                        "value": str(metric_value),
+                        "comment": f"Traffic Metric: {metric_name}",
+                    }
+                )
 
             # Save attribute data to file
             attribute_file = self.temp_dir / "anomaly_attributes.json"
@@ -145,8 +150,14 @@ class MISPClient:
             # Add attributes to event
             add_attribute_script = self.scripts_path / "add-attribute-to-event.py"
             result = subprocess.run(
-                ["python", str(add_attribute_script), str(event_id), str(attribute_file)],
-                capture_output=True, text=True
+                [
+                    "python",
+                    str(add_attribute_script),
+                    str(event_id),
+                    str(attribute_file),
+                ],
+                capture_output=True,
+                text=True,
             )
 
             if "Error" in result.stdout or result.returncode != 0:
@@ -161,9 +172,13 @@ class MISPClient:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='MISP Client Service')
-    parser.add_argument('--config', type=str, default='/app/config.json',
-                        help='Path to configuration file')
+    parser = argparse.ArgumentParser(description="MISP Client Service")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="/app/config.json",
+        help="Path to configuration file",
+    )
 
     # This component is typically called from the analytics agent
     # but can also be run as a standalone service for testing
@@ -172,7 +187,7 @@ def main():
 
     # Load configuration
     try:
-        with open(args.config, 'r') as f:
+        with open(args.config, "r") as f:
             config = json.load(f)
         logger.info(f"Loaded configuration from {args.config}")
     except Exception as e:
@@ -181,8 +196,10 @@ def main():
         config = {
             "MISP_URL": os.environ.get("MISP_URL", "https://cc-cracs-201.inesctec.pt"),
             "MISP_API_KEY": os.environ.get("MISP_API_KEY", ""),
-            "MISP_SCRIPTS_PATH": os.environ.get("MISP_SCRIPTS_PATH", "/app/misp_scripts"),
-            "MISP_TEMP_DIR": os.environ.get("MISP_TEMP_DIR", "/app/temp")
+            "MISP_SCRIPTS_PATH": os.environ.get(
+                "MISP_SCRIPTS_PATH", "/app/misp_scripts"
+            ),
+            "MISP_TEMP_DIR": os.environ.get("MISP_TEMP_DIR", "/app/temp"),
         }
         logger.info("Using default configuration")
 

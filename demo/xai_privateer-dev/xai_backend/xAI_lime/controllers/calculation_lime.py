@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from lime import lime_tabular
 
@@ -30,7 +29,9 @@ def model_predict_fn(model):
     return predict
 
 
-def main_calculation_lime(x, model, output, mode='regression', num_features=10, sample_index=0):
+def main_calculation_lime(
+    x, model, output, mode="regression", num_features=10, sample_index=0
+):
     """
     Main function to calculate LIME explanations for one sample in a batch.
 
@@ -45,17 +46,21 @@ def main_calculation_lime(x, model, output, mode='regression', num_features=10, 
     Returns:
         dict: Explanation result including explanation object, sample values, and more.
     """
-    print('Running LIME explanation...')
+    print("Running LIME explanation...")
 
     print(f"Input tensor shape (x): {x.shape}")
     print(f"Model output shape: {output.shape}")
 
     # Define base feature names
     feature_columns = [
-        'dl_bitrate', 'ul_bitrate',
-        'cell_x_dl_retx', 'cell_x_dl_tx',
-        'cell_x_ul_retx', 'cell_x_ul_tx',
-        'ul_total_bytes_non_incr', 'dl_total_bytes_non_incr'
+        "dl_bitrate",
+        "ul_bitrate",
+        "cell_x_dl_retx",
+        "cell_x_dl_tx",
+        "cell_x_ul_retx",
+        "cell_x_ul_tx",
+        "ul_total_bytes_non_incr",
+        "dl_total_bytes_non_incr",
     ]
 
     # Generate time-based feature names, e.g., dl_bitrate_0, dl_bitrate_1, ..., dl_bitrate_11
@@ -76,7 +81,7 @@ def main_calculation_lime(x, model, output, mode='regression', num_features=10, 
         training_data=input_kernel_explainer,
         feature_names=feature_names,
         mode=mode,
-        discretize_continuous=False
+        discretize_continuous=False,
     )
 
     # Select the sample to explain
@@ -84,9 +89,7 @@ def main_calculation_lime(x, model, output, mode='regression', num_features=10, 
 
     # Generate explanation for the selected instance
     explanation = explainer.explain_instance(
-        data_row=instance,
-        predict_fn=model_predict_fn(model),
-        num_features=num_features
+        data_row=instance, predict_fn=model_predict_fn(model), num_features=num_features
     )
 
     print("LIME Explanation Results:")
@@ -107,10 +110,13 @@ def main_calculation_lime(x, model, output, mode='regression', num_features=10, 
         "sample": instance.tolist(),  # Values of the explained instance
         "feature_names": feature_names,  # Feature name list
         "predict_fn": model_predict_fn(model),  # Prediction function used by LIME
-        "model_output": output[sample_index].detach().cpu().numpy().tolist()
+        "model_output": output[sample_index].detach().cpu().numpy().tolist(),
     }
 
-def main_calculation_lime_from_tensor(x, model, output, instance_X_test, mode='regression', num_features=8 ):
+
+def main_calculation_lime_from_tensor(
+    x, model, output, instance_X_test, mode="regression", num_features=8
+):
     """
     Main function to calculate LIME explanations for one sample in a batch.
 
@@ -125,17 +131,21 @@ def main_calculation_lime_from_tensor(x, model, output, instance_X_test, mode='r
     Returns:
         dict: Explanation result including explanation object, sample values, and more.
     """
-    print('Running LIME explanation...')
+    print("Running LIME explanation...")
 
     print(f"Input tensor shape (x): {x.shape}")
     print(f"Model output shape: {output.shape}")
 
     # Define base feature names
     feature_columns = [
-        'dl_bitrate', 'ul_bitrate',
-        'cell_x_dl_retx', 'cell_x_dl_tx',
-        'cell_x_ul_retx', 'cell_x_ul_tx',
-        'ul_total_bytes_non_incr', 'dl_total_bytes_non_incr'
+        "dl_bitrate",
+        "ul_bitrate",
+        "cell_x_dl_retx",
+        "cell_x_dl_tx",
+        "cell_x_ul_retx",
+        "cell_x_ul_tx",
+        "ul_total_bytes_non_incr",
+        "dl_total_bytes_non_incr",
     ]
 
     # Generate time-based feature names, e.g., dl_bitrate_0, dl_bitrate_1, ..., dl_bitrate_11
@@ -156,20 +166,25 @@ def main_calculation_lime_from_tensor(x, model, output, instance_X_test, mode='r
         training_data=input_kernel_explainer,
         feature_names=feature_names,
         mode=mode,
-        discretize_continuous=False
+        discretize_continuous=False,
     )
 
     # Select the sample to explain
     # instance = tensor
     original_shape_instance = instance_X_test.shape
-    shape_kernel_explainer_instance = (original_shape_instance[0], original_shape_instance[1] * original_shape_instance[2])
-    input_kernel_explainer_instance = instance_X_test.detach().numpy().reshape(shape_kernel_explainer_instance)
+    shape_kernel_explainer_instance = (
+        original_shape_instance[0],
+        original_shape_instance[1] * original_shape_instance[2],
+    )
+    input_kernel_explainer_instance = (
+        instance_X_test.detach().numpy().reshape(shape_kernel_explainer_instance)
+    )
 
     # Generate explanation for the selected instance
     explanation = explainer.explain_instance(
         data_row=input_kernel_explainer_instance,
         predict_fn=model_predict_fn(model),
-        num_features=num_features
+        num_features=num_features,
     )
 
     print("LIME Explanation Results:")
@@ -190,5 +205,5 @@ def main_calculation_lime_from_tensor(x, model, output, instance_X_test, mode='r
         "sample": input_kernel_explainer_instance.tolist(),  # Values of the explained instance
         "feature_names": feature_names,  # Feature name list
         "predict_fn": model_predict_fn(model),  # Prediction function used by LIME
-        "model_output": output.detach().cpu().numpy().tolist()
+        "model_output": output.detach().cpu().numpy().tolist(),
     }

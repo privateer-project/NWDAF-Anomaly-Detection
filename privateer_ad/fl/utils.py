@@ -4,34 +4,36 @@ import torch
 
 from flwr.common.typing import NDArrays
 
+
 def set_weights(net, parameters: NDArrays):
     """
-        Load model parameters from federated learning parameter arrays into a PyTorch model.
+    Load model parameters from federated learning parameter arrays into a PyTorch model.
 
-        This function bridges the gap between Flower's federated learning parameter
-        representation and PyTorch's native model state management. It reconstructs
-        the model's state dictionary from the flattened parameter arrays received
-        from federated aggregation, ensuring that the local model reflects the most
-        recent collaborative learning outcomes.
+    This function bridges the gap between Flower's federated learning parameter
+    representation and PyTorch's native model state management. It reconstructs
+    the model's state dictionary from the flattened parameter arrays received
+    from federated aggregation, ensuring that the local model reflects the most
+    recent collaborative learning outcomes.
 
-        Args:
-            net: PyTorch model instance that will receive the updated parameters.
-                 The model's architecture must match the parameter structure
-                 provided in the parameters array.
-            parameters (NDArrays): Collection of NumPy arrays containing model
-                                 parameters in the same order as the model's
-                                 state dictionary keys. These typically come
-                                 from federated aggregation processes.
+    Args:
+        net: PyTorch model instance that will receive the updated parameters.
+             The model's architecture must match the parameter structure
+             provided in the parameters array.
+        parameters (NDArrays): Collection of NumPy arrays containing model
+                             parameters in the same order as the model's
+                             state dictionary keys. These typically come
+                             from federated aggregation processes.
 
-        Note:
-            The function uses strict loading to ensure parameter integrity, which
-            means all expected parameters must be present and correctly shaped.
-            This prevents silent failures that could compromise federated learning
-            effectiveness.
-        """
+    Note:
+        The function uses strict loading to ensure parameter integrity, which
+        means all expected parameters must be present and correctly shaped.
+        This prevents silent failures that could compromise federated learning
+        effectiveness.
+    """
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
+
 
 def get_weights(net):
     """

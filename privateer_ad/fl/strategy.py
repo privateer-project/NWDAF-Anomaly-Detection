@@ -4,8 +4,15 @@ from typing import List, Tuple, Union, Optional
 import numpy as np
 import mlflow
 
-from flwr.common import (ndarrays_to_parameters, parameters_to_ndarrays, Scalar, Parameters,
-                         Metrics, EvaluateRes, FitRes)
+from flwr.common import (
+    ndarrays_to_parameters,
+    parameters_to_ndarrays,
+    Scalar,
+    Parameters,
+    Metrics,
+    EvaluateRes,
+    FitRes,
+)
 from flwr.server.strategy import FedAvg
 from flwr.server.client_proxy import ClientProxy
 
@@ -34,8 +41,10 @@ def metrics_aggregation_fn(results: List[Tuple[int, Metrics]]):
         for name, value in _metrics.items():
             if name not in weighted_sums:
                 weighted_sums[name] = 0
-            weighted_sums[name] += (num_examples * value)
-    weighted_metrics = {name: (value / total_num_examples) for name, value in weighted_sums.items()}
+            weighted_sums[name] += num_examples * value
+    weighted_metrics = {
+        name: (value / total_num_examples) for name, value in weighted_sums.items()
+    }
     return weighted_metrics
 
 
@@ -102,17 +111,19 @@ class CustomStrategy(FedAvg):
         self.model_config = model_config or ModelConfig()
         # Create model with proper configuration
         self.model = TransformerAD()
-        initial_parameters = ndarrays_to_parameters([val.cpu().numpy() for _, val in self.model.state_dict().items()])
+        initial_parameters = ndarrays_to_parameters(
+            [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+        )
         # Initialize parent strategy with custom config functions
         super().__init__(
             on_fit_config_fn=self._fit_config_fn,
             on_evaluate_config_fn=self._evaluate_config_fn,
             fit_metrics_aggregation_fn=metrics_aggregation_fn,
             evaluate_metrics_aggregation_fn=metrics_aggregation_fn,
-            initial_parameters=initial_parameters
+            initial_parameters=initial_parameters,
         )
 
-        if self.training_config.direction == 'maximize':
+        if self.training_config.direction == "maximize":
             self.best_target_metric = -np.inf
         else:
             self.best_target_metric = np.inf
@@ -129,8 +140,10 @@ class CustomStrategy(FedAvg):
             dict: Configuration dictionary containing round information and
                   experiment tracking identifiers for client coordination.
         """
-        return {'server_round': server_round,
-                'server_run_id': self.mlflow_config.parent_run_id}
+        return {
+            "server_round": server_round,
+            "server_run_id": self.mlflow_config.parent_run_id,
+        }
 
     def _evaluate_config_fn(self, server_round: int):
         """
@@ -143,7 +156,7 @@ class CustomStrategy(FedAvg):
             dict: Configuration dictionary containing round information and
                   experiment tracking identifiers for client coordination.
         """
-        return {'server_round': server_round}
+        return {"server_round": server_round}
 
     def _is_better_metric(self, current_value: float) -> bool:
         """
@@ -157,16 +170,16 @@ class CustomStrategy(FedAvg):
                   if performance has not exceeded previous best results.
         """
 
-        if self.training_config.direction == 'maximize':
+        if self.training_config.direction == "maximize":
             return current_value > self.best_target_metric
         else:  # minimize
             return current_value < self.best_target_metric
 
     def aggregate_fit(
-            self,
-            server_round: int,
-            results: List[Tuple[ClientProxy, FitRes]],
-            failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
+        self,
+        server_round: int,
+        results: List[Tuple[ClientProxy, FitRes]],
+        failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
     ) -> Tuple[Optional[Parameters], dict[str, Scalar]]:
         """
         Aggregate training results from federated clients with intelligent model selection.
@@ -194,28 +207,40 @@ class CustomStrategy(FedAvg):
                                                           distribution to clients in
                                                           subsequent federation rounds.
         """
-        parameters_aggregated, metrics_aggregated = super().aggregate_fit(server_round, results, failures)
+        parameters_aggregated, metrics_aggregated = super().aggregate_fit(
+            server_round, results, failures
+        )
         # Update best model if target metric improved
-        logging.warning(f'metrics_aggregated: {metrics_aggregated}')
+        logging.warning(f"metrics_aggregated: {metrics_aggregated}")
         if metrics_aggregated:
-            logging.warning(f'self.training_config.target_metric: {self.training_config.target_metric}')
+            logging.warning(
+                f"self.training_config.target_metric: {self.training_config.target_metric}"
+            )
             if self.training_config.target_metric in metrics_aggregated:
-                if self._is_better_metric(metrics_aggregated[self.training_config.target_metric]):
+                if self._is_better_metric(
+                    metrics_aggregated[self.training_config.target_metric]
+                ):
                     self.best_metrics = metrics_aggregated
-                    self.best_target_metric = self.best_metrics[self.training_config.target_metric]
-                    set_weights(self.model, parameters_to_ndarrays(parameters_aggregated))
-                    logging.info(f"New best model at round {server_round} with "
-                                 f"{self.training_config.target_metric}: {self.best_target_metric:.5f}")
+                    self.best_target_metric = self.best_metrics[
+                        self.training_config.target_metric
+                    ]
+                    set_weights(
+                        self.model, parameters_to_ndarrays(parameters_aggregated)
+                    )
+                    logging.info(
+                        f"New best model at round {server_round} with "
+                        f"{self.training_config.target_metric}: {self.best_target_metric:.5f}"
+                    )
         if mlflow.active_run() and metrics_aggregated:
             mlflow.log_metrics(metrics_aggregated, step=server_round)
 
         return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(
-            self,
-            server_round: int,
-            results: List[Tuple[ClientProxy, EvaluateRes]],
-            failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
+        self,
+        server_round: int,
+        results: List[Tuple[ClientProxy, EvaluateRes]],
+        failures: List[Union[Tuple[ClientProxy, EvaluateRes], BaseException]],
     ) -> Tuple[Optional[float], dict[str, Scalar]]:
         """
         Aggregate evaluation results from federated clients with comprehensive tracking.
@@ -242,9 +267,11 @@ class CustomStrategy(FedAvg):
                                                      metrics for federation assessment
                                                      and tracking purposes.
         """
-        loss_aggregated, metrics_aggregated = super().aggregate_evaluate(server_round, results, failures)
+        loss_aggregated, metrics_aggregated = super().aggregate_evaluate(
+            server_round, results, failures
+        )
         # Log metrics to MLFlow
         if mlflow.active_run() and metrics_aggregated:
             mlflow.log_metrics(metrics_aggregated, step=server_round)
-            mlflow.log_metric('test_loss', loss_aggregated, step=server_round)
+            mlflow.log_metric("test_loss", loss_aggregated, step=server_round)
         return loss_aggregated, metrics_aggregated

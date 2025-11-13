@@ -10,23 +10,29 @@ import re
 
 # Import custom SHAP service logic
 from xAI_shap.controllers.crud_shap_flask import ShapService
-from xAI_shap.controllers.generate_shap_reports import generate_json_report_shap, \
-    create_all_report_folders
+from xAI_shap.controllers.generate_shap_reports import (
+    generate_json_report_shap,
+    create_all_report_folders,
+)
 
 # === Initialize the Flask app and CORS ===
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # === Configure Flask-RestX API metadata ===
-api = Api(app, version='1.0', title='SHAP Management API',
-          description='API for managing SHAP explanations.',
-          default='SHAP',
-          default_label='Operations related to SHAP explanations')
+api = Api(
+    app,
+    version="1.0",
+    title="SHAP Management API",
+    description="API for managing SHAP explanations.",
+    default="SHAP",
+    default_label="Operations related to SHAP explanations",
+)
 
 # === Configure file storage ===
-UPLOAD_FOLDER = 'graphics'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['ALLOWED_EXTENSIONS'] = {'png'}
+UPLOAD_FOLDER = "graphics"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["ALLOWED_EXTENSIONS"] = {"png"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # === Instantiate the SHAP service class ===
@@ -36,7 +42,7 @@ shap_service = ShapService()
 JSON_FOLDER = os.path.join("reports_shap", "json")
 
 
-@api.route('/api_shap/json_report/<int:instance_index>')
+@api.route("/api_shap/json_report/<int:instance_index>")
 class LatestJsonReport(Resource):
     def get(self, instance_index):
         """
@@ -50,7 +56,9 @@ class LatestJsonReport(Resource):
         """
         try:
             # Regular expression to match files named like: instance_<index>_<timestamp>.json
-            pattern = re.compile(rf"^instance_{instance_index}_(\d{{8}}_\d{{6}})\.json$")
+            pattern = re.compile(
+                rf"^instance_{instance_index}_(\d{{8}}_\d{{6}})\.json$"
+            )
             matched_files = []
 
             # Search for matching files in the JSON reports folder
@@ -62,7 +70,9 @@ class LatestJsonReport(Resource):
 
             # If no matching file found, return 404
             if not matched_files:
-                return {"error": f"No JSON report found for instance {instance_index}."}, 404
+                return {
+                    "error": f"No JSON report found for instance {instance_index}."
+                }, 404
 
             # Sort files by timestamp in descending order and select the most recent one
             matched_files.sort(reverse=True)
@@ -70,7 +80,7 @@ class LatestJsonReport(Resource):
             full_path = os.path.join(JSON_FOLDER, latest_file)
 
             # Read and parse the JSON content of the selected file
-            with open(full_path, 'r') as f:
+            with open(full_path, "r") as f:
                 data = json.load(f)
 
             # Return the parsed JSON content
@@ -82,7 +92,7 @@ class LatestJsonReport(Resource):
 
 
 # === API endpoint to load dataset and model ===
-@api.route('/api_shap/send_data_request/<string:dataset_name>/<string:model_name>')
+@api.route("/api_shap/send_data_request/<string:dataset_name>/<string:model_name>")
 class InitShap(Resource):
     def get(self, dataset_name, model_name):
         try:
@@ -93,7 +103,7 @@ class InitShap(Resource):
 
 
 # === API endpoint to run prediction and calculate SHAP values for an instance ===
-@api.route('/api_shap/perform_shap_calculations/<int:instance_index>')
+@api.route("/api_shap/perform_shap_calculations/<int:instance_index>")
 class ShapCalculate(Resource):
     def get(self, instance_index):
         try:
@@ -118,22 +128,25 @@ class ShapCalculate(Resource):
             json_path = os.path.join(folders["json"], base_name + ".json")
 
             # Generate JSON report
-            generate_json_report_shap(shap_service.result_shap, json_path, instance_index)
+            generate_json_report_shap(
+                shap_service.result_shap, json_path, instance_index
+            )
 
             # Load JSON content to return it in the response
-            with open(json_path, 'r') as f:
+            with open(json_path, "r") as f:
                 json_content = json.load(f)
 
             return {
                 "message": "SHAP values calculated and JSON report generated.",
-                "report": json_content
+                "report": json_content,
             }, 200
 
         except Exception as e:
             return {"error": str(e)}, 500
 
+
 # === API endpoint to generate SHAP explanation graphics ===
-@api.route('/api_shap/generation_graphics')
+@api.route("/api_shap/generation_graphics")
 class GenerateGraphics(Resource):
     def get(self):
         try:
@@ -144,7 +157,7 @@ class GenerateGraphics(Resource):
 
 
 # === API endpoint to generate report files ===
-@api.route('/generate_reports')
+@api.route("/generate_reports")
 class GenerateReports(Resource):
     def get(self):
         try:
@@ -155,7 +168,7 @@ class GenerateReports(Resource):
 
 
 # === API endpoint to list feature names used for SHAP ===
-@api.route('/api_shap/features')
+@api.route("/api_shap/features")
 class ListFeatures(Resource):
     def get(self):
         try:
@@ -165,7 +178,7 @@ class ListFeatures(Resource):
 
 
 # === API endpoint to list generated graphic filenames ===
-@api.route('/api_shap/files')
+@api.route("/api_shap/files")
 class ListGraphics(Resource):
     def get(self):
         try:
@@ -176,7 +189,7 @@ class ListGraphics(Resource):
 
 
 # === API endpoint to serve a specific graphic file ===
-@api.route('/api_shap/files/<string:filename>')
+@api.route("/api_shap/files/<string:filename>")
 class ServeGraphic(Resource):
     def get(self, filename):
         try:
@@ -186,12 +199,16 @@ class ServeGraphic(Resource):
 
 
 # === API endpoint to return graphic filenames by instance index ===
-@api.route('/api_shap/return_name_graphics/<int:instance_X_test>')
+@api.route("/api_shap/return_name_graphics/<int:instance_X_test>")
 class ReturnGraphicNames(Resource):
     def get(self, instance_X_test):
         try:
-            matched_files = [f for f in os.listdir(UPLOAD_FOLDER)
-                             if f.startswith(f"shap_summary_{instance_X_test}_") and f.endswith(".png")]
+            matched_files = [
+                f
+                for f in os.listdir(UPLOAD_FOLDER)
+                if f.startswith(f"shap_summary_{instance_X_test}_")
+                and f.endswith(".png")
+            ]
             if not matched_files:
                 return {"message": "No graphics found."}, 404
             return {"graphics": matched_files}, 200
@@ -200,24 +217,31 @@ class ReturnGraphicNames(Resource):
 
 
 # === API endpoint to return graphics as ZIP for a given instance ===
-@api.route('/api_shap/return_graphics/<int:instance_X_test>')
+@api.route("/api_shap/return_graphics/<int:instance_X_test>")
 class ReturnGraphicsZip(Resource):
     def get(self, instance_X_test):
         try:
-            matched_files = [os.path.join(UPLOAD_FOLDER, f) for f in os.listdir(UPLOAD_FOLDER)
-                             if f.startswith(f"shap_summary_{instance_X_test}_") and f.endswith(".png")]
+            matched_files = [
+                os.path.join(UPLOAD_FOLDER, f)
+                for f in os.listdir(UPLOAD_FOLDER)
+                if f.startswith(f"shap_summary_{instance_X_test}_")
+                and f.endswith(".png")
+            ]
             if not matched_files:
                 return {"message": "No graphics found."}, 404
 
             zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            with zipfile.ZipFile(zip_buffer, "w") as zip_file:
                 for file_path in matched_files:
                     zip_file.write(file_path, os.path.basename(file_path))
 
             zip_buffer.seek(0)
-            return send_file(zip_buffer, as_attachment=True,
-                             download_name=f"graphics_instance_{instance_X_test}.zip",
-                             mimetype="application/zip")
+            return send_file(
+                zip_buffer,
+                as_attachment=True,
+                download_name=f"graphics_instance_{instance_X_test}.zip",
+                mimetype="application/zip",
+            )
         except Exception as e:
             return {"error": str(e)}, 500
 
@@ -228,5 +252,5 @@ def start_xAI_shap(host, port):
 
 
 # === Entry point for standalone script execution ===
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(host="127.0.0.4", port=5000, debug=True)

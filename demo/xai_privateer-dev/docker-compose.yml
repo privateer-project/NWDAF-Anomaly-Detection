@@ -10,7 +10,7 @@ services:
       - FLASK_DEBUG=1
     networks:
       - app-network
-  
+
   manage_models:
     build:
       context: ./xai_backend
@@ -22,7 +22,7 @@ services:
       - FLASK_DEBUG=1
     networks:
       - app-network
-    
+
   xai_shap:
     build:
       context: ./xai_backend
@@ -46,7 +46,7 @@ services:
       - FLASK_DEBUG=1
     networks:
       - app-network
-  
+
 
   frontend:
     build:

@@ -1,5 +1,6 @@
 import torch
 
+
 def make_prediction(x, model):
     """
     Perform a forward pass through the model using the given input tensor `x`.
@@ -19,6 +20,7 @@ def make_prediction(x, model):
         output = model(x)  # Forward pass
     return output
 
+
 def get_feature_names():
     """
     Generate the list of feature names for each time step.
@@ -33,10 +35,14 @@ def get_feature_names():
     """
     # Base feature names, assumed to repeat across each time step
     feature_columns = [
-        'dl_bitrate', 'ul_bitrate',
-        'cell_x_dl_retx', 'cell_x_dl_tx',
-        'cell_x_ul_retx', 'cell_x_ul_tx',
-        'ul_total_bytes_non_incr', 'dl_total_bytes_non_incr'
+        "dl_bitrate",
+        "ul_bitrate",
+        "cell_x_dl_retx",
+        "cell_x_dl_tx",
+        "cell_x_ul_retx",
+        "cell_x_ul_tx",
+        "ul_total_bytes_non_incr",
+        "dl_total_bytes_non_incr",
     ]
 
     # Construct feature names with time step suffixes (e.g., 'dl_bitrate_0', ..., 'dl_bitrate_11')

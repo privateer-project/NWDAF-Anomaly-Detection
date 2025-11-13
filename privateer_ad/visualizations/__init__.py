@@ -1,3 +1,3 @@
 from .plotter import Visualizer
 
-__all__ = ['Visualizer']
+__all__ = ["Visualizer"]

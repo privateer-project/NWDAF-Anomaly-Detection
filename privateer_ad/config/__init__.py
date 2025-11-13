@@ -15,6 +15,7 @@ Usage Examples:
     # Override with environment variables
     config = ModelConfig() # Automatically loads PRIVATEER_MODEL_* env vars
 """
+
 from .metadata import MetadataConfig
 from .settings import (
     PathConfig,
@@ -24,17 +25,17 @@ from .settings import (
     DataConfig,
     FederatedLearningConfig,
     PrivacyConfig,
-    MLFlowConfig
+    MLFlowConfig,
 )
 
 __all__ = [
-    'MetadataConfig',
-    'PathConfig',
-    'ModelConfig',
-    'TrainingConfig',
-    'DataConfig',
-    'FederatedLearningConfig',
-    'PrivacyConfig',
-    'MLFlowConfig',
-    'AutotuningConfig',
+    "MetadataConfig",
+    "PathConfig",
+    "ModelConfig",
+    "TrainingConfig",
+    "DataConfig",
+    "FederatedLearningConfig",
+    "PrivacyConfig",
+    "MLFlowConfig",
+    "AutotuningConfig",
 ]

@@ -21,7 +21,7 @@
         margin-bottom: 20px;
       }
 
-      
+
   /* Description Section */
   .description {
     display: flex;
@@ -35,7 +35,7 @@
     width: 100%;
     box-sizing: border-box;
   }
-  
+
   .explanation-text {
     width: 100%;
     height: auto; /* Removei o tamanho fixo para o texto */

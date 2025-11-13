@@ -71,7 +71,9 @@ class Trainer:
         self.config = config
         self.logger = logger
 
-    def load_dataset(self, schema_id: str, mode: str) -> tuple[np.ndarray, list[str]]:
+    def load_dataset(
+        self, schema_id: str, mode: str
+    ) -> tuple[np.ndarray, list[str], tuple[int, ...]]:
         """Load all vectors for a schema from database.
 
         Args:
@@ -79,10 +81,14 @@ class Trainer:
             mode: "dense" or "conv1d" - determines shape transformation
 
         Returns:
-            (X, ids) tuple where:
-            - Dense mode: X has shape (N, D)
-            - Conv1d mode: X has shape (N, F, T) - transposed from storage format
-            - ids is list of anomaly_ids
+            (X, ids, storage_sample_shape) tuple where:
+            - X: Data array
+              - Dense mode: X has shape (N, D)
+              - Conv1d mode: X has shape (N, F, T) - transposed from storage format
+            - ids: List of anomaly_ids
+            - storage_sample_shape: Original sample shape in storage format
+              - Dense: (D,)
+              - Conv1d: (T, F)
 
         Shape Convention:
             Storage format (per sample):
@@ -115,6 +121,9 @@ class Trainer:
         # Stack into single array
         X = np.stack(vectors, axis=0)
 
+        # Store original sample shape (storage format) for model building
+        storage_sample_shape = X.shape[1:]  # Shape per sample in storage format
+
         # For Conv1d mode, transpose from storage format (N, T, F) to training format (N, F, T)
         # PyTorch Conv1d expects (Batch, Channels, Length) = (N, F, T)
         if mode == "conv1d" and X.ndim == 3:
@@ -133,14 +142,22 @@ class Trainer:
             mode=mode
         )
 
-        return X, ids
+        return X, ids, storage_sample_shape
 
-    def fit(self, X: np.ndarray, params: TrainParams) -> tuple[dict, dict, dict]:
+    def fit(
+        self,
+        X: np.ndarray,
+        params: TrainParams,
+        storage_sample_shape: tuple[int, ...] | None = None,
+    ) -> tuple[dict, dict, dict]:
         """Train autoencoder on data.
 
         Args:
             X: Training data array (raw, no preprocessing)
+               For Conv1d, should already be transposed to (N, F, T)
             params: Training parameters
+            storage_sample_shape: Original sample shape in storage format
+                                 If None, will use X.shape[1:]
 
         Returns:
             (state_dict, threshold, metrics) tuple
@@ -156,6 +173,10 @@ class Trainer:
         patience = params["patience"]
         percentile = params["percentile"]
 
+        # Use provided storage shape or infer from X
+        if storage_sample_shape is None:
+            storage_sample_shape = X.shape[1:]
+
         device = get_device()
         self.logger.info("Using device", device=str(device))
 
@@ -163,14 +184,14 @@ class Trainer:
         X_train, X_val = self._split_data(X, val_split)
         self.logger.info("Data split", train_shape=X_train.shape, val_shape=X_val.shape)
 
-        # 2. Build model (train on raw data, no normalization)
-        input_shape = X.shape[1:]  # Everything except batch dimension
-        model = build_model(mode, input_shape)
+        # 2. Build model using STORAGE format shape (before any transpose)
+        #    build_model expects storage format: Dense=(D,), Conv1d=(T,F)
+        model = build_model(mode, storage_sample_shape)
         model = model.to(device)
 
         n_params = sum(p.numel() for p in model.parameters())
         self.logger.info(
-            "Model built", mode=mode, input_shape=input_shape, n_parameters=n_params
+            "Model built", mode=mode, input_shape=storage_sample_shape, n_parameters=n_params
         )
 
         # 3. Setup optimizer and loss
@@ -263,15 +284,14 @@ class Trainer:
         )
 
         # 1. Load dataset (with appropriate shape transformation for mode)
-        X, ids = self.load_dataset(schema_id, mode=params["mode"])
+        X, ids, storage_sample_shape = self.load_dataset(schema_id, mode=params["mode"])
 
         # 2. Train model (no normalization, train on raw data)
-        state_dict, threshold, metrics = self.fit(X, params)
+        state_dict, threshold, metrics = self.fit(X, params, storage_sample_shape)
 
-        # 3. Create artifact version
-        input_shape = X.shape[1:]
+        # 3. Create artifact version using STORAGE format shape
         model_version, artifact_path = self.artifacts.create_version(
-            params["mode"], input_shape
+            params["mode"], storage_sample_shape
         )
 
         self.logger.info(
@@ -283,7 +303,7 @@ class Trainer:
 
         config = {
             "mode": params["mode"],
-            "input_shape": list(input_shape),
+            "input_shape": list(storage_sample_shape),
             "dtype": "float32",
         }
         self.artifacts.save_config(model_version, config)

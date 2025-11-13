@@ -15,14 +15,14 @@ import pandas as pd
 
 from kafka import KafkaConsumer, KafkaProducer
 
-sys.path.append('/app')
+sys.path.append("/app")
 from privateer_ad.etl import DataProcessor
 
 
 def default_serializer(data: dict) -> bytes:
     try:
         # Convert numpy types and serialize to JSON
-        return json.dumps(data, cls=NumpyEncoder).encode('utf-8')
+        return json.dumps(data, cls=NumpyEncoder).encode("utf-8")
     except Exception as e:
         logging.error(f"Serialization error: {e}")
         raise
@@ -53,26 +53,28 @@ class AnonymizerPreprocessor:
 
         # Timestamp-based buffering for aggregation
         self.buffer = []  # timestamp -> list of device samples
-        self.max_timestamp_age = 30  # seconds - maximum age before processing incomplete batches
+        self.max_timestamp_age = (
+            30  # seconds - maximum age before processing incomplete batches
+        )
 
     def process_sample(self, data):
         """Process incoming sample using timestamp-based batching approach"""
         # Extract timestamp - normalize to the same second for batching
         df = pd.DataFrame.from_dict(data)
         df = self.data_processor.clean_data(df)
-        df['_time'] = pd.to_datetime(df['_time'])
-        df = df.sort_values(by=['_time']).reset_index(drop=True)
+        df["_time"] = pd.to_datetime(df["_time"])
+        df = df.sort_values(by=["_time"]).reset_index(drop=True)
         df = self.data_processor.aggregate_by_time(df)
         df = self.data_processor.scale_data(df)
 
-        aggregated_point = self._process_timestamp_batch(df['_time'].values, df)
+        aggregated_point = self._process_timestamp_batch(df["_time"].values, df)
 
         if aggregated_point is not None:
             self.buffer.append(aggregated_point)
 
             # Keep only last seq_len aggregated points
             if len(self.buffer) >= self.data_config.seq_len:
-                self.buffer = self.buffer[-self.data_config.seq_len:]
+                self.buffer = self.buffer[-self.data_config.seq_len :]
                 seq = self._build_sequence()
                 return seq
         return None
@@ -82,14 +84,18 @@ class AnonymizerPreprocessor:
         try:
             if len(df) > 0:
                 aggregated_point = {
-                    'timestamp': timestamp_key,
-                    'features': df[self.data_processor.input_features].to_dict(orient='list'),
-                    'metadata': {
-                        'attack': int(df.get('attack', pd.Series([0])).iloc[0]),
-                        'malicious': int(df.get('malicious', pd.Series([0])).iloc[0]),
-                        'cell': df.get('cell', pd.Series(['unknown'])).iloc[0],
-                        'attack_number': int(df.get('attack_number', pd.Series([0])).iloc[0])
-                    }
+                    "timestamp": timestamp_key,
+                    "features": df[self.data_processor.input_features].to_dict(
+                        orient="list"
+                    ),
+                    "metadata": {
+                        "attack": int(df.get("attack", pd.Series([0])).iloc[0]),
+                        "malicious": int(df.get("malicious", pd.Series([0])).iloc[0]),
+                        "cell": df.get("cell", pd.Series(["unknown"])).iloc[0],
+                        "attack_number": int(
+                            df.get("attack_number", pd.Series([0])).iloc[0]
+                        ),
+                    },
                 }
                 return aggregated_point
             return None
@@ -105,34 +111,34 @@ class AnonymizerPreprocessor:
         # Extract features in temporal sequence order
         features = {}
         for feature in self.data_processor.input_features:
-            features[feature] = [point['features'][feature] for point in self.buffer]
+            features[feature] = [point["features"][feature] for point in self.buffer]
 
         # Get metadata from the last (most recent) point
         last_point = self.buffer[-1]
         return {
-            'device_id': 'network_aggregated',  # This represents the entire network
-            'features': features,
-            'timestamp': last_point['timestamp'],
-            'metadata': last_point['metadata']
+            "device_id": "network_aggregated",  # This represents the entire network
+            "features": features,
+            "timestamp": last_point["timestamp"],
+            "metadata": last_point["metadata"],
         }
 
+
 def main():
-    bootstrap_servers = os.environ.get('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
-    input_topic = os.environ.get('INPUT_TOPIC', 'raw-network-data')
-    output_topic = os.environ.get('OUTPUT_TOPIC', 'preprocessed-data')
+    bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    input_topic = os.environ.get("INPUT_TOPIC", "raw-network-data")
+    output_topic = os.environ.get("OUTPUT_TOPIC", "preprocessed-data")
 
     print("Starting anonymizer with DataProcessor preprocessing...")
-    print('bootstrap_servers')
+    print("bootstrap_servers")
     consumer = KafkaConsumer(
         input_topic,
         bootstrap_servers=bootstrap_servers,
-        value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-        auto_offset_reset='latest'
+        value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+        auto_offset_reset="latest",
     )
 
     producer = KafkaProducer(
-        bootstrap_servers=bootstrap_servers,
-        value_serializer=default_serializer
+        bootstrap_servers=bootstrap_servers, value_serializer=default_serializer
     )
 
     processor = AnonymizerPreprocessor()
@@ -156,6 +162,7 @@ def main():
         except Exception as e:
             print(f"Error processing message: {e}")
             import traceback
+
             traceback.print_exc()
             exit()
 
@@ -163,5 +170,5 @@ def main():
     producer.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

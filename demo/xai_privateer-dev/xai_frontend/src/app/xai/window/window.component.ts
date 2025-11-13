@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './window.component.css'
 })
 export class WindowComponent {
-  
+
   shapvalues: number[][]
   limeValues:number [][]
 
@@ -30,16 +30,16 @@ export class WindowComponent {
   // Chart Data
   public barChartType = 'bar' as const;
 
-  
+
   public barChartOptions: ChartConfiguration<'bar'>['options']
   public barChartDataShap: ChartData<'bar'>
-  public barChartDataLime: ChartData<'bar'> 
-  
+  public barChartDataLime: ChartData<'bar'>
+
     constructor(private shap: ShapApiService, private limeService:LimeApiService) {
         this.shapvalues = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
         this.limeValues = this.limeService.fillMissingValuesLimeReport()
         this.featureLabels = this.shap.labels
-    
+
         this.columnLabels = this.shap.labels
         let graph_data = this.calculateStats(this.shapvalues)
         let initShapCharts = this.init_feature_data_graphic(this.shapvalues)
@@ -69,30 +69,30 @@ export class WindowComponent {
     };
     return {barChartData, barChartOptions}
   }
-  
+
     transpose<T>(matrix: number[][]): number[][] {
       return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
     }
-  
+
     convertTo2DArray(obj: any, groupSize = 8) {
       // Get all values from the object in order
       const values = Object.values(obj);
       // Create 2D array by grouping consecutive values
       const result = [];
-  
+
       for (let i = 0; i < values.length; i += groupSize) {
         // Extract a slice of 'groupSize' elements
         const group = values.slice(i, i + groupSize);
         result.push(group);
       }
-  
+
       return result;
     }
-  
-  
+
+
     //---------------------
-  
-  
+
+
     // events
     public chartClicked({
       event,
@@ -103,7 +103,7 @@ export class WindowComponent {
     }): void {
       console.log(event, active);
     }
-  
+
     public chartHovered({
       event,
       active,
@@ -113,7 +113,7 @@ export class WindowComponent {
     }): void {
       console.log(event, active);
     }
-  
+
   // Calculate mean and standard deviation for each row
   private calculateStats(data: number[][]): { means: number[]; stdDevs: number[] } {
     if (!data || data.length === 0 || data[0].length === 0) {
@@ -147,7 +147,7 @@ export class WindowComponent {
       let temp = {
         labels: this.featureLabels,
         datasets: [
-          { data: data_transposed[i], label: features[i] }  
+          { data: data_transposed[i], label: features[i] }
         ],
     }
     resp.push({data:temp, features:features[i]})

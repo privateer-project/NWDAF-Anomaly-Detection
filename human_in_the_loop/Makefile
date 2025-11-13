@@ -12,9 +12,10 @@ help:
 	@echo "  make test             Run all tests"
 	@echo "  make test-verbose     Run tests with verbose output"
 	@echo "  make test-coverage    Run tests with coverage report"
-	@echo "  make lint             Run linter (ruff)"
+	@echo "  make lint             Run linter (ruff check)"
+	@echo "  make ruff             Run ruff with auto-fix"
 	@echo "  make format           Format code with ruff"
-	@echo "  make type-check       Run type checker (mypy)"
+	@echo "  make type-check       Run type checker (ty)"
 	@echo "  make clean            Clean up generated files"
 	@echo "  make init-db          Initialize database"
 	@echo "  make run-api          Start API server"
@@ -47,13 +48,16 @@ test-watch:
 
 # Code quality targets
 lint:
-	python -m ruff check hitl/ tests/
+	uvx ruff check .
+
+ruff:
+	uvx ruff check . --fix
 
 format:
-	python -m ruff format hitl/ tests/
+	uvx ruff format .
 
 type-check:
-	python -m mypy hitl/ --strict
+	uvx ty check . --ignore unresolved-import
 
 # Cleanup targets
 clean:

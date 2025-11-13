@@ -8,7 +8,13 @@ import numpy as np
 import optuna
 import mlflow
 
-from privateer_ad.config import AutotuningConfig, ModelConfig, TrainingConfig, MLFlowConfig, DataConfig
+from privateer_ad.config import (
+    AutotuningConfig,
+    ModelConfig,
+    TrainingConfig,
+    MLFlowConfig,
+    DataConfig,
+)
 from privateer_ad.train.train import TrainPipeline
 
 
@@ -31,6 +37,7 @@ class AutotuneParam:
         q (Optional[float]): Quantization factor for discrete sampling
         log (Optional[bool]): Whether to use logarithmic scaling for numeric ranges
     """
+
     name: str
     type: str
     choices: Optional[List] = None
@@ -43,19 +50,25 @@ class AutotuneParam:
 
 # Parameter definitions
 DATA_PARAMS = [
-    AutotuneParam(name='seq_len', type='int', low=1, high=500, step=1, log=True),  # [1, 2, 6, 12, 24, 120]
+    AutotuneParam(
+        name="seq_len", type="int", low=1, high=500, step=1, log=True
+    ),  # [1, 2, 6, 12, 24, 120]
 ]
 MODEL_PARAMS = [
-    AutotuneParam(name='num_layers', type='categorical', choices=[1, 2, 4, 8, 16, 32]),
-    AutotuneParam(name='hidden_dim', type='categorical', choices=[16, 32, 64, 128]),
-    AutotuneParam(name='latent_dim', type='categorical', choices=[8, 16, 32, 64]),
-    AutotuneParam(name='num_heads', type='categorical', choices=[1, 2, 4, 8]),
-    AutotuneParam(name='dropout', type='float', low=0.0, high=0.5, step=0.05),
+    AutotuneParam(name="num_layers", type="categorical", choices=[1, 2, 4, 8, 16, 32]),
+    AutotuneParam(name="hidden_dim", type="categorical", choices=[16, 32, 64, 128]),
+    AutotuneParam(name="latent_dim", type="categorical", choices=[8, 16, 32, 64]),
+    AutotuneParam(name="num_heads", type="categorical", choices=[1, 2, 4, 8]),
+    AutotuneParam(name="dropout", type="float", low=0.0, high=0.5, step=0.05),
 ]
 
 TRAINING_PARAMS = [
-    AutotuneParam(name='learning_rate', type='loguniform', low=1e-5, high=1e-2),
-    AutotuneParam(name='batch_size', type='categorical', choices=[256, 512, 1024, 2048, 4096, 8192]),
+    AutotuneParam(name="learning_rate", type="loguniform", low=1e-5, high=1e-2),
+    AutotuneParam(
+        name="batch_size",
+        type="categorical",
+        choices=[256, 512, 1024, 2048, 4096, 8192],
+    ),
 ]
 
 ALL_PARAMS = MODEL_PARAMS + TRAINING_PARAMS
@@ -81,7 +94,11 @@ class ModelAutoTuner:
         parent_run_id (str): MLflow parent run for experiment hierarchy
     """
 
-    def __init__(self, autotune_config: Optional[AutotuningConfig] = None, parent_run_id: Optional[str] = None):
+    def __init__(
+        self,
+        autotune_config: Optional[AutotuningConfig] = None,
+        parent_run_id: Optional[str] = None,
+    ):
         """
         Initialize hyperparameter optimization with study configuration.
 
@@ -103,14 +120,14 @@ class ModelAutoTuner:
         self.parent_run_id = parent_run_id
 
         storage = self.autotune_config.study_name
-        if not storage.startswith(('sqlite://', 'mysql://', 'postgresql://')):
+        if not storage.startswith(("sqlite://", "mysql://", "postgresql://")):
             storage = f"sqlite:///{self.autotune_config.study_name}.db"
 
         self.study = optuna.create_study(
             study_name=self.autotune_config.study_name,
             direction=self.autotune_config.direction,
             storage=storage,
-            load_if_exists=True
+            load_if_exists=True,
         )
 
     def run(self) -> tuple:
@@ -124,20 +141,26 @@ class ModelAutoTuner:
         Returns:
             tuple: Parameter importance plot and optimization history visualization
         """
-        logging.info(f'Starting optimization: {self.autotune_config.n_trials} trials')
+        logging.info(f"Starting optimization: {self.autotune_config.n_trials} trials")
 
-        self.study.optimize(self.objective, n_trials=self.autotune_config.n_trials,
-                            timeout=self.autotune_config.timeout, show_progress_bar=True)
+        self.study.optimize(
+            self.objective,
+            n_trials=self.autotune_config.n_trials,
+            timeout=self.autotune_config.timeout,
+            show_progress_bar=True,
+        )
 
         # Log best result
         best = self.study.best_trial
-        logging.info(f'Best {self.autotune_config.target_metric}: {best.value:.4f}')
-        logging.info(f'Best params: {best.params}')
+        logging.info(f"Best {self.autotune_config.target_metric}: {best.value:.4f}")
+        logging.info(f"Best params: {best.params}")
 
         # Return plots
         return (
             optuna.visualization.plot_param_importances(self.study),
-            optuna.visualization.plot_optimization_history(self.study, target_name=self.autotune_config.target_metric)
+            optuna.visualization.plot_optimization_history(
+                self.study, target_name=self.autotune_config.target_metric
+            ),
         )
 
     def objective(self, trial: optuna.Trial) -> float | None:
@@ -159,15 +182,13 @@ class ModelAutoTuner:
             for param in self.training_params
         }
         model_updates = {
-            param.name: self._suggest_value(trial, param)
-            for param in self.model_params
+            param.name: self._suggest_value(trial, param) for param in self.model_params
         }
         data_updates = {
-            param.name: self._suggest_value(trial, param)
-            for param in self.data_params
+            param.name: self._suggest_value(trial, param) for param in self.data_params
         }
 
-        logging.info(f'Trial {trial.number}')
+        logging.info(f"Trial {trial.number}")
         logging.info(pformat(training_updates))
         logging.info(pformat(model_updates))
         logging.info(pformat(data_updates))
@@ -181,7 +202,7 @@ class ModelAutoTuner:
                 mlflow_config=trial_mlflow_config,
                 training_config=TrainingConfig(**training_updates),
                 data_config=DataConfig(**data_updates),
-                model_config=ModelConfig(**model_updates)
+                model_config=ModelConfig(**model_updates),
             )
 
             metrics, figs = pipeline.train_eval()
@@ -189,8 +210,8 @@ class ModelAutoTuner:
             return target_value
 
         except Exception as e:
-            logging.error(f'Trial {trial.number} failed: {e}')
-            return -np.inf if self.autotune_config.direction == 'maximize' else np.inf
+            logging.error(f"Trial {trial.number} failed: {e}")
+            return -np.inf if self.autotune_config.direction == "maximize" else np.inf
 
         finally:
             if pipeline:
@@ -202,6 +223,7 @@ class ModelAutoTuner:
                     logging.warning(f"Error during pipeline cleanup: {cleanup_error}")
 
             import gc
+
             gc.collect()
 
             try:
@@ -230,61 +252,62 @@ class ModelAutoTuner:
             ValueError: For incomplete parameter specifications
             NotImplementedError: For unsupported parameter types
         """
-        if param.type == 'categorical':
+        if param.type == "categorical":
             if not param.choices:
-                raise ValueError(f"Parameter '{param.name}' of type 'categorical' requires 'choices'")
+                raise ValueError(
+                    f"Parameter '{param.name}' of type 'categorical' requires 'choices'"
+                )
             return trial.suggest_categorical(name=param.name, choices=param.choices)
 
-        elif param.type == 'float':
+        elif param.type == "float":
             if param.low is None or param.high is None:
-                raise ValueError(f"Parameter '{param.name}' of type 'float' requires 'low' and 'high'")
+                raise ValueError(
+                    f"Parameter '{param.name}' of type 'float' requires 'low' and 'high'"
+                )
             return trial.suggest_float(
                 name=param.name,
                 low=param.low,
                 high=param.high,
                 step=param.step,
-                log=param.log
+                log=param.log,
             )
 
-        elif param.type == 'int':
+        elif param.type == "int":
             if param.low is None or param.high is None:
-                raise ValueError(f"Parameter '{param.name}' of type 'int' requires 'low' and 'high'")
+                raise ValueError(
+                    f"Parameter '{param.name}' of type 'int' requires 'low' and 'high'"
+                )
             return trial.suggest_int(
                 name=param.name,
                 low=int(param.low),
                 high=int(param.high),
                 step=int(param.step) if param.step else None,
-                log=param.log
+                log=param.log,
             )
 
-        elif param.type == 'loguniform':
+        elif param.type == "loguniform":
             if param.low is None or param.high is None:
-                raise ValueError(f"Parameter '{param.name}' of type 'loguniform' requires 'low' and 'high'")
+                raise ValueError(
+                    f"Parameter '{param.name}' of type 'loguniform' requires 'low' and 'high'"
+                )
             return trial.suggest_float(
-                name=param.name,
-                low=param.low,
-                high=param.high,
-                log=True
+                name=param.name, low=param.low, high=param.high, log=True
             )
 
-        elif param.type == 'uniform':
+        elif param.type == "uniform":
             if param.low is None or param.high is None:
-                raise ValueError(f"Parameter '{param.name}' of type 'uniform' requires 'low' and 'high'")
-            return trial.suggest_float(
-                name=param.name,
-                low=param.low,
-                high=param.high
-            )
+                raise ValueError(
+                    f"Parameter '{param.name}' of type 'uniform' requires 'low' and 'high'"
+                )
+            return trial.suggest_float(name=param.name, low=param.low, high=param.high)
 
-        elif param.type == 'discrete_uniform':
+        elif param.type == "discrete_uniform":
             if param.low is None or param.high is None or param.step is None:
                 raise ValueError(
-                    f"Parameter '{param.name}' of type 'discrete_uniform' requires 'low', 'high', and 'step'")
+                    f"Parameter '{param.name}' of type 'discrete_uniform' requires 'low', 'high', and 'step'"
+                )
             return trial.suggest_float(
-                name=param.name,
-                low=param.low,
-                high=param.high,
-                step=param.step
+                name=param.name, low=param.low, high=param.high, step=param.step
             )
 
         else:

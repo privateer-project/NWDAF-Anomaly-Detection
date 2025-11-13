@@ -2,17 +2,16 @@ from load_dataset import main_load_dataset
 from load_models import main_load_models
 from xAI_shap import main_shap
 from xAI_lime import main_lime
-import threading
 import time
 from multiprocessing import Process
 
-#main_load_dataset.start_load_dataset("127.0.0.1","5000")
+# main_load_dataset.start_load_dataset("127.0.0.1","5000")
 # main_load_models.start_load_model("127.0.0.1","5001")
 # main_shap.start_xAI_shap("127.0.0.1","5002")
 # main_lime.start_xAI_lime("127.0.0.1","5003")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     processes = [
         Process(target=main_load_dataset.start_load_dataset("127.0.0.1", 5000)),
         Process(target=main_load_models.start_load_model, args=("127.0.0.1", 5001)),
@@ -35,6 +34,3 @@ if __name__ == '__main__':
         for p in processes:
             p.terminate()
             p.join()
-
-
-

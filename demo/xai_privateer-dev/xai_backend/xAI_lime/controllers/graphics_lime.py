@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")  # Use non-GUI backend for safe multiprocessing rendering
 
 
@@ -34,12 +35,15 @@ def plot_lime_bar(explanation, output_dir, instance_index, mode):
     plt.title(f"Top Features - LIME Explanation ({mode}) (Instance {instance_index})")
     plt.tight_layout()
 
-    bar_path = os.path.join(output_dir, f"lime_bar_{mode}_instance_{instance_index}.png")
+    bar_path = os.path.join(
+        output_dir, f"lime_bar_{mode}_instance_{instance_index}.png"
+    )
     plt.savefig(bar_path, bbox_inches="tight")
     plt.close()
     print("Bar chart saved at:", bar_path)
 
     return bar_path
+
 
 def plot_lime_table(explanation, output_dir, instance_index, mode):
     """
@@ -64,18 +68,21 @@ def plot_lime_table(explanation, output_dir, instance_index, mode):
     df = pd.DataFrame(explanation_list, columns=["Feature", "Weight"])
 
     plt.figure(figsize=(8, 2 + 0.5 * len(df)))
-    plt.axis('tight')
-    plt.axis('off')
-    table = plt.table(cellText=df.values, colLabels=df.columns, loc='center')
+    plt.axis("tight")
+    plt.axis("off")
+    table = plt.table(cellText=df.values, colLabels=df.columns, loc="center")
     table.auto_set_font_size(False)
     table.set_fontsize(10)
 
-    table_path = os.path.join(output_dir, f"lime_table_{mode}_instance_{instance_index}.png")
+    table_path = os.path.join(
+        output_dir, f"lime_table_{mode}_instance_{instance_index}.png"
+    )
     plt.savefig(table_path, bbox_inches="tight")
     plt.close()
     print("Table saved at:", table_path)
 
     return table_path
+
 
 def plot_lime_html(explanation, output_dir, instance_index, mode):
     """
@@ -90,10 +97,13 @@ def plot_lime_html(explanation, output_dir, instance_index, mode):
     Returns:
         str: Path to the saved HTML file.
     """
-    html_path = os.path.join(output_dir, f"lime_explanation_{mode}_instance_{instance_index}.html")
+    html_path = os.path.join(
+        output_dir, f"lime_explanation_{mode}_instance_{instance_index}.html"
+    )
     explanation.save_to_file(html_path)
     print("HTML explanation saved at:", html_path)
     return html_path
+
 
 def main_graphics_lime(explanation_data, instance_index, mode="regression"):
     """
@@ -107,7 +117,7 @@ def main_graphics_lime(explanation_data, instance_index, mode="regression"):
     Returns:
         dict: Dictionary containing paths to all generated visualizations.
     """
-    output_dir = os.path.join("xAI_lime","graphics")
+    output_dir = os.path.join("xAI_lime", "graphics")
     os.makedirs(output_dir, exist_ok=True)
 
     explanation = explanation_data["explanation"]
@@ -116,8 +126,10 @@ def main_graphics_lime(explanation_data, instance_index, mode="regression"):
     plots = {
         "bar": plot_lime_bar(explanation, output_dir, instance_index, mode),
         "table": plot_lime_table(explanation, output_dir, instance_index, mode),
-        "html": plot_lime_html(explanation, output_dir, instance_index, mode)
+        "html": plot_lime_html(explanation, output_dir, instance_index, mode),
     }
 
-    print(f"[INFO] All LIME plots for instance {instance_index} generated successfully.")
+    print(
+        f"[INFO] All LIME plots for instance {instance_index} generated successfully."
+    )
     return {instance_index: plots}

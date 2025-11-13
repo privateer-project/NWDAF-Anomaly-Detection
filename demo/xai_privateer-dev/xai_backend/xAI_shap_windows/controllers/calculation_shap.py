@@ -85,5 +85,5 @@ def main_calculation_shap(x, output, model, instance_X_test):
         "x": x,
         "explainer": explainer,
         "feature_names": feature_names,
-        "model_output": output[instance_X_test].detach().cpu().numpy().tolist()
+        "model_output": output[instance_X_test].detach().cpu().numpy().tolist(),
     }

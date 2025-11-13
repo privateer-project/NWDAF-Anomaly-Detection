@@ -17,10 +17,10 @@ from privateer_ad.utils import load_champion_model
 
 
 def make_predictions(
-        model_name: str ='TransformerAD_DP',
-        data_path: str = 'test',
-        seq_len: Optional[int] = None,
-        device: Optional[str] = None
+    model_name: str = "TransformerAD_DP",
+    data_path: str = "test",
+    seq_len: Optional[int] = None,
+    device: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Load a trained model and make predictions on the specified dataset.
@@ -51,34 +51,35 @@ def make_predictions(
     # Use provided parameters or fall back to config
     data_config.seq_len = seq_len or data_config.seq_len
 
-
     # Setup device
-    device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device(device)
-    logging.info(f'Using device: {device}')
+    logging.info(f"Using device: {device}")
 
     # Setup data processing
-    logging.info('Setting up data processing...')
+    logging.info("Setting up data processing...")
     dp = DataProcessor(data_config=data_config)
 
     try:
         dl = dp.get_dataloader(data_path, only_benign=False, train=False)
-        logging.info(f'Data loader created successfully for {data_path}')
+        logging.info(f"Data loader created successfully for {data_path}")
     except Exception as e:
-        logging.error(f'Failed to create data loader: {e}')
+        logging.error(f"Failed to create data loader: {e}")
         raise
     # Create model
-    logging.info('Loading model...')
-    model, threshold, loss_fn = load_champion_model(mlflow_conf.tracking_uri, model_name=model_name)
+    logging.info("Loading model...")
+    model, threshold, loss_fn = load_champion_model(
+        mlflow_conf.tracking_uri, model_name=model_name
+    )
     print(model)
-    logging.info(f'Starting predictions for model: {model_name}')
-    logging.info(f'Making predictions on dataset: {data_path}')
+    logging.info(f"Starting predictions for model: {model_name}")
+    logging.info(f"Making predictions on dataset: {data_path}")
     # Move model to device and set to evaluation mode
     model = model.to(device)
     model.eval()
 
     # Setup loss function
-    criterion_fn = getattr(nn, training_config.loss_fn_name)(reduction='none')
+    criterion_fn = getattr(nn, training_config.loss_fn_name)(reduction="none")
 
     # Collect predictions
     inputs = []
@@ -86,10 +87,10 @@ def make_predictions(
     predictions = []
     labels = []
 
-    logging.info('Making predictions...')
+    logging.info("Making predictions...")
     with torch.no_grad():
-        for batch in tqdm(dl, desc='Computing reconstruction errors'):
-            x = batch[0]['encoder_cont'].to(device)
+        for batch in tqdm(dl, desc="Computing reconstruction errors"):
+            x = batch[0]["encoder_cont"].to(device)
             targets = np.squeeze(batch[1][0])
             labels.extend(targets.cpu().tolist())
 
@@ -120,20 +121,25 @@ def make_predictions(
     ben_predictions = ben_predictions[:_len]
     mal_predictions = mal_predictions[:_len]
     balanced_labels = np.concatenate([ben_labels[:_len], mal_labels[:_len]])
-    balanced_predictions = np.concatenate([ben_predictions[:_len], mal_predictions[:_len]])
+    balanced_predictions = np.concatenate(
+        [ben_predictions[:_len], mal_predictions[:_len]]
+    )
 
     # Log classification report
-    logging.info('Classification Report:')
-    logging.info(classification_report(y_true=balanced_labels, y_pred=balanced_predictions))
+    logging.info("Classification Report:")
+    logging.info(
+        classification_report(y_true=balanced_labels, y_pred=balanced_predictions)
+    )
     return inputs, losses, predictions, labels
+
 
 def main():
     """Main function with Fire integration for CLI usage."""
     fire.Fire(make_predictions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
-        make_predictions(data_path='test')
+        make_predictions(data_path="test")
     except Exception as e:
-        logging.error(f'Prediction failed: {e}')
+        logging.error(f"Prediction failed: {e}")

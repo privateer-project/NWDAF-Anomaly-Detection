@@ -2,15 +2,17 @@ import os
 import torch
 
 import sys
-sys.path.append(os.path.join(sys.path[0], 'common_libraries'))
+
+sys.path.append(os.path.join(sys.path[0], "common_libraries"))
 
 from privateer_ad.models import TransformerAD
 
 # Define the absolute path to the directory where model files are stored
-MODEL_DIR = os.path.join(os.path.dirname(__file__), '..','saved_models')
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "saved_models")
 MODEL_DIR = os.path.abspath(MODEL_DIR)
-print("caminho....."+MODEL_DIR)
-print("caminho2....."+os.path.dirname(__file__))
+print("caminho....." + MODEL_DIR)
+print("caminho2....." + os.path.dirname(__file__))
+
 
 def save_model(file, filename):
     """
@@ -27,6 +29,7 @@ def save_model(file, filename):
     file.save(path)
     return path
 
+
 def list_model_files():
     """
     List all model files currently stored in the models directory.
@@ -35,6 +38,7 @@ def list_model_files():
         list: A list of all filenames in the models directory.
     """
     return os.listdir(MODEL_DIR)
+
 
 def delete_model(filename):
     """
@@ -51,6 +55,7 @@ def delete_model(filename):
         os.remove(path)
         return True
     return False
+
 
 def load_model(filename):
     """
@@ -70,16 +75,18 @@ def load_model(filename):
     """
     path = os.path.join(MODEL_DIR, filename)
     if os.path.exists(path):
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Initialize the model architecture
         model = TransformerAD()
 
         # Load the state_dict from disk
-        state_dict = torch.load(path, map_location=torch.device('cpu'))
+        state_dict = torch.load(path, map_location=torch.device("cpu"))
 
         # If model was trained using Distributed Data Parallel, remove the module prefix
-        state_dict = {key.removeprefix('_module.'): value for key, value in state_dict.items()}
+        state_dict = {
+            key.removeprefix("_module."): value for key, value in state_dict.items()
+        }
 
         # Load the weights into the model
         model.load_state_dict(state_dict)

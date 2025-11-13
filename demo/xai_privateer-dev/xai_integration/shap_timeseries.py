@@ -1,24 +1,30 @@
 import shap
 import torch
 
-from xAI_shap.controllers.predictions import get_feature_names
 
 class ShapTimeSeries:
-    def __init__(self,model, dataset):
+    def __init__(self, model, dataset):
         self.model = model
         self.initial_dataset = dataset
         self.explainer = None
 
         self.__init_shap()
-    
+
     def __init_shap(self):
         # Reshape input to 2D (instances, flattened features) for SHAP KernelExplainer
         original_shape = self.initial_dataset.shape
-        shape_kernel_explainer = (original_shape[0], original_shape[1] * original_shape[2])
-        input_kernel_explainer = self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        shape_kernel_explainer = (
+            original_shape[0],
+            original_shape[1] * original_shape[2],
+        )
+        input_kernel_explainer = (
+            self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        )
 
         # Initialize SHAP KernelExplainer with model prediction function
-        self.explainer = shap.KernelExplainer(self.__model_predict_fn(), input_kernel_explainer)
+        self.explainer = shap.KernelExplainer(
+            self.__model_predict_fn(), input_kernel_explainer
+        )
 
     def __model_predict_fn(self):
         """
@@ -43,8 +49,8 @@ class ShapTimeSeries:
                 return mse_output.detach().numpy()
 
         return predict
-    
-    def shap_values_from_instance(self,instance):
+
+    def shap_values_from_instance(self, instance):
         # Compute SHAP values for the selected instance
         shap_values = self.explainer.shap_values(instance)
 
@@ -60,22 +66,30 @@ class ShapTimeSeries:
             "explainer": self.explainer,
         }
 
+
 class ShapFeaturesInTimeSeries:
-    def __init__(self,model, dataset):
+    def __init__(self, model, dataset):
         self.model = model
         self.initial_dataset = dataset
         self.explainer = None
 
         self.__init_shap()
-    
+
     def __init_shap(self):
         # Reshape input to 2D (instances, flattened features) for SHAP KernelExplainer
         original_shape = self.initial_dataset.shape
-        shape_kernel_explainer = (original_shape[0], original_shape[1] * original_shape[2])
-        input_kernel_explainer = self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        shape_kernel_explainer = (
+            original_shape[0],
+            original_shape[1] * original_shape[2],
+        )
+        input_kernel_explainer = (
+            self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        )
 
         # Initialize SHAP KernelExplainer with model prediction function
-        self.explainer = shap.KernelExplainer(self.__model_predict_fn(), input_kernel_explainer)
+        self.explainer = shap.KernelExplainer(
+            self.__model_predict_fn(), input_kernel_explainer
+        )
 
     def __model_predict_fn(self):
         """
@@ -100,8 +114,8 @@ class ShapFeaturesInTimeSeries:
                 return mse_output.detach().numpy()
 
         return predict
-    
-    def shap_values_from_instance(self,instance):
+
+    def shap_values_from_instance(self, instance):
         # Compute SHAP values for the selected instance
         shap_values = self.explainer.shap_values(instance)
 
@@ -117,22 +131,30 @@ class ShapFeaturesInTimeSeries:
             "explainer": self.explainer,
         }
 
+
 class ShapWindowsInTimeSeries:
-    def __init__(self,model, dataset):
+    def __init__(self, model, dataset):
         self.model = model
         self.initial_dataset = dataset
         self.explainer = None
 
         self.__init_shap()
-    
+
     def __init_shap(self):
         # Reshape input to 2D (instances, flattened features) for SHAP KernelExplainer
         original_shape = self.initial_dataset.shape
-        shape_kernel_explainer = (original_shape[0], original_shape[1] * original_shape[2])
-        input_kernel_explainer = self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        shape_kernel_explainer = (
+            original_shape[0],
+            original_shape[1] * original_shape[2],
+        )
+        input_kernel_explainer = (
+            self.initial_dataset.detach().numpy().reshape(shape_kernel_explainer)
+        )
 
         # Initialize SHAP KernelExplainer with model prediction function
-        self.explainer = shap.KernelExplainer(self.__model_predict_fn(), input_kernel_explainer)
+        self.explainer = shap.KernelExplainer(
+            self.__model_predict_fn(), input_kernel_explainer
+        )
 
     def __model_predict_fn(self):
         """
@@ -157,8 +179,8 @@ class ShapWindowsInTimeSeries:
                 return mse_output.detach().numpy()
 
         return predict
-    
-    def shap_values_from_instance(self,instance):
+
+    def shap_values_from_instance(self, instance):
         # Compute SHAP values for the selected instance
         shap_values = self.explainer.shap_values(instance)
 
@@ -168,8 +190,4 @@ class ShapWindowsInTimeSeries:
             shap_values = shap_values[0]
 
         # Return all relevant objects
-        return {
-            "shap_values": shap_values,
-            "x": instance,
-            "explainer": self.explainer
-        }
+        return {"shap_values": shap_values, "x": instance, "explainer": self.explainer}

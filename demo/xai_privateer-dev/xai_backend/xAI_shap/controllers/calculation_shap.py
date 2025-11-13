@@ -85,8 +85,9 @@ def main_calculation_shap(x, output, model, instance_X_test):
         "x": x,
         "explainer": explainer,
         "feature_names": feature_names,
-        "model_output": output[instance_X_test].detach().cpu().numpy().tolist()
+        "model_output": output[instance_X_test].detach().cpu().numpy().tolist(),
     }
+
 
 def main_calculation_shap_from_tensor(x, output, model, instance_X_test):
     """
@@ -120,14 +121,18 @@ def main_calculation_shap_from_tensor(x, output, model, instance_X_test):
     original_shape = x.shape
     shape_kernel_explainer = (original_shape[0], original_shape[1] * original_shape[2])
     input_kernel_explainer = x.detach().numpy().reshape(shape_kernel_explainer)
-    
 
     # Initialize SHAP KernelExplainer with model prediction function
     explainer = shap.KernelExplainer(model_predict_fn(model), input_kernel_explainer)
 
     original_shape_instance = instance_X_test.shape
-    shape_kernel_explainer_instance = (original_shape_instance[0], original_shape_instance[1] * original_shape_instance[2])
-    input_kernel_explainer_instance = instance_X_test.detach().numpy().reshape(shape_kernel_explainer_instance)
+    shape_kernel_explainer_instance = (
+        original_shape_instance[0],
+        original_shape_instance[1] * original_shape_instance[2],
+    )
+    input_kernel_explainer_instance = (
+        instance_X_test.detach().numpy().reshape(shape_kernel_explainer_instance)
+    )
     # Compute SHAP values for the selected instance
     shap_values = explainer.shap_values(input_kernel_explainer_instance)
 
@@ -145,5 +150,5 @@ def main_calculation_shap_from_tensor(x, output, model, instance_X_test):
         "x": x,
         "explainer": explainer,
         "feature_names": feature_names,
-        "model_output": output.detach().cpu().numpy().tolist()
+        "model_output": output.detach().cpu().numpy().tolist(),
     }

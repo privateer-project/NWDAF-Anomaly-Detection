@@ -22,7 +22,8 @@ class ModelEvaluator:
     anomaly detection approaches where the model learns to reconstruct normal patterns
     and flags deviations as anomalous.
     """
-    def __init__(self, device: torch.device, loss_fn: str=None):
+
+    def __init__(self, device: torch.device, loss_fn: str = None):
         """
         Initialize the model evaluator with device and loss function configuration.
 
@@ -39,14 +40,16 @@ class ModelEvaluator:
                                    computing reconstruction errors. If not provided,
                                    uses the default from TrainingConfig.
         """
-        logging.info('Instantiate ModelEvaluator...')
+        logging.info("Instantiate ModelEvaluator...")
 
         self.device = device
         self.loss_fn = loss_fn or TrainingConfig().loss_fn_name
 
         self.visualizer = Visualizer()
 
-    def compute_anomaly_scores(self, model, dataloader) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def compute_anomaly_scores(
+        self, model, dataloader
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute reconstruction errors and ground truth labels for the entire dataset.
 
@@ -80,15 +83,15 @@ class ModelEvaluator:
         y_true: List[int] = []
         y_score: List[float] = []
 
-        loss_fn = getattr(torch.nn, self.loss_fn)(reduction='none')
+        loss_fn = getattr(torch.nn, self.loss_fn)(reduction="none")
         model.to(self.device)
         model.eval()
 
         with torch.no_grad():
-            progress_bar = tqdm(dataloader, desc='Computing reconstruction errors')
+            progress_bar = tqdm(dataloader, desc="Computing reconstruction errors")
 
             for inputs in progress_bar:
-                batch_input = inputs[0]['encoder_cont'].to(self.device)
+                batch_input = inputs[0]["encoder_cont"].to(self.device)
                 batch_y_true = np.squeeze(inputs[1][0])
                 batch_output = model(batch_input)
 
@@ -99,7 +102,11 @@ class ModelEvaluator:
                 y_true.extend(batch_y_true.tolist())
                 y_score.extend(batch_y_score_per_sample.cpu().tolist())
 
-        return np.array(x, dtype=np.float32), np.array(y_true, dtype=np.int32), np.array(y_score, dtype=np.float32)
+        return (
+            np.array(x, dtype=np.float32),
+            np.array(y_true, dtype=np.int32),
+            np.array(y_score, dtype=np.float32),
+        )
 
     @staticmethod
     def find_optimal_threshold(y_true: np.ndarray, y_score: np.ndarray) -> float:
@@ -136,7 +143,9 @@ class ModelEvaluator:
         optimal_idx = np.argmin(np.sqrt(np.power(fpr, 2) + np.power(1 - tpr, 2)))
         return thresholds[optimal_idx]
 
-    def evaluate(self, model, dataloader, threshold: int = None, prefix='', step=0) -> Tuple[dict[str, float], dict]:
+    def evaluate(
+        self, model, dataloader, threshold: int = None, prefix="", step=0
+    ) -> Tuple[dict[str, float], dict]:
         """
         Perform comprehensive model evaluation with metrics computation and visualization.
 
@@ -177,34 +186,43 @@ class ModelEvaluator:
 
         y_pred = (anomaly_scores >= threshold).astype(int)
 
-        target_names = ['Benign', 'Malicious']
-        metrics = {'roc_auc': float(roc_auc_score(y_true=y_true, y_score=anomaly_scores)),
-                   'loss': float(np.mean(anomaly_scores))}
+        target_names = ["Benign", "Malicious"]
+        metrics = {
+            "roc_auc": float(roc_auc_score(y_true=y_true, y_score=anomaly_scores)),
+            "loss": float(np.mean(anomaly_scores)),
+        }
 
-        metrics.update(classification_report(y_true=y_true,
-                                             y_pred=y_pred,
-                                             target_names=target_names,
-                                             output_dict=True)['macro avg'])
+        metrics.update(
+            classification_report(
+                y_true=y_true,
+                y_pred=y_pred,
+                target_names=target_names,
+                output_dict=True,
+            )["macro avg"]
+        )
 
-        metrics['threshold'] = float(threshold)
-        if prefix != '':
-            metrics = {f'_'.join([prefix, k]): v for k, v in metrics.items()}
-        self.visualizer.visualize(y_true=y_true,
-                                  y_pred=y_pred,
-                                  scores=anomaly_scores,
-                                  threshold=threshold,
-                                  target_names=target_names,
-                                  prefix=prefix
-                                  )
+        metrics["threshold"] = float(threshold)
+        if prefix != "":
+            metrics = {"_".join([prefix, k]): v for k, v in metrics.items()}
+        self.visualizer.visualize(
+            y_true=y_true,
+            y_pred=y_pred,
+            scores=anomaly_scores,
+            threshold=threshold,
+            target_names=target_names,
+            prefix=prefix,
+        )
 
         if mlflow.active_run():
-            mlflow.log_text(classification_report(y_true=y_true,
-                                                  y_pred=y_pred,
-                                                  target_names=target_names),
-                            f'{str(step).zfill(3)}_{prefix}_classification_report.txt')
+            mlflow.log_text(
+                classification_report(
+                    y_true=y_true, y_pred=y_pred, target_names=target_names
+                ),
+                f"{str(step).zfill(3)}_{prefix}_classification_report.txt",
+            )
             mlflow.log_metrics(metrics, step=step)
             for name, fig in self.visualizer.figures.items():
-                mlflow.log_figure(fig, f'{str(step).zfill(3)}_{name}.png')
-        metrics_logs = '\n'.join([f'{key}: {value}' for key, value in metrics.items()])
-        logging.info(f'Test metrics:\n{metrics_logs}')
+                mlflow.log_figure(fig, f"{str(step).zfill(3)}_{name}.png")
+        metrics_logs = "\n".join([f"{key}: {value}" for key, value in metrics.items()])
+        logging.info(f"Test metrics:\n{metrics_logs}")
         return metrics, self.visualizer.figures

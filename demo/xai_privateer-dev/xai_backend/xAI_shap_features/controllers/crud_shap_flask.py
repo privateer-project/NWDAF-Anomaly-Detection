@@ -63,12 +63,16 @@ class ShapService:
             ValueError: If model or dataset has not been loaded or if the loader is empty
         """
         if not self.model or not self.train_loader:
-            raise ValueError("Model or dataset not loaded. Please call load_resources first.")
+            raise ValueError(
+                "Model or dataset not loaded. Please call load_resources first."
+            )
 
         try:
             # Fetch the first batch from the data loader
             first_batch = next(iter(self.train_loader))
-            self.x = first_batch[0]['encoder_cont']  # Extract encoder continuous features
+            self.x = first_batch[0][
+                "encoder_cont"
+            ]  # Extract encoder continuous features
             self.output = make_prediction(self.x, self.model)  # Run model prediction
         except StopIteration:
             raise ValueError("The DataLoader is empty.")
@@ -81,14 +85,16 @@ class ShapService:
             ValueError: If prediction outputs or inputs are missing
         """
         if self.x is None or self.output is None or self.model is None:
-            raise ValueError("Missing prediction results. Please call run_predictions first.")
+            raise ValueError(
+                "Missing prediction results. Please call run_predictions first."
+            )
 
         # Perform SHAP value calculation
         self.result_shap = main_calculation_shap(
             x=self.x,
             output=self.output,
             model=self.model,
-            instance_X_test=self.instance_index
+            instance_X_test=self.instance_index,
         )
 
     def generate_graphics(self):
@@ -99,7 +105,9 @@ class ShapService:
             ValueError: If SHAP values haven't been computed yet
         """
         if self.result_shap is None:
-            raise ValueError("SHAP values not calculated. Please call calculate_shap first.")
+            raise ValueError(
+                "SHAP values not calculated. Please call calculate_shap first."
+            )
 
         # Generate visual explanation plots
         main_graphics_shap(self.result_shap, self.instance_index)
@@ -112,7 +120,9 @@ class ShapService:
             ValueError: If SHAP values haven't been computed yet
         """
         if self.result_shap is None:
-            raise ValueError("SHAP values not calculated. Please call calculate_shap first.")
+            raise ValueError(
+                "SHAP values not calculated. Please call calculate_shap first."
+            )
 
         main_generate_all_shap_reports(self.result_shap, self.instance_index)
 
@@ -127,7 +137,9 @@ class ShapService:
             List[str]: List of feature names
         """
         if self.feature_names is None:
-            raise ValueError("Feature names not available. Please call load_resources first.")
+            raise ValueError(
+                "Feature names not available. Please call load_resources first."
+            )
 
         return self.feature_names
 
@@ -144,7 +156,11 @@ class ShapService:
         if self.name_dataset is None:
             raise ValueError("Dataset not specified. Please call load_resources first.")
 
-        graphics_dir = 'graphics'
-        matched_files = [f for f in os.listdir(graphics_dir)
-                         if f.startswith(f"shap_summary_{self.instance_index}_") and f.endswith(".png")]
+        graphics_dir = "graphics"
+        matched_files = [
+            f
+            for f in os.listdir(graphics_dir)
+            if f.startswith(f"shap_summary_{self.instance_index}_")
+            and f.endswith(".png")
+        ]
         return matched_files

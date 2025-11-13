@@ -130,9 +130,10 @@ def test_load_dataset_returns_array_and_ids(
         repository.put_vector(anomaly_id, schema_id, blob, "2025-11-06T10:00:00Z")
 
     # Test
-    X, ids = trainer.load_dataset(schema_id, mode="dense")
+    X, ids, storage_shape = trainer.load_dataset(schema_id, mode="dense")
 
     assert X.shape == (5, 84)
+    assert storage_shape == (84,)
     assert len(ids) == 5
     assert all(isinstance(id, str) for id in ids)
 

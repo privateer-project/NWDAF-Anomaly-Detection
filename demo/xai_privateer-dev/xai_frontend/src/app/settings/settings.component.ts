@@ -27,7 +27,7 @@ export class SettingsComponent {
 
 
   constructor(private dataService: DataApiService, public shapService: ShapApiService, public limeService: LimeApiService) {
-    
+
    }
 
    ngOnInit(){
@@ -95,7 +95,7 @@ export class SettingsComponent {
       error:(err)=>{
         this.genereateReportsMessage = "❌ Error generating graphics. Please try again."
       }
-    })  
+    })
   }
 
   onDataFileSelected(event: Event): void {

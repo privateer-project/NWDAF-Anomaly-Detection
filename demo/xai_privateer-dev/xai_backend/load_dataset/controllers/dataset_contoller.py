@@ -1,16 +1,18 @@
 import os
 
 import sys
-sys.path.append(os.path.join(sys.path[0], 'common_libraries'))
+
+sys.path.append(os.path.join(sys.path[0], "common_libraries"))
 
 from load_dataset.controllers.transform import DataProcessor
 
 # Define the absolute path to the datasets directory
 # This assumes the datasets folder is located at: /load_dataset/datasets
-DATASET_DIR = os.path.join(os.path.dirname(__file__),'..', 'datasets')
+DATASET_DIR = os.path.join(os.path.dirname(__file__), "..", "datasets")
 DATASET_DIR = os.path.abspath(DATASET_DIR)
 
 print(f"Dataset directory set to: {DATASET_DIR}")
+
 
 def save_csv(file, filename):
     """
@@ -27,6 +29,7 @@ def save_csv(file, filename):
     file.save(path)
     return path
 
+
 def list_csv_files():
     """
     List all files in the datasets directory.
@@ -35,6 +38,7 @@ def list_csv_files():
         list: A list of filenames present in the datasets directory.
     """
     return os.listdir(DATASET_DIR)
+
 
 def delete_csv(filename):
     """
@@ -51,6 +55,7 @@ def delete_csv(filename):
         os.remove(path)
         return True
     return False
+
 
 def load_csv(filename):
     """
@@ -73,7 +78,7 @@ def load_csv(filename):
     if os.path.exists(path):
         dp = DataProcessor(partition=False)
         data = dp._read_csv(path)
-        dataloader  = dp.get_dataloader2(data, seq_len=12, only_benign=False)
+        dataloader = dp.get_dataloader2(data, seq_len=12, only_benign=False)
         return dataloader
     return path
-    #raise FileNotFoundError
+    # raise FileNotFoundError

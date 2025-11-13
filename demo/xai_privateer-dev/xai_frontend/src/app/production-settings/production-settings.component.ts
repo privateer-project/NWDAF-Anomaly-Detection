@@ -30,7 +30,7 @@ export class ProductionSettingsComponent {
   nameModelEight: string = ''; // Variable to hold the selected model name for SHAP Feature 8
   graphicURLEight: string = ''; // Variable to store the URL of the selected graphic for SHAP Feature 8
   nameDBLime: string = '';
-  nameModelLime: string = ''; 
+  nameModelLime: string = '';
   InstanceOne: number = 0; // ID da instância para SHAP One
   InstanceEight: number = 0; // ID da instância para SHAP Eight
   InstanceLime: number = 0; // ID da instância para LIME
@@ -74,7 +74,7 @@ export class ProductionSettingsComponent {
   setModelName(model: string) {
     this.nameModelOne = model; // Assigns the selected model name for SHAP Feature 1
     this.nameModelEight = model; // Assigns the selected model name for SHAP Feature 8
-    this.nameModelLime = model; 
+    this.nameModelLime = model;
   }
 
   /* Shap Feature 1 */
@@ -123,9 +123,9 @@ export class ProductionSettingsComponent {
         error: (err) => console.error('Error sending request:', err), // Logs error if the request fails
       });
     }
-  
+
     generateGraphicsLime() {
-  
+
       const url = `http://127.0.0.6:5000/api_lime/generation_graphics`;
       this.http.get(url).subscribe({
         next: () => alert('Graphics lime generated successfully!'), // Alerts success message

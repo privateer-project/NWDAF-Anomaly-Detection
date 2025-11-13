@@ -37,7 +37,7 @@ class PositionalEncoding(nn.Module):
             raise ValueError(f"d_model must be positive, got {d_model}")
         if max_seq_length <= 0:
             raise ValueError(f"max_seq_length must be positive, got {max_seq_length}")
-        if not 0. <= dropout <= 1.:
+        if not 0.0 <= dropout <= 1.0:
             raise ValueError(f"dropout must be between 0 and 1, got {dropout}")
 
         self.d_model = d_model
@@ -50,8 +50,8 @@ class PositionalEncoding(nn.Module):
         # Create division term for frequency scaling
         # This implements: 10000^(-2i/d_model) = exp(-2i * ln(10000) / d_model)
         div_term = torch.exp(
-            torch.arange(0, d_model, 2, dtype=torch.float) *
-            (-math.log(10000.0) / d_model)
+            torch.arange(0, d_model, 2, dtype=torch.float)
+            * (-math.log(10000.0) / d_model)
         )
 
         # Apply sine to even indices (0, 2, 4, ...)
@@ -68,7 +68,7 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
 
         # Register as buffer so it moves with the model but isn't a parameter
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -85,7 +85,9 @@ class PositionalEncoding(nn.Module):
             ValueError: If input doesn't have expected 3D shape
         """
         if x.dim() != 3:
-            raise ValueError(f"Expected 3D input [batch, seq, features], got {x.dim()}D")
+            raise ValueError(
+                f"Expected 3D input [batch, seq, features], got {x.dim()}D"
+            )
 
         batch_size, seq_length, feature_dim = x.shape
 
@@ -131,11 +133,13 @@ class PositionalEncoding(nn.Module):
 
         # Recompute positional encoding with new length
         pe = torch.zeros(new_max_length, self.d_model, device=self.pe.device)
-        position = torch.arange(0, new_max_length, dtype=torch.float, device=self.pe.device).unsqueeze(1)
+        position = torch.arange(
+            0, new_max_length, dtype=torch.float, device=self.pe.device
+        ).unsqueeze(1)
 
         div_term = torch.exp(
-            torch.arange(0, self.d_model, 2, dtype=torch.float, device=self.pe.device) *
-            (-math.log(10000.0) / self.d_model)
+            torch.arange(0, self.d_model, 2, dtype=torch.float, device=self.pe.device)
+            * (-math.log(10000.0) / self.d_model)
         )
 
         pe[:, 0::2] = torch.sin(position * div_term)
@@ -148,7 +152,7 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
 
         # Update the registered buffer
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
 
 # Example usage and testing

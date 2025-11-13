@@ -3,9 +3,9 @@ import pickle
 import base64
 import torch
 import io
-from torch.utils.data import DataLoader
 
 from xAI_shap.controllers.urls import BASE_URL_DATASET, BASE_URL_MODEL
+
 
 def send_dataset_request(filename, batch_size=32):
     """
@@ -32,11 +32,11 @@ def send_dataset_request(filename, batch_size=32):
 
         # Decode base64 string and unpickle the DataLoader
         dataloader = pickle.loads(base64.b64decode(data["dataset_bytes_base64"]))
-        return {
-            "dataset_loader": dataloader
-        }
+        return {"dataset_loader": dataloader}
     else:
-        raise Exception(f"Failed to load dataset: {response.status_code}, {response.text}")
+        raise Exception(
+            f"Failed to load dataset: {response.status_code}, {response.text}"
+        )
 
 
 def send_model_request(model_filename):
@@ -73,9 +73,12 @@ def send_model_request(model_filename):
             state_dict = torch.load(io.BytesIO(model_bytes), map_location="cpu")
 
             # Dynamically import the model architecture (must match the trained one)
-            import sys,os
-            sys.path.append(os.path.join(sys.path[0], 'common_libraries'))
+            import sys
+            import os
+
+            sys.path.append(os.path.join(sys.path[0], "common_libraries"))
             from privateer_ad.models import TransformerAD
+
             model = TransformerAD()
 
             # Load weights into model (non-strict in case of mismatches or missing keys)

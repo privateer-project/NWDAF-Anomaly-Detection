@@ -13,7 +13,7 @@ export class DataApiService {
 
   uploadDataset(file:File){
     const formData = new FormData();
-    formData.append('file', file);  
+    formData.append('file', file);
     return this.http.post(`${this.endpointDataAPI}/${file.name}`, formData)
   }
 
@@ -23,7 +23,7 @@ export class DataApiService {
 
   uploadModel(file:File){
     const formData = new FormData();
-    formData.append('file', file);  
+    formData.append('file', file);
     return this.http.post(`${this.endpointModelAPI}/${file.name}`, formData)
   }
 

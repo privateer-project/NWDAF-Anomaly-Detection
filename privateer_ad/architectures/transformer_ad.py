@@ -27,6 +27,7 @@ class TransformerAD(nn.Module):
         output (nn.Linear): Reconstruction layer projecting latent representations
                           back to original feature space
     """
+
     def __init__(self, model_config: ModelConfig = None):
         """
         Initialize the transformer-based anomaly detection architecture.
@@ -47,19 +48,23 @@ class TransformerAD(nn.Module):
         self.model_config = model_config or ModelConfig()
 
         # Input feature embedding to model dimension
-        self.embed = nn.Linear(self.model_config.input_size, self.model_config.embed_dim)
+        self.embed = nn.Linear(
+            self.model_config.input_size, self.model_config.embed_dim
+        )
 
         # Positional encoding for temporal sequence understanding
-        self.pos_enc = PositionalEncoding(d_model=self.model_config.embed_dim,
-                                          max_seq_length=self.model_config.seq_len,
-                                          dropout=self.model_config.dropout)
+        self.pos_enc = PositionalEncoding(
+            d_model=self.model_config.embed_dim,
+            max_seq_length=self.model_config.seq_len,
+            dropout=self.model_config.dropout,
+        )
 
         # Configure transformer encoder layer with privacy-preserving attention
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=self.model_config.embed_dim,
             nhead=self.model_config.num_heads,
             dim_feedforward=self.model_config.latent_dim,
-            batch_first=True
+            batch_first=True,
         )
 
         # Replace standard attention with opacus, privacy compatible, implementation
@@ -67,20 +72,25 @@ class TransformerAD(nn.Module):
             embed_dim=self.model_config.embed_dim,
             num_heads=self.model_config.num_heads,
             dropout=self.model_config.dropout,
-            batch_first=True)
+            batch_first=True,
+        )
 
         # Multi-layer transformer encoder with layer normalization
         self.transformer_encoder = nn.TransformerEncoder(
             encoder_layer,
             num_layers=self.model_config.num_layers,
-            norm=nn.LayerNorm(self.model_config.embed_dim)
+            norm=nn.LayerNorm(self.model_config.embed_dim),
         )
 
         # Compression path to latent representation
-        self.compress = nn.Sequential(nn.Linear(self.model_config.embed_dim, self.model_config.latent_dim),
-                                      nn.ReLU())
+        self.compress = nn.Sequential(
+            nn.Linear(self.model_config.embed_dim, self.model_config.latent_dim),
+            nn.ReLU(),
+        )
         # Reconstruction output layer
-        self.output = nn.Linear(self.model_config.latent_dim, self.model_config.input_size)
+        self.output = nn.Linear(
+            self.model_config.latent_dim, self.model_config.input_size
+        )
 
     def forward(self, x):
         """

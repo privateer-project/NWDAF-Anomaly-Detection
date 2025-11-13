@@ -15,4 +15,3 @@ COPY producer.py /app/producer.py
 
 # Run the producer
 CMD ["python3", "/app/producer.py"]
-

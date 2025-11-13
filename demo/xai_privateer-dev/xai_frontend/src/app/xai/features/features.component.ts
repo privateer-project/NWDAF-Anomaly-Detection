@@ -28,10 +28,10 @@ export class FeaturesComponent {
   // Chart Data
   public barChartType = 'bar' as const;
 
-  
+
   public barChartOptions: ChartConfiguration<'bar'>['options']
   public barChartDataShap: ChartData<'bar'>
-  public barChartDataLime: ChartData<'bar'> 
+  public barChartDataLime: ChartData<'bar'>
 
   constructor(private shap: ShapApiService, private limeService:LimeApiService) {
     this.shapvalues = this.convertTo2DArray(this.shap.shapReport.shap_values) as number[][]
@@ -92,7 +92,7 @@ export class FeaturesComponent {
     return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
   }
 
-  
+
 
   convertTo2DArray(obj: any, groupSize = 8) {
     // Get all values from the object in order
@@ -113,7 +113,7 @@ export class FeaturesComponent {
 
   //---------------------
 
-  
+
 
   // events
   public chartClicked({
@@ -172,7 +172,7 @@ export class FeaturesComponent {
       let temp = {
         labels: [1,2,3,4,5,6,7,8,9,10,11,12],
         datasets: [
-          { data: data_transposed[i], label: features[i] }  
+          { data: data_transposed[i], label: features[i] }
         ],
     }
     resp.push({data:temp, features:features[i]})
