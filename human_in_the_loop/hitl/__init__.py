@@ -23,8 +23,17 @@
 
 __version__ = "0.1.0"
 
-# TODO: Import and re-export public API
-# from hitl.core.hitl import HITL
-# from hitl.types import PredictResult, TrainParams, SchemaInfo
-# from hitl.errors import NoLiveModel, ShapeMismatch, UnsupportedShape
-# __all__ = ["HITL", "PredictResult", "TrainParams", "SchemaInfo", "NoLiveModel", "ShapeMismatch", "UnsupportedShape"]
+# Re-export main public API
+from .core.hitl import HITL  # noqa: E402,F401
+from .types import PredictResult, TrainParams, SchemaInfo  # noqa: E402,F401
+from .errors import NoLiveModel, ShapeMismatch, UnsupportedShape  # noqa: E402,F401
+
+__all__ = [
+	"HITL",
+	"PredictResult",
+	"TrainParams",
+	"SchemaInfo",
+	"NoLiveModel",
+	"ShapeMismatch",
+	"UnsupportedShape",
+]

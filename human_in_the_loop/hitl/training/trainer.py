@@ -72,7 +72,7 @@ class Trainer:
         self.logger = logger
 
     def load_dataset(
-        self, schema_id: str, mode: str
+        self, schema_id: str, mode: str, only_false_positives: bool = False
     ) -> tuple[np.ndarray, list[str], tuple[int, ...]]:
         """Load all vectors for a schema from database.
 
@@ -110,6 +110,12 @@ class Trainer:
 
         # Iterate over all vectors for this schema
         for anomaly_id, blob in self.repo.iter_vectors(schema_id):
+            # If requested, filter to only include samples labeled as false positives
+            if only_false_positives:
+                fb = self.repo.latest_feedback(anomaly_id)
+                if not fb or fb["label"] != "FP":
+                    continue
+
             # Decode the .npy blob
             arr = decode_npy(blob)
             vectors.append(arr)
@@ -284,7 +290,7 @@ class Trainer:
         )
 
         # 1. Load dataset (with appropriate shape transformation for mode)
-        X, ids, storage_sample_shape = self.load_dataset(schema_id, mode=params["mode"])
+        X, ids, storage_sample_shape = self.load_dataset(schema_id, mode=params["mode"], only_false_positives=params.get("only_false_positives", False))
 
         # 2. Train model (no normalization, train on raw data)
         state_dict, threshold, metrics = self.fit(X, params, storage_sample_shape)

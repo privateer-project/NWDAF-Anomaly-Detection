@@ -21,6 +21,8 @@ __all__ = [
     "tensor_from_list",
     "tensor_to_list",
     "estimate_blob_size",
+    "validate_array",
+    "safe_cast",
 ]
 
 
@@ -182,6 +184,53 @@ def tensor_from_list(
     validate_tensor(arr)
 
     return arr
+
+
+def validate_array(arr: np.ndarray) -> None:
+    """Backward-compatible wrapper for array validation used in dev scripts.
+
+    Raises `InvalidArray` (alias of ValidationError) on failure.
+    """
+    # Reuse validate_tensor behavior
+    from hitl.errors import InvalidArray
+
+    try:
+        validate_tensor(arr)
+    except Exception as e:
+        # Wrap in InvalidArray for older tests
+        raise InvalidArray(str(e)) from e
+
+
+def safe_cast(data: list | np.ndarray, target_dtype: str = "float32", expected_shape: tuple[int, ...] | None = None) -> np.ndarray:
+    """Convert lists to NumPy arrays and validate shape/dtype.
+
+    Args:
+        data: Python list (1D or 2D) or ndarray
+        target_dtype: dtype string
+        expected_shape: optional shape to assert
+
+    Returns:
+        NumPy ndarray with target dtype
+
+    Raises:
+        InvalidArray if validation fails
+    """
+    from hitl.errors import InvalidArray
+
+    try:
+        if isinstance(data, np.ndarray):
+            arr = data.astype(target_dtype)
+        else:
+            arr = tensor_from_list(data, dtype=target_dtype)
+
+        if expected_shape is not None and tuple(arr.shape) != tuple(expected_shape):
+            raise InvalidArray(f"Expected shape {expected_shape}, got {arr.shape}")
+
+        return arr
+    except Exception as e:
+        if isinstance(e, InvalidArray):
+            raise
+        raise InvalidArray(str(e)) from e
 
 
 def tensor_to_list(arr: np.ndarray) -> list[float] | list[list[float]]:

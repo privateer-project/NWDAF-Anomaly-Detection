@@ -1,7 +1,8 @@
 """
 Custom exceptions for HITL system.
 
-This module defines a hierarchy of exceptions used throughout the system for error handling.
+This module defines a hierarchy of exceptions used throughout the system for
+error handling.
 
 Exception Hierarchy:
     HITLError (base)
@@ -37,8 +38,9 @@ class UnsupportedShape(HITLError):
     """
     Raised when tensor has invalid shape (not 1D or 2D).
 
-    The HITL system only supports 1D vectors (shape: (n,)) and 2D tensors
-    (shape: (features, timesteps)) for dense and conv1d modes respectively.
+    The HITL system only supports:
+        * 1D vectors for "dense" models (shape: (n,))
+        * 2D tensors for "conv1d" models (shape: (features, timesteps))
 
     Example:
         >>> raise UnsupportedShape("Expected 1D or 2D, got shape (2, 3, 4)")
@@ -105,8 +107,11 @@ class ArtifactMissing(HITLError):
     """
     Raised when model artifacts are not found or incomplete.
 
-    A complete model requires: weights (.pth), config (.json), scaler (.json),
-    and threshold (.json) files.
+    A complete model requires at least:
+        * weights (.pth)
+        * config (.json)
+        * scaler (.json)
+        * threshold (.json)
 
     Example:
         >>> raise ArtifactMissing("Missing scaler.json for model AE-2025.11.04-1")
@@ -118,35 +123,62 @@ class ArtifactMissing(HITLError):
     pass
 
 
-class DBError(HITLError):
-    """
-    Raised when database operation fails.
-
-    This wraps SQLite errors with additional context about what operation
-    was being attempted.
-
-    Example:
-        >>> raise DBError("Failed to insert anomaly: UNIQUE constraint failed")
-        Traceback (most recent call last):
-        ...
-        hitl.errors.DBError: Failed to insert anomaly: UNIQUE constraint failed
-    """
-
-    pass
+# Backwards-compatible alias for older test/dev scripts
+class ArtifactNotFound(ArtifactMissing):
+    """Alias for ArtifactMissing kept for backward compatibility."""
 
 
 class ValidationError(HITLError):
     """
     Raised when data validation fails.
 
-    This includes Pydantic validation errors and custom validation logic
-    (e.g., checking for NaN/Inf values in tensors).
+    This includes:
+        * Pydantic validation errors
+        * Custom validation logic (e.g. checking for NaN/Inf values)
+        * Schema-level inconsistencies in anomaly payloads
 
     Example:
         >>> raise ValidationError("Tensor contains NaN values")
         Traceback (most recent call last):
         ...
         hitl.errors.ValidationError: Tensor contains NaN values
+    """
+
+    pass
+
+
+# InvalidArray used by older serialization tests
+class InvalidArray(ValidationError):
+    """
+    Raised when an input array is invalid.
+
+    Typical reasons:
+        * Contains NaN or Inf values
+        * Has zero length
+        * Has unexpected dimensions
+
+    Example:
+        >>> raise InvalidArray("Input array is empty")
+        Traceback (most recent call last):
+        ...
+        hitl.errors.InvalidArray: Input array is empty
+    """
+
+    pass
+
+
+class DBError(HITLError):
+    """
+    Raised when a database operation fails.
+
+    This wraps SQLite (or other driver) errors with additional context about
+    what operation was being attempted.
+
+    Example:
+        >>> raise DBError("Failed to insert anomaly: UNIQUE constraint failed")
+        Traceback (most recent call last):
+        ...
+        hitl.errors.DBError: Failed to insert anomaly: UNIQUE constraint failed
     """
 
     pass

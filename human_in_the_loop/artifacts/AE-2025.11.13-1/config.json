@@ -1,7 +1,8 @@
 {
-  "mode": "dense",
+  "mode": "conv1d",
   "input_shape": [
-    616
+    77,
+    8
   ],
   "dtype": "float32"
 }
