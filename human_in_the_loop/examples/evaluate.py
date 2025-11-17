@@ -21,7 +21,7 @@ from hitl.settings import Config, paths, validate_config
 from hitl.utils.logging import configure_logging, get_logger
 
 
-configure_logging("INFO")
+configure_logging("INFO", dev_mode=True)
 logger = get_logger("evaluate")
 
 
@@ -29,7 +29,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--data-dir", default="../data")
     p.add_argument("--db-path", default="db/hitl.db")
-    p.add_argument("--artifacts-dir", default="artifacts_demo")
+    p.add_argument("--artifacts-dir", default="artifacts")
     return p.parse_args()
 
 
@@ -37,8 +37,8 @@ def main():
     args = parse_args()
 
     data_dir = Path(args.data_dir)
-    val_npz = data_dir / "validation_anomalies.npz"
-    val_csv = data_dir / "validation_anomalies_meta.csv"
+    val_npz = data_dir / "test_anomalies.npz"
+    val_csv = data_dir / "test_anomalies_meta.csv"
     if not val_npz.exists() or not val_csv.exists():
         logger.error("Validation files missing in %s", data_dir)
         raise SystemExit(1)
@@ -51,14 +51,29 @@ def main():
     validate_config(cfg)
     paths(cfg)
 
+    original_counts = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
+    
+    for i in range(len(meta_val)):
+        # true_label = int(meta_val.iloc[i]["true_label"]) if "true_label" in meta_val.columns else int(meta_val.iloc[i].get("is_anomaly", 0))
+        # predicted_label = int(meta_val.iloc[i].get("predicted_label", 0))
+        true_label = int(meta_val.iloc[i]["true_label"]) 
+        predicted_label = int(meta_val.iloc[i].get("is_anomaly", 0))
+        if predicted_label == 1 and true_label == 1:
+            k = "TP"
+        elif predicted_label == 1 and true_label == 0:
+            k = "FP"
+        elif predicted_label == 0 and true_label == 0:
+            k = "TN"
+        else:
+            k = "FN"
+        original_counts[k] += 1
+    
     hitl = HITL(config=cfg)
 
     results = []
     counts = {"TP": 0, "FP": 0, "TN": 0, "FN": 0}
     
-    print(meta_val.shape)
-    print(meta_val.head())
-    return
+
 
     for i in range(len(X_val)):
         sample = X_val[i]
@@ -90,6 +105,7 @@ def main():
 
     total = sum(counts.values())
     logger.info("Evaluation complete. Samples: %d", total)
+    logger.info("Original counts: %s", original_counts)
     logger.info("Counts: %s", counts)
     if total > 0:
         precision = counts["TP"] / (counts["TP"] + counts["FP"]) if (counts["TP"] + counts["FP"]) > 0 else 0.0

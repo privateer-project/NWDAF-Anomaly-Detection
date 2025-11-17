@@ -18,7 +18,7 @@ from hitl.settings import Config, paths, validate_config
 from hitl.utils.logging import configure_logging, get_logger
 
 
-configure_logging("INFO")
+configure_logging("INFO", dev_mode=True)
 logger = get_logger("train_filter_model")
 
 
@@ -50,7 +50,7 @@ def main():
     # Allow overriding mode from CLI (useful when dataset shape requires conv1d)
     if args.mode:
         hitl.config.mode = args.mode
-
+    
     train_params = {
         "mode": hitl.config.mode,
         "epochs": args.epochs,
@@ -59,8 +59,11 @@ def main():
         "val_split": args.val_split,
         "patience": args.patience,
         "percentile": args.percentile,
-        "only_false_positives": bool(args.only_false_positives),
+        "only_false_positives": True,
     }
+    
+    print("Training with parameters:", train_params)
+    # return
 
     try:
         model_version = hitl.train_model(schema_id=args.schema_id, params=train_params)

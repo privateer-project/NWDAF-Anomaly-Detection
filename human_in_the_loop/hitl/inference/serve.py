@@ -85,8 +85,11 @@ class LiveModel:
 			# Try to load
 			self.load_live()
 
-		validate_tensor(arr)
-
+		try:
+			validate_tensor(arr)
+		except ValueError as e:
+			raise ValueError(f"Invalid input tensor: {e}")
+  
 		cfg = self._config
 		if cfg is None:
 			raise ArtifactMissing("Model config missing after load")
@@ -112,7 +115,11 @@ class LiveModel:
 			mse = ((tensor - recon) ** 2).mean().item()
 
 		threshold_value = self._threshold["value"]
-		label = 1 if mse > threshold_value else 0
+
+		# THIS IS THE WHOLE ESSENCE OF THE PROJECT
+		# Normally, an anomaly is when the reconstruction error is HIGHER than the threshold.
+		# However, to flip the logic to detect NORMAL samples instead, we invert the condition
+		label = 1 if mse < threshold_value else 0
 
 		return {
 			"label": int(label),
