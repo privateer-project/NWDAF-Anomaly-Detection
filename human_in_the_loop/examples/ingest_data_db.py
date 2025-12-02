@@ -40,12 +40,11 @@ def main():
     args = parse_args()
 
     data_dir = Path(args.data_dir)
-    npz_path = data_dir / "train_anomalies.npz"
-    csv_path = data_dir / "train_anomalies_meta.csv"
+    npz_path = data_dir / "final_anomalies.npz"
+    csv_path = data_dir / "final_anomalies_meta.csv"
 
     if not npz_path.exists() or not csv_path.exists():
-        raise SystemExit(f"Missing data files in {data_dir}; expected train_anomalies.npz and train_anomalies_meta.csv")
-
+        raise SystemExit(f"Missing data files in {data_dir}; expected final_anomalies.npz and final_anomalies_meta.csv")
     logger.info("Loading train data")
     npz = np.load(npz_path, allow_pickle=True)
     X = npz["X"]

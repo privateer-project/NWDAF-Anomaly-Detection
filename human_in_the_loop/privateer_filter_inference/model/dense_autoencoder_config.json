@@ -1,0 +1,1 @@
+{"input_dim": 96, "hidden_dims": [48, 24], "latent_dim": 12, "mode": "dense", "threshold": 0.9212926626205444}

@@ -1,0 +1,32 @@
+"""
+Central configuration for HITL experiments and training.
+"""
+
+# Experiment Config
+EXPERIMENT_ID = "demo-human-in-the-loop-dense"
+VAL_DATA_PROPORTION = 0.2
+POSITIVE_CLASS = "anomaly"
+NEGATIVE_CLASS = "normal"
+CLASSNAMES = [NEGATIVE_CLASS, POSITIVE_CLASS]
+LABEL_FEATURE = "true_label"
+
+# Data Config
+SCHEMA_ID = "67b4d11c626dc4c211ff758c0667e294ac3fb145"
+
+# Training Config
+BATCH_SIZE = 32
+LATENT_DIM = 12
+THRESHOLD_CALC_BATCH_SIZE = 1024
+
+# Artifact Routine Config
+ARTIFACT_ROUTINE_PERIOD = 10
+CLASSIFICATION_THRESHOLD = 0.57
+
+# Model IO Config
+LOADER_VALIDATION_PERIOD = 10
+TRAIN_DIAGNOSTICS_PERIOD = 10
+
+# Trainer Config
+CHECKPOINT_PERIOD = 5
+LEARNING_RATE = 0.001
+MAX_N_EPOCHS = 300

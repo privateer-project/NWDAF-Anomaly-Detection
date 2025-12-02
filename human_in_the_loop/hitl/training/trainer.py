@@ -72,7 +72,7 @@ class Trainer:
         self.logger = logger
 
     def load_dataset(
-        self, schema_id: str, mode: str, only_false_positives: bool = False
+        self, schema_id: str, mode: str, only_false_positives: bool = True
     ) -> tuple[np.ndarray, list[str], tuple[int, ...]]:
         """Load all vectors for a schema from database.
 
@@ -290,7 +290,7 @@ class Trainer:
         )
 
         # 1. Load dataset (with appropriate shape transformation for mode)
-        X, ids, storage_sample_shape = self.load_dataset(schema_id, mode=params["mode"], only_false_positives=params.get("only_false_positives", False))
+        X, ids, storage_sample_shape = self.load_dataset(schema_id, mode=params["mode"], only_false_positives=params.get("only_false_positives", True))
 
         # 2. Train model (no normalization, train on raw data)
         state_dict, threshold, metrics = self.fit(X, params, storage_sample_shape)

@@ -10,7 +10,41 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Literal
 
-from ..errors import UnsupportedShape
+class HITLError(Exception):
+    """
+    Base exception for all HITL-specific errors.
+
+    All custom exceptions in the HITL system inherit from this base class,
+    making it easy to catch all HITL-related errors.
+
+    Example:
+        >>> try:
+        ...     raise HITLError("Something went wrong")
+        ... except HITLError as e:
+        ...     print(f"HITL error: {e}")
+        HITL error: Something went wrong
+    """
+
+    pass
+
+
+class UnsupportedShape(HITLError):
+    """
+    Raised when tensor has invalid shape (not 1D or 2D).
+
+    The HITL system only supports:
+        * 1D vectors for "dense" models (shape: (n,))
+        * 2D tensors for "conv1d" models (shape: (features, timesteps))
+
+    Example:
+        >>> raise UnsupportedShape("Expected 1D or 2D, got shape (2, 3, 4)")
+        Traceback (most recent call last):
+        ...
+        hitl.errors.UnsupportedShape: Expected 1D or 2D, got shape (2, 3, 4)
+    """
+
+    pass
+
 
 
 class DenseAE(nn.Module):
@@ -114,178 +148,6 @@ class DenseAE(nn.Module):
         return self.decoder(z)
 
 
-class Conv1dAE(nn.Module):
-    """Convolutional autoencoder for 2D time-series (T, F) tensors.
-    
-    IMPORTANT - Shape Conventions:
-        Storage format (per sample): (T, F) - time-first
-            - T = number of timesteps
-            - F = number of features/channels
-            - Example: (240, 84) for 240 timesteps with 84 features
-        
-        Model input format (batched): (B, F, T) - channels-first
-            - B = batch size
-            - F = number of features/channels (Conv1d input channels)
-            - T = number of timesteps (sequence length)
-            - Example: (128, 84, 240) for batch of 128 samples
-        
-        Transformation required: Data must be transposed from (N, T, F) to (N, F, T)
-        before being passed to this model. This is handled in trainer.py.
-        
-        See docs/SHAPE_CONVENTIONS.md for full details.
-    """
-
-    def __init__(
-        self,
-        num_features: int,
-        seq_len: int,
-        latent_dim: int = 32,
-        num_filters: list[int] | None = None,
-    ):
-        """
-        Initialize 1D convolutional autoencoder.
-
-        Args:
-            num_features: Number of features/channels (F) - becomes Conv1d input channels
-            seq_len: Sequence length / number of timesteps (T)
-            latent_dim: Size of latent representation
-            num_filters: List of filter counts for conv layers
-                        If None, use default: [16, 32, 64]
-
-        Architecture:
-            Input format: (B, F, T) where B=batch, F=features (channels), T=time
-            PyTorch Conv1d expects channels-first format.
-            
-            Note: This differs from storage format (T, F).
-                  Transformation (T, F) -> (F, T) happens in data loading.
-
-            Encoder: Conv1d layers with ReLU
-                (B, F, T) → Conv1d(F, 16, k=3, s=2, p=1) → ReLU
-                          → Conv1d(16, 32, k=3, s=2, p=1) → ReLU
-                          → Conv1d(32, 64, k=3, s=2, p=1) → ReLU
-                          → Flatten → Linear → latent_dim
-
-            Decoder: Mirror with ConvTranspose1d
-                latent_dim → Linear → Unflatten
-                           → ConvTranspose1d(64, 32, k=3, s=2, p=1, output_padding=1) → ReLU
-                           → ConvTranspose1d(32, 16, k=3, s=2, p=1, output_padding=1) → ReLU
-                           → ConvTranspose1d(16, F, k=3, s=2, p=1, output_padding=1)
-
-        Note: Adjust output_padding to match input seq_len exactly.
-        """
-        super().__init__()
-
-        self.num_features = num_features
-        self.seq_len = seq_len
-        self.latent_dim = latent_dim
-
-        # Default filter counts if not provided
-        if num_filters is None:
-            num_filters = [64, 32, 16]
-
-        self.num_filters = num_filters
-
-        # Build encoder
-        encoder_layers = []
-        in_channels = num_features
-
-        for out_channels in num_filters:
-            encoder_layers.append(
-                nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
-            )
-            encoder_layers.append(nn.ReLU())
-            in_channels = out_channels
-
-        self.encoder_conv = nn.Sequential(*encoder_layers)
-
-        # Calculate the flattened dimension after convolutions
-        flattened_len = seq_len
-        for _ in num_filters:
-            flattened_len = (flattened_len + 2 * 1 - 3) // 2 + 1
-
-        self.flattened_dim = num_filters[-1] * flattened_len
-        self.flattened_len = flattened_len
-
-        # Linear layer to latent
-        self.encoder_fc = nn.Linear(self.flattened_dim, latent_dim)
-
-        # Build decoder
-        self.decoder_fc = nn.Linear(latent_dim, self.flattened_dim)
-
-        # Deconv layers
-        decoder_layers = []
-
-        for i in range(len(num_filters) - 1, 0, -1):
-            decoder_layers.append(
-                nn.ConvTranspose1d(
-                    num_filters[i],
-                    num_filters[i - 1],
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    output_padding=1,
-                )
-            )
-            decoder_layers.append(nn.ReLU())
-
-        # Final deconv layer
-        decoder_layers.append(
-            nn.ConvTranspose1d(
-                num_filters[0],
-                num_features,
-                kernel_size=3,
-                stride=2,
-                padding=1,
-                output_padding=1,
-            )
-        )
-
-        self.decoder_conv = nn.Sequential(*decoder_layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through convolutional autoencoder.
-        
-        Args:
-            x: Input tensor of shape (B, F, T)
-               - B = batch size
-               - F = number of features/channels (must match num_features)
-               - T = sequence length (must match seq_len)
-        
-        Returns:
-            Reconstructed tensor of shape (B, F, T)
-            
-        Note: Input must already be in channels-first format (B, F, T).
-              Transformation from storage format (T, F) happens before this call.
-        """
-        z = self.encode(x)
-        x_hat = self.decode(z)
-
-        # Trim or pad to match original seq_len
-        if x_hat.size(2) != self.seq_len:
-            if x_hat.size(2) > self.seq_len:
-                x_hat = x_hat[:, :, : self.seq_len]
-            else:
-                padding = self.seq_len - x_hat.size(2)
-                x_hat = F.pad(x_hat, (0, padding))
-
-        return x_hat
-
-    def encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Get latent representation."""
-        h = self.encoder_conv(x)
-        h = h.view(h.size(0), -1)
-        z = self.encoder_fc(h)
-        
-        return z
-
-    def decode(self, z: torch.Tensor) -> torch.Tensor:
-        """Reconstruct from latent."""
-        h = self.decoder_fc(z)
-        h = h.view(h.size(0), self.num_filters[-1], self.flattened_len)
-        x_hat = self.decoder_conv(h)
-        return x_hat
-
-
 def build_model(
     mode: Literal["dense", "conv1d"],
     input_shape: tuple[int, ...],
@@ -327,23 +189,6 @@ def build_model(
 
         return DenseAE(
             input_dim=input_dim, latent_dim=latent_dim, hidden_dims=hidden_dims
-        )
-
-    elif mode == "conv1d":
-        if len(input_shape) != 2:
-            raise UnsupportedShape(
-                f"Conv1d mode expects 2D shape (T, F), got {input_shape}"
-            )
-
-        seq_len, num_features = input_shape
-        num_filters = kwargs.get("num_filters")
-
-        print(f"Building Conv1dAE with seq_len={seq_len}, num_features={num_features}")
-        return Conv1dAE(
-            num_features=num_features,
-            seq_len=seq_len,
-            latent_dim=latent_dim,
-            num_filters=num_filters,
         )
 
     else:
